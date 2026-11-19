@@ -149,7 +149,6 @@ Une arborescence typique **lorsque tous les outils sont installés et exécutés
 ```text
 reports/counter/
 ├── manifest_snapshot.json
-├── elaborate(d)_ast...?       # non : voir le vrai nom ci-dessous
 ├── elaborated_ast.json
 ├── design_summary.json
 ├── analyze.result.json
@@ -166,7 +165,7 @@ reports/counter/
 └── synth.stderr.log
 ```
 
-La ligne avec `elaborate(d)_ast...?` ci-dessus est **un piège volontaire de lecture** : elle ne correspond pas à un fichier produit. Un bon réflexe d'ingénierie consiste à vérifier l'arborescence réelle plutôt qu'à recopier une liste aveuglément. Le vrai fichier est bien `elaborated_ast.json`.
+La liste ci-dessus est indicative : les fichiers réellement présents dépendent des outils disponibles et du succès de chaque étape.
 
 **Si un outil manque**, une partie de ces fichiers n'existera pas. Consulte toujours les statuts avant d'ouvrir les fichiers dépendants.
 
