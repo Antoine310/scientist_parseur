@@ -125,7 +125,7 @@ Exemple simplifié, représentatif du contrat mais sans tous les détails :
       }
     }
   ],
-  "counts": {"modules": 2, "instances": 3, "signals": 6}
+  "counts": {"modules": 2, "instances": 3, "signals": 7}
 }
 ```
 
