@@ -1,0 +1,6 @@
+{
+  "top": "counter",
+  "sources": ["counter.sv"],
+  "include_dirs": [],
+  "defines": []
+}
