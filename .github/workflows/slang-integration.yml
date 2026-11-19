@@ -45,6 +45,28 @@ jobs:
         run: |
           python -m rtlprep analyze examples/hierarchy/design.json --out reports/ci-hierarchy
           python -m json.tool reports/ci-hierarchy/design_summary.json
+      - name: Inspect actual slang AST schema
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          obj=json.load(open("reports/ci-hierarchy/elaborated_ast.json"))
+          root=obj["design"]
+          print("ROOT_KEYS",list(root))
+          for node in root.get("members",[])[:3]:
+              print("ROOT_NODE",str(node)[:400])
+              if node.get("kind")!="Instance":continue
+              body=node.get("body",{})
+              print("INSTANCE_KEYS",list(node),"BODY_KEYS",list(body))
+              for member in body.get("members",[])[:25]:
+                  info={k: v for k,v in member.items() if k in ("kind","name","type","direction","sourceRange","sourceInfo","location","syntax","sourceFile","index")}
+                  print("MEMBER",json.dumps(info,ensure_ascii=False)[:500],"KEYS",list(member)[:20])
+                  if member.get("kind")=="Instance":
+                      print("CHILD_BODY_KEYS",list(member.get("body",{})))
+                      for child in member.get("body",{}).get("members",[])[:8]:
+                          print("CHILD_MEMBER",json.dumps({k:v for k,v in child.items() if k in ("kind","name","type","direction","sourceRange","sourceInfo")},ensure_ascii=False)[:500])
+          print("ROOT_COUNTS",Counter(x.get("kind") for x in root.get("members",[]) if isinstance(x,dict)))
+          PY
       - name: Upload diagnostic logs if job fails
         if: failure()
         uses: actions/upload-artifact@v4
