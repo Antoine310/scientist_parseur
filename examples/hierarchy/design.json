@@ -1,0 +1,6 @@
+{
+  "top": "hierarchy_top",
+  "sources": ["leaf.sv", "top.sv"],
+  "include_dirs": [],
+  "defines": []
+}

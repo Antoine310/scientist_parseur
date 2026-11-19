@@ -16,6 +16,20 @@ Une documentation en français explique **tous les composants de RTLPrep v0.1**,
 
 Le cours précise ce qui est **implémenté** et ce qui reste **prévu**, pour éviter de confondre inventaire AST et véritable analyse de dépendances.
 
+## Tests de parsing et hiérarchie
+
+Le projet contient aussi `examples/hierarchy`, un design multi-modules avec
+deux instances du même module. Les tests d'intégration `tests/test_integration_slang.py`
+utilisent le véritable exécutable slang **s'il est installé**, sinon ils sont
+explicitement marqués comme sautés. Les tests unitaires valident séparément les
+erreurs d'AST, le top demandé et les chemins d'instance.
+
+```bash
+python -m pytest -q
+python -m pytest -v tests/test_integration_slang.py
+python -m rtlprep analyze examples/hierarchy/design.json --out reports/hierarchy
+```
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
