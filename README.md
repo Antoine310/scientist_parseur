@@ -16,6 +16,18 @@ Une documentation en français explique **tous les composants de RTLPrep v0.1**,
 
 Le cours précise ce qui est **implémenté** et ce qui reste **prévu**, pour éviter de confondre inventaire AST et véritable analyse de dépendances.
 
+## Intégration avec le vrai compilateur slang
+
+La CI GitHub Actions contient maintenant un workflow séparé
+[`slang-integration.yml`](.github/workflows/slang-integration.yml) :
+il installe **slang v12.1** sur Ubuntu et vérifie l'analyse réelle
+du compteur et de la hiérarchie multi-modules. Le premier essai a révélé
+que le cache d'instances de slang rendait certains corps incomplets pour
+notre extracteur JSON. RTLPrep utilise provisoirement
+`--disable-instance-caching` pour obtenir des instances distinctes.
+
+**[Tutoriel : installation, explication du cache et tests réels](docs/slang-environnement.md).**
+
 ## Tests de parsing et hiérarchie
 
 Le projet contient aussi `examples/hierarchy`, un design multi-modules avec
