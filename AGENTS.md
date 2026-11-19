@@ -29,3 +29,7 @@ Développer RTLPrep, une CLI Python gratuite permettant d'analyser, documenter e
 - Prévoir ultérieurement une interface LLM interchangeable, désactivée par défaut.
 
 Les modifications fonctionnelles expérimentales doivent rester confinées à des bancs d'essai contrôlés et documentés.
+
+## Documentation pédagogique
+
+Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

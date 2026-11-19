@@ -2,6 +2,20 @@
 
 **Statut : prototype v0.1.** Ce projet fournit un socle Python pour analyser et valider des circuits SystemVerilog dans un environnement de test autorisé. Il ne nécessite aucun LLM ni clé API.
 
+
+## 📚 Documentation pédagogique détaillée
+
+Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :
+
+1. [Parcours d'apprentissage](docs/README.md) — guide des chapitres et vocabulaire de base.
+2. [Architecture du projet](docs/architecture.md) — fichiers Python, manifeste et enchaînement des opérations.
+3. [Analyseur SystemVerilog, AST et récursion](docs/parser-systemverilog.md) — explication ligne par ligne de `summarize_ast` et de slang.
+4. [CLI et validation avec les outils EDA](docs/outils-et-validation.md) — `run_command`, Verilator, Yosys, logs et statuts.
+5. [TP guidé sur le compteur](docs/tutoriel-compteur.md) — commandes à exécuter et résultats à inspecter.
+6. [Tests et évolutions](docs/tests-et-evolutions.md) — pytest, tests d'intégration et préparation du graphe de dépendances.
+
+Le cours précise ce qui est **implémenté** et ce qui reste **prévu**, pour éviter de confondre inventaire AST et véritable analyse de dépendances.
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
