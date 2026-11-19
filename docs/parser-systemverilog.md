@@ -256,6 +256,19 @@ Dans `runner.analyze` :
 
 Cela rend les rapports beaucoup plus utiles pour un futur agent.
 
+### Important : cache d'instances slang
+
+Dans les tests réels v12.1, le circuit `hierarchy_top` avec deux instances
+de `leaf` a révélé que le JSON exporté peut réutiliser des corps
+d'instances mis en cache. Notre code ne résout pas encore ces références :
+l'orchestrateur lance donc provisoirement
+`slang --disable-instance-caching --ast-json ...`.
+
+Cela **ne transforme pas RTLPrep en compilateur** : slang continue
+d'effectuer l'élaboration. L'option peut en revanche coûter plus cher
+sur un très gros design ; on revisitera ce choix lors de l'index structurel.
+Voir [l'étude pratique de cette erreur](slang-environnement.md).
+
 ## 2.6 Exemple de résultat attendu
 
 Pour la fixture du §2.4, un résumé pourrait ressembler à ceci :
