@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rtlprep-starter"
+version = "0.1.0"
+description = "Open-source RTL analysis and validation starter"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+rtlprep = "rtlprep.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["rtlprep*"]
