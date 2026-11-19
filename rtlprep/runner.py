@@ -100,25 +100,29 @@ def common_slang_args(d: Design) -> list[str]:
 
 
 def analyze(d: Design, out: Path, timeout: int) -> dict:
+    out.mkdir(parents=True, exist_ok=True)
     ast_path = out / "elaborated_ast.json"
+    summary_path = out / "design_summary.json"
+    # Ne jamais réutiliser par erreur les artefacts d'une précédente exécution.
+    ast_path.unlink(missing_ok=True)
+    summary_path.unlink(missing_ok=True)
     cmd = ["slang", "--ast-json", str(ast_path), "--ast-json-source-info", *common_slang_args(d)]
     result = run_command(cmd, "analyze", out, timeout)
     if result["status"] == "passed":
         try:
             raw = json.loads(ast_path.read_text(encoding="utf-8"))
-            summary = summarize_ast(raw)
+            summary = summarize_ast(raw, expected_top=d.top)
             summary["top"] = d.top
             summary["source_fingerprint"] = fingerprint(d)
-            (out / "design_summary.json").write_text(
-                json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8",
-            )
-            result["summary"] = str(out / "design_summary.json")
+            summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+            result["summary"] = str(summary_path)
         except (ValueError, OSError, TypeError) as exc:
             result["status"] = "failed"
             result["error"] = f"AST JSON inexploitable : {exc}"
-            (out / "analyze.result.json").write_text(
-                json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8",
-            )
+        # run_command écrit un premier rapport ; le mettre à jour après post-traitement.
+        (out / "analyze.result.json").write_text(
+            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     return result
 
 
