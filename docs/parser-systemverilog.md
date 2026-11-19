@@ -140,21 +140,55 @@ Un AST contient des objets emboîtés. **Le JSON ci-dessous est une *fixture pé
 
 L'intérêt d'un AST est que `"kind": "Instance"` est une **information fournie par le compilateur**, pas une intuition du LLM.
 
-## 2.5 Décortiquer `rtlprep/analysis.py`
+## 2.5 Décortiquer `rtlprep/analysis.py` (version durcie)
 
-Le code de v0.1 commence ainsi :
+Dans la version initiale, le code essayait de parcourir n'importe quel objet JSON, même si
+le compilateur n'avait pas fourni la structure attendue. Cela risquait de produire
+un **résumé vide présenté comme réussi**. La nouvelle version protège cette étape.
+
+### Étape 1 : valider la racine
 
 ```python
-def summarize_ast(ast: dict[str, Any]) -> dict[str, Any]:
-    roots = ast.get("design", ast)
-    result: list[dict[str, Any]] = []
+def summarize_ast(ast: dict[str, Any], *, expected_top: str | None = None) -> dict[str, Any]:
+    if not isinstance(ast, dict):
+        raise ValueError("AST slang : la racine JSON doit être un objet")
+    root = ast.get("design")
+    if not isinstance(root, dict) or root.get("kind") != "Root":
+        raise ValueError("AST slang : design.kind=Root manquant")
+    members = root.get("members")
+    if not isinstance(members, list):
+        raise ValueError("AST slang : design.members doit être une liste")
 ```
 
-- `ast` : dictionnaire Python chargé depuis le fichier JSON.
-- `ast.get("design", ast)` : cherche une clé `design`, sinon parcourt la racine.
-- `result` : liste où sont accumulées les instances découvertes.
+- `ast` est le dictionnaire produit par `json.loads`.
+- `root` est la racine de l'AST élaboré que nous attendons de slang.
+- `kind == "Root"` vérifie que nous avons bien un arbre de **design élaboré**,
+  et non un CST ou un fichier JSON quelconque.
+- `members` contient les objets déclarés au niveau racine.
+- Si le format est différent, le code signale l'erreur au lieu de deviner.
 
-Puis vient une fonction **imbriquée et récursive** :
+### Étape 2 : vérifier le top choisi
+
+```python
+top_nodes = [m for m in members if isinstance(m, dict) and m.get("kind") == "Instance"]
+if not top_nodes:
+    raise ValueError("AST slang : aucune instance de premier niveau")
+```
+
+Quand `runner.analyze` connaît le module demandé dans le manifeste,
+il le transmet à la fonction :
+
+```python
+summary = summarize_ast(raw, expected_top=d.top)
+```
+
+Le résumé n'est accepté que si l'on retrouve le top parmi les instances
+de premier niveau (par son nom d'instance ou le nom du module du corps).
+**Un top absent est une erreur**, pas un design silencieusement vide.
+
+### Étape 3 : récursion sur les instances
+
+La fonction `walk` descend récursivement dans l'AST :
 
 ```python
 def walk(obj: Any, parents: tuple[str, ...] = ()) -> None:
@@ -162,80 +196,65 @@ def walk(obj: Any, parents: tuple[str, ...] = ()) -> None:
         for x in obj:
             walk(x, parents)
     elif isinstance(obj, dict):
-        # exploration du dictionnaire...
+        # Repère les nœuds d'instance, extrait leurs ports et parcourt les enfants.
         ...
 ```
 
-Ce qu'il faut comprendre :
+Quand elle rencontre un dictionnaire portant `kind == "Instance"` :
 
-- une **liste** contient plusieurs enfants ;
-- un **dictionnaire** contient des paires clé/valeur ;
-- la fonction s'appelle elle-même pour descendre dans ces enfants ;
-- `parents` garde le chemin des instances déjà traversées, sous forme de tuple.
+1. elle vérifie que l'instance a un **nom** et un **corps** ;
+2. elle lit le nom du module dans le corps ;
+3. elle cherche les objets `kind == "Port"` parmi les membres ;
+4. elle calcule le chemin hiérarchique à partir des noms parents ;
+5. elle ajoute une entrée dans le résultat ;
+6. elle descend **uniquement dans les membres du corps élaboré**.
 
-Le traitement spécial commence lorsqu'une instance est rencontrée :
+L'intérêt est de ne pas confondre les métadonnées ou références de connexions
+avec de nouvelles instances. Le code refuse également un chemin d'instance
+dupliqué, au lieu de conserver deux entrées impossibles à distinguer.
 
 ```python
-if obj.get("kind") == "Instance":
-    body = obj.get("body") if isinstance(obj.get("body"), dict) else {}
-    name = str(obj.get("name", "<anonymous>"))
-    module = str(body.get("name", "<unknown>"))
-    new_parents = (*parents, name)
+new_parents = (*parents, name)
+path = ".".join(new_parents)
+if path in seen_paths:
+    raise ValueError(f"AST slang : chemin d'instance dupliqué : {path}")
+seen_paths.add(path)
 ```
 
-- `kind` indique que le nœud représente une instance.
-- `body` contient, dans la représentation attendue, sa définition élaborée.
-- `name` est **le nom de l'instance** (par exemple `u_child`).
-- `module` est **le nom du module** qui a servi à la créer (par exemple `child`).
-- `new_parents` ajoute cette instance à la hiérarchie : `("top", "u_child")`.
+**Attention :** les nœuds de port et de générateurs ont des variantes selon
+la structure exacte exportée par slang. Le parcours doit être confronté à des
+AST réels ; la version actuelle ne garantit pas encore une interprétation
+parfaite de tous les blocs `generate` ou interfaces complexes.
 
-On extrait ensuite les ports :
+### Étape 4 : résultat
 
-```python
-ports = []
-for member in body.get("members", []):
-    if isinstance(member, dict) and member.get("kind") == "Port":
-        ports.append({
-            "name": member.get("name"),
-            "direction": member.get("direction"),
-            "type": member.get("type"),
-        })
-```
-
-**Différence essentielle :** la présence d'un port ne prouve pas que le code a identifié toutes ses connexions, ses expressions d'association ou son sens fonctionnel.
-
-Enfin, le résumé est enregistré :
+La fonction renvoie :
 
 ```python
-result.append({
-    "hierarchy_path": ".".join(new_parents),
-    "instance": name,
-    "module": module,
-    "ports": ports,
-})
-```
-
-Et le parcours continue dans les enfants :
-
-```python
-for k, v in obj.items():
-    if k in ("addr", "type"):
-        continue
-    walk(v, new_parents)
-```
-
-Les clés `addr` et `type` sont ignorées par le parcours pour éviter de s'enfoncer dans certaines métadonnées. Ce choix est **provisoire**, pas une garantie que l'on ignore uniquement des champs sans intérêt dans toutes les versions d'AST.
-
-La fonction termine par :
-
-```python
-walk(roots)
 return {
     "format": "slang-elaborated-ast",
     "instances": result,
     "instance_count": len(result),
 }
 ```
+
+Le champ `instance_count` compte les **instances** enregistrées,
+et non le nombre de **définitions de modules**. Plusieurs instances
+d'un même module ont des chemins différents.
+
+### Étape 5 : artefacts et erreurs de post-traitement
+
+Dans `runner.analyze` :
+
+- les anciens fichiers `elaborated_ast.json` et `design_summary.json` sont
+  supprimés **avant** le lancement pour empêcher qu'une ancienne exécution
+  ne soit prise pour le résultat courant ;
+- si slang réussit mais que le JSON est illisible ou incohérent,
+  le résultat devient `failed` ;
+- le statut final (y compris les erreurs de validation AST) est réécrit dans
+  `analyze.result.json`, et pas seulement affiché à l'écran.
+
+Cela rend les rapports beaucoup plus utiles pour un futur agent.
 
 ## 2.6 Exemple de résultat attendu
 
