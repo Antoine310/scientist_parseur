@@ -196,3 +196,40 @@ Ce genre de demande est préférable à « implémente un parser complet CVA6 »
 - **Nombre de cellules** ne signifie pas **surface ou puissance**.
 
 C'est en gardant ces distinctions que RTLPrep pourra devenir un outil scientifique crédible, y compris sur des circuits complexes.
+
+## 5.10 Première consolidation de l'AST (phase A)
+
+L'index du parseur est maintenant plus strict : il refuse les racines inconnues,
+un top absent et les chemins d'instances dupliqués. Le lanceur supprime aussi
+les anciens fichiers JSON avant chaque analyse.
+
+Deux types de tests ont été ajoutés :
+
+- `tests/test_analysis.py` : tests unitaires utilisant de **fausses sorties AST**
+  conçues pour provoquer des succès et des échecs précis. Ils fonctionnent
+  sans installer slang.
+- `tests/test_integration_slang.py` : tests qui appellent le **vrai exécutable slang**
+  sur `examples/counter` et `examples/hierarchy`. Ces tests sont **sautés**
+  lorsque slang est absent. Leurs résultats ne doivent jamais être présentés
+  comme une validation EDA si l'outil est absent.
+
+Commandes :
+
+```bash
+python -m pytest -q
+python -m pytest -v tests/test_integration_slang.py
+python -m rtlprep analyze examples/hierarchy/design.json --out reports/hierarchy
+```
+
+La fixture de hiérarchie contient le module `hierarchy_top` qui instancie deux
+fois `leaf` sous les noms `first` et `second`. Le résumé doit distinguer :
+
+```text
+hierarchy_top
+hierarchy_top.first
+hierarchy_top.second
+```
+
+La sortie réelle des tests d'intégration dépend de la version et de
+l'installation de slang. Tant qu'ils n'ont pas été exécutés sur un véritable
+compilateur, les cas de structures d'AST incompatibles restent à valider.
