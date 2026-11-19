@@ -1,0 +1,54 @@
+name: Real slang integration
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  slang-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and Python tests
+        run: python -m pip install -e '.[dev]'
+      - name: Install pinned slang release (real compiler)
+        shell: bash
+        run: |
+          set -euo pipefail
+          SLANG_VERSION="v12.1"
+          SLANG_URL="https://github.com/MikePopoloski/slang/releases/download/${SLANG_VERSION}/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 \
+            "$SLANG_URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN_PATH="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN_PATH"
+          sudo install -m 0755 "$BIN_PATH" /usr/local/bin/slang
+          slang --version
+      - name: Run unit tests
+        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py
+      - name: Run REAL slang tests (must not be skipped)
+        run: |
+          python -m pytest -vv -rs -o addopts='' tests/test_integration_slang.py
+      - name: Show example summary
+        run: |
+          python -m rtlprep analyze examples/hierarchy/design.json --out reports/ci-hierarchy
+          python -m json.tool reports/ci-hierarchy/design_summary.json
+      - name: Upload diagnostic logs if job fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slang-diagnostics
+          path: reports/
+          if-no-files-found: ignore

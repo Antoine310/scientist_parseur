@@ -45,6 +45,14 @@ et un agent LLM autonome **n'existent pas encore**.
 
 ## Phase A — Stabiliser le socle (v0.2)
 
+**Point de progression (novembre 2026) :** les tests d'intégration
+avec slang v12.1 sont désormais lancés sur GitHub Actions.
+L'exemple multi-instances a montré l'importance de gérer le cache
+d'instances ; la solution provisoire est `--disable-instance-caching`.
+Voir [docs/slang-environnement.md](slang-environnement.md).
+La phase A reste **partiellement achevée** tant que les packages, includes,
+paramètres, versions d'outils et provenance source ne sont pas couverts.
+
 **Priorité : bloquante.** Avant d'ajouter de l'IA, il faut être certain que l'AST
 extrait correspond vraiment aux designs traités.
 
