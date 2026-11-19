@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .analysis import summarize_ast
+from .index import build_index
 from .manifest import Design
 
 TOOL_NAMES = ("slang", "verilator", "yosys", "sby", "eqy", "openroad")
@@ -186,4 +187,27 @@ def synth(d: Design, out: Path, timeout: int) -> dict:
         (out / "synth.result.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8",
         )
+    return result
+
+
+def index_design(d: Design, out: Path, timeout: int) -> dict:
+    """Produire un index local uniquement après une analyse slang réussie."""
+    index_path = out / "rtl_index.json"
+    index_path.unlink(missing_ok=True)
+    result = analyze(d, out, timeout)
+    if result["status"] == "passed":
+        try:
+            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+            index = build_index(ast, expected_top=d.top)
+            index["source_fingerprint"] = fingerprint(d)
+            index["manifest"] = str(d.manifest)
+            index["sources"] = [str(x) for x in d.sources]
+            index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+            result["index"] = str(index_path)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            result["status"] = "failed"
+            result["error"] = f"Index AST impossible : {exc}"
+    (out / "index.result.json").write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return result
