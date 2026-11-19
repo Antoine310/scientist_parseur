@@ -106,7 +106,15 @@ def analyze(d: Design, out: Path, timeout: int) -> dict:
     # Ne jamais réutiliser par erreur les artefacts d'une précédente exécution.
     ast_path.unlink(missing_ok=True)
     summary_path.unlink(missing_ok=True)
-    cmd = ["slang", "--ast-json", str(ast_path), "--ast-json-source-info", *common_slang_args(d)]
+    # Le JSON des instances répétées peut utiliser des références de cache au lieu
+    # de réémettre le corps. Notre extracteur v0.2 exige encore un corps complet.
+    # Désactiver le cache pour garantir une hiérarchie lisible en attendant
+    # un indexeur compatible avec les références / le backend pyslang.
+    cmd = [
+        "slang", "--disable-instance-caching",
+        "--ast-json", str(ast_path), "--ast-json-source-info",
+        *common_slang_args(d),
+    ]
     result = run_command(cmd, "analyze", out, timeout)
     if result["status"] == "passed":
         try:
