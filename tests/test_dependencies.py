@@ -131,3 +131,31 @@ def test_invalid_slang_list_is_reported_not_silently_ignored():
     proc["body"]["stmt"] = n("List")
     graph = build_dependency_graph(ast, expected_top="top")
     assert any("List sans liste" in x["reason"] for x in graph["warnings"])
+
+
+def test_real_slang_replication_count_and_concat_are_traversed():
+    """slang exports {6{a}} as Replication(count, concat), not 'operands'."""
+    ast = design_ast()
+    body = ast["design"]["members"][0]["body"]["members"]
+    child = next(x for x in body if x.get("kind") == "Instance")
+    continuous = next(x for x in child["body"]["members"]
+                      if x.get("kind") == "ContinuousAssign")
+    continuous["assignment"]["right"] = n(
+        "Replication",
+        count=n("IntegerLiteral", value="6"),
+        concat=n("Concatenation", operands=[ref("a")]),
+    )
+    graph = build_dependency_graph(ast, expected_top="top")
+    assert ("top.child.a", "top.child.y", "data") in edges(graph)
+    assert graph["counts"]["warnings"] == 0
+
+
+def test_malformed_replication_is_reported():
+    ast = design_ast()
+    child = next(x for x in ast["design"]["members"][0]["body"]["members"]
+                 if x.get("kind") == "Instance")
+    assign_stmt = next(x for x in child["body"]["members"]
+                       if x.get("kind") == "ContinuousAssign")
+    assign_stmt["assignment"]["right"] = n("Replication", count=n("IntegerLiteral", value="6"))
+    graph = build_dependency_graph(ast, expected_top="top")
+    assert any("Replication sans concaténation" in x["reason"] for x in graph["warnings"])
