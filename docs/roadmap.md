@@ -192,9 +192,19 @@ assertions avec `mode prove` (induction) et une recherche `cover`
 défectueux doit produire un vrai `FAIL` et une trace VCD.
 Les rapports distinguent `UNKNOWN` d'un bug démontré.
 
-La **phase D reste incomplète** : EQY, les preuves pertinentes sur des
-vrais modules CPU, la couverture exhaustive, les garanties de sandbox
+**Troisième jalon en PR #13 :** une commande `rtlprep eqy`
+compare des paires RTL gold/gate **approuvées**. Avec EQY, SBY et Z3,
+la CI prouve l'équivalence du compteur refactorisé (1 partition)
+et de la FSM refactorisée (6 partitions). La variante
+`counter_buggy.sv` est **non équivalente**, avec un vrai contre-exemple
+VCD, et fait échouer le job si l'anomalie n'est pas reconnue.
+
+La **phase D reste incomplète** : les preuves pertinentes sur de
+vrais modules CPU, l'équivalence de transformations plus complexes,
+la couverture exhaustive, les garanties de sandbox
 et les propriétés de sécurité avancées restent à développer.
+
+Voir le [guide EQY](equivalence-eqy.md).
 
 Voir [le cours sur les preuves SBY](preuves-formelles-sby.md).
 
