@@ -18,6 +18,7 @@ from .runner import fingerprint, run_command
 PROOF_SUITES = {
     "counter": ("counter_properties.sv", "counter_formal"),
     "handshake_fsm": ("handshake_fsm_properties.sv", "handshake_fsm_formal"),
+    "secure_csr": ("secure_csr_properties.sv", "secure_csr_formal"),
 }
 FORMAL_DIR = Path(__file__).resolve().parent / "formal_specs"
 VALID_FILENAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
@@ -111,6 +112,13 @@ def formal_verify(d: Design, out: Path, timeout: int = 180) -> dict:
     if timeout < 1:
         result.update(status="failed", error="timeout doit être >= 1 seconde")
         return _persist(out, result)
+    if d.top == "secure_csr":
+        from .security_lab import validate_security_design
+        try:
+            validate_security_design(d)
+        except ValueError as exc:
+            result.update(status="failed", error=str(exc))
+            return _persist(out, result)
     if d.top not in PROOF_SUITES:
         result.update(status="failed", error=f"Aucun banc formel approuvé pour le top {d.top!r}")
         return _persist(out, result)

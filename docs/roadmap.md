@@ -399,6 +399,33 @@ toute conclusion sur la supériorité d'une stratégie.
 
 Voir [le cours et le protocole de benchmark](benchmark-phase-g.md).
 
+### Phase G — laboratoire défensif de sécurité RTL (PR #17)
+
+Après les premiers volumes A/B/C, un **exercice contrôlé**
+teste la capacité de RTLPrep à accompagner une investigation
+sur un **CSR synthétique** : un contrôle d'accès erroné
+`machine_mode || !debug_locked` autorise une écriture
+non privilégiée lorsqu'un debug non verrouillé est présent.
+
+La CI élabore le circuit sain et le mutant avec slang, puis
+exige des **simulations réussies et échouées**, des
+**preuves formelles SBY** et une comparaison EQY qui
+révèle la divergence, avec de **vraies traces VCD**.
+Un rapport unifié recoupe les verdicts et les **empreintes des
+sources réellement testées**.
+
+Le graphe peut être **exactement identique** sur les deux
+versions : ce jalon vérifie donc que nos conclusions
+reposent sur des propriétés fonctionnelles, pas seulement
+sur une proximité de signaux.
+
+Le bug est **entièrement artificiel**, non découvert
+dans le CV32E40P. L'évaluation d'un **vrai agent IA**
+sur un ensemble de vulnérabilités inédites reste
+une étape suivante ; ce run ne la simule pas.
+
+Voir [le TP de sécurité du CSR](laboratoire-securite-csr.md).
+
 ## Phase G — Benchmark et optimisation finale (v0.8)## Phase G — Benchmark et optimisation finale (v0.8)
 
 **Priorité : après E/F. Ne pas choisir une architecture multi-agents avant de mesurer.**

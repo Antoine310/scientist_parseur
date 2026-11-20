@@ -60,6 +60,12 @@ les limites de lecture et le test réel `stdio` avec le SDK officiel.
 Les résultats mesurés sont distingués d'une **future**
 évaluation de la qualité d'un agent LLM, non réalisée.
 
+**Nouveau laboratoire de sécurité RTL :**
+[contrôle d'accès CSR, contournement volontaire de privilèges et
+validation croisée slang/cocotb/SBY/EQY](laboratoire-securite-csr.md).
+Il explique pourquoi deux circuits peuvent partager le même graphe
+de dépendances et présenter pourtant des comportements différents.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal

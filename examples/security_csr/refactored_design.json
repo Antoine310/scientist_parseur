@@ -1,0 +1,6 @@
+{
+  "top": "secure_csr",
+  "sources": ["secure_csr_refactored.sv"],
+  "include_dirs": [],
+  "defines": []
+}

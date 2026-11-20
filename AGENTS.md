@@ -248,6 +248,39 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Lire [docs/benchmark-phase-g.md](docs/benchmark-phase-g.md)
   avant toute nouvelle optimisation basée sur ces métriques.
 
+## Laboratoire de sécurité du CSR (PR #17)
+
+- `examples/security_csr/` livre trois versions **approuvées**
+  de `secure_csr` : bonne, refactorisée et volontairement
+  vulnérable (**OU** en lieu et place de **ET** dans
+  l'autorisation d'écriture protégée).
+- **Contrat :** `write_accepted_o = write_i && machine_mode_i &&
+  !debug_locked_i`. Une écriture non privilégiée avec
+  `debug_locked_i=0` doit **toujours être refusée**.
+- `rtlprep deps` sur les deux variantes produit un graphe
+  de dépendances de signaux ; un graphe identique ne
+  prouve PAS l'équivalence logique ou la sécurité.
+- `rtlprep simulate` teste les huit combinaisons de
+  contrôle et 128 stimuli reproductibles. Le mutant doit
+  faire échouer cocotb ; ne jamais accepter un faux vert.
+- `rtlprep formal` utilise les assertions de
+  `rtlprep/formal_specs/secure_csr_properties.sv`
+  avec reset initial explicitement supposé ; la référence
+  doit donner `prove=PASS` et `cover=PASS`,
+  le mutant `prove=FAIL` et une **trace VCD**.
+- `rtlprep eqy` démontre l'équivalence de la variante
+  saine et réfute le mutant avec partition FAIL et VCD.
+- `scripts/check_security_lab.py` recoupe toutes les
+  preuves et **leurs empreintes source**, et produit
+  `reports/security-lab/security_lab_report.json`.
+- Le workflow `.github/workflows/rtl-security-lab.yml`
+  exécute **les outils EDA réels** sur un design autorisé.
+- Aucun agent IA n'a été testé ni revendiqué
+  comme découvreur autonome de cette faille ;
+  **ce n'est pas une vulnérabilité CV32E40P**.
+- Lire [docs/laboratoire-securite-csr.md](docs/laboratoire-securite-csr.md)
+  avant de modifier les hypothèses, modèles, ou verdicts.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
