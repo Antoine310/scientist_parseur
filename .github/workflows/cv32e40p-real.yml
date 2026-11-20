@@ -61,6 +61,33 @@ jobs:
             --source-root upstream_cv32e40p \
             --out reports/cv32e40p \
             --timeout 180
+      - name: Inspect slang package declarations and AST root (temporary)
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          ast=json.load(open("reports/cv32e40p/elaborated_ast.json"))
+          print("AST_KEYS",list(ast.keys()))
+          d=ast.get("design",{})
+          print("DESIGN_KEYS",list(d.keys()))
+          print("ROOT_MEMBER_KINDS",[(n.get("kind"),n.get("name"),list(n.keys())[:9]) for n in d.get("members",[])[:30] if isinstance(n,dict)])
+          def scan(x,depth=0):
+              if depth>9:return
+              if isinstance(x,list):
+                  for y in x[:3000]:scan(y,depth+1)
+              elif isinstance(x,dict):
+                  k=x.get("kind")
+                  if k in ("Package","CompilationUnit","Parameter","TypeParameter","EnumValue","WildcardImport"):
+                      if k in ("Package","CompilationUnit","WildcardImport") or x.get("name") in ("OPCODE_JAL","OPCODE_BRANCH","OPCODE_OPIMM","ZFINX","FPU"):
+                          print("AST_SYMBOL",k,x.get("name"),{a:(str(v)[:150] if not isinstance(v,(dict,list)) else "container") for a,v in x.items() if a not in ("addr","definition","members")}, "KEYS",list(x.keys()))
+                  if k=="NamedValue" and "OPCODE_JAL" in str(x.get("symbol")):
+                      print("REF_EXAMPLE",x)
+                      return
+                  for field,val in x.items():
+                      if field in ("addr","definition","internalSymbol","type"):continue
+                      if isinstance(val,(dict,list)):scan(val,depth+1)
+          scan(ast)
+          PY
       - name: Upload reports and relevant logs (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
