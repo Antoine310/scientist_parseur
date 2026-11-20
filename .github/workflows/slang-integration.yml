@@ -37,7 +37,7 @@ jobs:
           sudo install -m 0755 "$BIN_PATH" /usr/local/bin/slang
           slang --version
       - name: Run unit tests
-        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py tests/test_index.py tests/test_dependencies.py
+        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py tests/test_index.py tests/test_dependencies.py tests/test_advanced_dependencies.py
       - name: Run REAL slang tests (must not be skipped)
         run: |
           python -m pytest -vv -rs -o addopts='' tests/test_integration_slang.py
@@ -64,6 +64,18 @@ jobs:
           print("WARNINGS", graph["warnings"])
           assert graph["counts"]["warnings"] == 0
           assert graph["counts"]["edges"] >= 14
+          PY
+      - name: Validate advanced RTL graph (real slang)
+        run: |
+          python -m rtlprep deps examples/advanced/design.json --out reports/ci-advanced
+          python -m rtlprep trace reports/ci-advanced/rtl_dependencies.json fanin advanced_logic.result --depth 3
+          python - <<'PY'
+          import json
+          graph=json.load(open("reports/ci-advanced/rtl_dependencies.json"))
+          print("ADVANCED_GRAPH_COUNTS",graph["counts"])
+          print("ADVANCED_WARNINGS",graph["warnings"])
+          assert graph["counts"]["warnings"] == 1
+          assert graph["counts"]["edges"] >= 10
           PY
       - name: Upload diagnostic logs if job fails
         if: failure()
