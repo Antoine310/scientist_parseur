@@ -70,6 +70,23 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Toute sélection de bits reste une dépendance **agrégée au signal entier** et
   doit rester explicitement signalée, jamais convertie en preuve exacte bit-à-bit.
 
+## Benchmark réel CV32E40P
+
+- Exécuter l'expérience reproductible décrite dans
+  [docs/test-cv32e40p-reel.md](docs/test-cv32e40p-reel.md).
+- Workflow : `.github/workflows/cv32e40p-real.yml`. Il récupère un commit
+  officiel OpenHW **pinné**, sans copier le CPU dans le dépôt RTLPrep.
+- `scripts/run_cv32e40p_decoder.py` vérifie les hash Git blob des
+  sources amont, les ports et la présence de chemins de fan-in de
+  `instr_i` vers chaque sortie.
+- Le résultat `status=passed` n'implique pas une **couverture complète** :
+  `dependency_coverage=partial` et les warnings doivent rester visibles.
+- Les constantes `OPCODE_*` viennent du package SystemVerilog ; ne pas
+  les éliminer par un filtre de chaînes arbitraire.
+- Les structures AST réellement observées : `List.list` et
+  `Replication.count/concat`. Écrire des tests pour toute nouvelle
+  construction avant de modifier le graphe.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

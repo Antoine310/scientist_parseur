@@ -94,6 +94,30 @@ python -m rtlprep trace reports/advanced/rtl_dependencies.json fanin advanced_lo
 
 [**Cours détaillé : comprendre le vrai AST et le code Python**](docs/systemverilog-avance.md).
 
+## Test sur un vrai module de processeur RISC-V
+
+RTLPrep a été exécuté avec **slang v12.1** sur le décodeur d'instructions
+compressées du **CV32E40P officiel** (révision Git et contenu des sources
+vérifiés). Le compilateur et l'index ont réussi, et le fan-in de chacune
+des trois sorties remonte à `instr_i`.
+
+**Résultat : 4 nœuds, 4 arêtes et 12 avertissements ; la couverture reste
+partielle.** Ce test a permis de corriger la traversée de `List` (blocs
+`begin/end`) et le traitement de `Replication` (`{N{expr}}`).
+Les constantes importées d'un package restent à reconnaître correctement.
+
+```bash
+python scripts/run_cv32e40p_decoder.py \
+  --source-root upstream_cv32e40p \
+  --out reports/cv32e40p
+```
+
+La récupération de la révision exacte et le test automatisé sont réalisés
+par [GitHub Actions](.github/workflows/cv32e40p-real.yml).
+
+**[Lire le rapport et le cours pédagogique du test CV32E40P](docs/test-cv32e40p-reel.md).**
+Les sources du CPU ne sont pas recopiées dans ce dépôt.
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
