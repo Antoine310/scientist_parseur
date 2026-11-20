@@ -65,6 +65,25 @@ jobs:
           assert graph["counts"]["warnings"] == 0
           assert graph["counts"]["edges"] >= 14
           PY
+      - name: Explore real AST of advanced RTL (temporary)
+        run: |
+          python -m rtlprep analyze examples/advanced/design.json --out reports/ci-advanced
+          python - <<'PY'
+          import json
+          raw=json.load(open("reports/ci-advanced/elaborated_ast.json"))
+          inst=next(n for n in raw["design"]["members"] if isinstance(n,dict) and n.get("kind")=="Instance")
+          print("ADVANCED_BODY",list(inst["body"].keys()))
+          ignored={"addr","internalSymbol","definition"}
+          def tidy(x,depth=0):
+              if depth>19:return "<depth>"
+              if isinstance(x,dict):return {k:tidy(v,depth+1) for k,v in x.items() if k not in ignored}
+              if isinstance(x,list):return [tidy(y,depth+1) for y in x[:35]]
+              return x
+          for m in inst["body"]["members"]:
+              if not isinstance(m,dict):continue
+              if m.get("kind") in ("Port","Net","Variable","Parameter"):continue
+              print("AST_ADVANCED",m.get("kind"),json.dumps(tidy(m),ensure_ascii=False)[:35000])
+          PY
       - name: Upload diagnostic logs if job fails
         if: failure()
         uses: actions/upload-artifact@v4
