@@ -78,6 +78,16 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
         ) for name in sorted(REQUIRED_PORTS - {"instr_i"})
     }
     edge_counts = dict(sorted(Counter(edge["kind"] for edge in graph["edges"]).items()))
+    # Prevent a false green build when the compiler succeeds but the graph
+    # silently loses the input-to-output paths (as happened with AST kind=List).
+    disconnected = [
+        name for name, response in fanin.items()
+        if f"{TOP}.instr_i" not in response["visited_nodes"] or response["truncated"]
+    ]
+    if disconnected:
+        raise AssertionError(
+            f"Missing expected CV32E40P decoder input dependencies: {disconnected}"
+        )
     test_report = {
         "project": "OpenHW CV32E40P",
         "upstream_repository": UPSTREAM_REPOSITORY,
@@ -93,6 +103,7 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
             ).stdout.strip(),
         },
         "status": result["status"],
+        "dependency_coverage": "partial" if graph["warnings"] else "within_supported_scope",
         "index_counts": index["counts"],
         "graph_counts": graph["counts"],
         "edge_types": edge_counts,
