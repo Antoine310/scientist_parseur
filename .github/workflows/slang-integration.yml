@@ -52,36 +52,33 @@ jobs:
           python -m rtlprep query reports/ci-index/rtl_index.json module leaf
           python -m rtlprep query reports/ci-index/rtl_index.json signal hierarchy_top.first status
           python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
-      - name: Inspect dependency AST structure (temporary)
+      - name: Inspect dependency expression and connection nodes (temporary)
         run: |
           python -m rtlprep analyze examples/dependencies/design.json --out reports/ci-deps
+          python -m rtlprep analyze examples/counter/design.json --out reports/ci-counter
           python - <<'PY'
           import json
-          ast=json.load(open("reports/ci-deps/elaborated_ast.json"))
-          count=0
-          ignore={"addr","definition","internalSymbol","source_file","source_line","source_column"}
-          def show(node, label="", depth=0):
-              global count
-              if depth>9 or count>145: return
-              if isinstance(node,list):
-                  for i, x in enumerate(node[:15]):
-                      show(x, f"{label}[{i}]", depth+1)
-                  return
-              if not isinstance(node,dict): return
-              count+=1
-              attrs={k:(str(v)[:65]) for k,v in node.items()
-                     if k not in ignore and k not in ("body","members","connections",
-                     "left","right","operand","expression","condition","statement",
-                     "timing","events","trueExpr","falseExpr","value","symbol",
-                     "selector","arguments","initializer","source","target",
-                     "expr","patterns","items","clauses") and not isinstance(v,(list,dict))}
-              print("AST_TRACE","  "*depth, label, attrs,"keys:",list(node))
-              for k,v in node.items():
-                  if k in ignore or k=="type":continue
-                  if isinstance(v,(dict,list)):show(v,k,depth+1)
-          for obj in ast["design"]["members"]:
-              if isinstance(obj,dict) and obj.get("kind")=="Instance":
-                  show(obj,"TOP")
+          skip={"addr","internalSymbol","definition"}
+          def clean(obj,depth=0):
+              if depth>13:return "<depth limit>"
+              if isinstance(obj,dict):
+                  return {k:clean(v,depth+1) for k,v in obj.items() if k not in skip}
+              if isinstance(obj,list):
+                  return [clean(v,depth+1) for v in obj[:25]]
+              return obj
+          for case in ("deps","counter"):
+              ast=json.load(open(f"reports/ci-{case}/elaborated_ast.json"))
+              top=next(n for n in ast["design"]["members"] if isinstance(n,dict) and n.get("kind")=="Instance")
+              print("AST_TOP",case,top["name"])
+              def visit(inst):
+                  path=inst["name"]
+                  print("AST_INSTANCE",path,"CONNECTIONS",json.dumps(clean(inst.get("connections")),ensure_ascii=False)[:10000])
+                  for node in inst["body"]["members"]:
+                      k=node.get("kind") if isinstance(node,dict) else None
+                      if k in ("Port","Net","Variable"):continue
+                      print("AST_NODE",case,path,k,json.dumps(clean(node),ensure_ascii=False)[:13500])
+                      if k=="Instance":visit(node)
+              visit(top)
           PY
       - name: Upload diagnostic logs if job fails
         if: failure()
