@@ -194,6 +194,15 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             else:
                 statements(path, stmts, controls=controls, events=events,
                            sequential=sequential)
+        elif kind == "List":
+            # Vrai slang v12.1 : les séquences begin/end contenant plusieurs
+            # instructions sont exportées avec kind=List et une clé "list".
+            children = obj.get("list")
+            if not isinstance(children, list):
+                warn(path, "List sans liste d'instructions valide")
+            else:
+                statements(path, children, controls=controls, events=events,
+                           sequential=sequential)
         elif kind == "StatementList":
             for child in obj.get("statements", []):
                 statements(path, child, controls=controls, events=events,
