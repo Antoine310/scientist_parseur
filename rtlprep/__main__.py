@@ -9,6 +9,7 @@ from .runner import analyze, doctor, fingerprint, lint, synth, index_design, dep
 from .dependencies import trace_dependencies
 from .simulation import simulate
 from .formal import formal_verify
+from .equivalence import equivalence_check
 from .index import (get_instance, get_instance_tree, get_module_summary,
                     get_signal_info, get_source_context, list_modules)
 
@@ -22,6 +23,11 @@ def main() -> int:
         s.add_argument("manifest", help="chemin vers design.json")
         s.add_argument("--out", default="reports", help="dossier de sortie")
         s.add_argument("--timeout", type=int, default=120, help="timeout par outil en secondes")
+    eq = sub.add_parser("eqy", help="comparer deux RTL approuvés avec Yosys EQY")
+    eq.add_argument("manifest", help="design.json de référence (gold)")
+    eq.add_argument("--gate", required=True, help="design.json du candidat (gate)")
+    eq.add_argument("--out", default="reports/eqy", help="répertoire des résultats")
+    eq.add_argument("--timeout", type=int, default=180, help="timeout EQY en secondes")
     q = sub.add_parser("query", help="interroger un rtl_index.json déjà généré")
     q.add_argument("index_file")
     qsub = q.add_subparsers(dest="query_type", required=True)
@@ -74,6 +80,20 @@ def main() -> int:
             info = get_source_context(design.sources, args.filename, args.line, args.radius)
             print(json.dumps(info, ensure_ascii=False, indent=2))
             return 0
+        if args.cmd == "eqy":
+            gold = load_design(args.manifest)
+            gate = load_design(args.gate)
+            out = Path(args.out).resolve()
+            result = equivalence_check(gold, gate, out, args.timeout)
+            print(f"[eqy] {result['status']}")
+            print(f"  équivalent : {result['equivalent']}")
+            print(f"  partitions : {result['partition_count']}")
+            print(f"  rapport : {out / 'equivalence.result.json'}")
+            if result.get("error"):
+                print(f"  {result['error']}")
+            for trace in result.get("trace_files", []):
+                print(f"  contre-exemple : {trace}")
+            return 0 if result["status"] == "passed" else 2
         d = load_design(args.manifest)
         out = Path(args.out).resolve()
         out.mkdir(parents=True, exist_ok=True)
