@@ -11,6 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+simulation = ["cocotb==2.0.1"]
 
 [project.scripts]
 rtlprep = "rtlprep.__main__:main"

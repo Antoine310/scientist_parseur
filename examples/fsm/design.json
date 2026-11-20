@@ -1,0 +1,6 @@
+{
+  "top": "handshake_fsm",
+  "sources": ["handshake_fsm.sv"],
+  "include_dirs": [],
+  "defines": []
+}

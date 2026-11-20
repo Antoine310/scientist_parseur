@@ -7,6 +7,7 @@ from pathlib import Path
 from .manifest import load_design
 from .runner import analyze, doctor, fingerprint, lint, synth, index_design, dependency_design
 from .dependencies import trace_dependencies
+from .simulation import simulate
 from .index import (get_instance, get_instance_tree, get_module_summary,
                     get_signal_info, get_source_context, list_modules)
 
@@ -15,7 +16,7 @@ def main() -> int:
     p = argparse.ArgumentParser(prog="rtlprep", description="Outils RTL locaux, sans cle API")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("doctor", help="afficher les outils et paquets disponibles")
-    for name in ("analyze", "lint", "synth", "all", "index", "deps"):
+    for name in ("analyze", "lint", "synth", "all", "index", "deps", "simulate"):
         s = sub.add_parser(name)
         s.add_argument("manifest", help="chemin vers design.json")
         s.add_argument("--out", default="reports", help="dossier de sortie")
@@ -80,7 +81,7 @@ def main() -> int:
             "include_dirs": [str(x) for x in d.includes],
             "defines": d.defines, "fingerprint": fingerprint(d),
         }, indent=2), encoding="utf-8")
-        tasks = {"analyze": analyze, "lint": lint, "synth": synth, "index": index_design, "deps": dependency_design}
+        tasks = {"analyze": analyze, "lint": lint, "synth": synth, "index": index_design, "deps": dependency_design, "simulate": simulate}
         keys = ["analyze", "lint", "synth"] if args.cmd == "all" else [args.cmd]
         statuses = []
         for key in keys:
@@ -89,6 +90,9 @@ def main() -> int:
             print(f"[{key}] {result['status']}")
             if result.get("error"):
                 print(f"  {result['error']}")
+            if key == "simulate":
+                print(f"  tests : {result.get('tests', 0)} ; réussis : {result.get('passed', 0)} ; échecs : {result.get('failed', 0)}")
+                print(f"  xUnit : {result.get('results_xml')}")
             if result.get("dependencies"):
                 print(f"  graphe : {result['dependencies']}")
                 print(f"  arêtes : {result['edges']} ; avertissements : {result['graph_warnings']}")

@@ -142,6 +142,34 @@ Les scripts vérifient la révision et les empreintes de chaque fichier source.
 **[Cours détaillé et mesures réelles sur l'ALU](docs/constantes-et-alu-cv32e40p.md)**.
 Ce benchmark ne prouve ni la complétude du graphe ni la correction du matériel.
 
+## Simulation comportementale : Verilator + cocotb (PR #11)
+
+La commande `simulate` exécute de **vrais tests de simulation**
+via **Verilator 5.040** et **cocotb 2.0.1**. Elle vérifie les sorties
+du matériel contre des modèles Python de référence et conserve des
+rapports xUnit/XML et JSON.
+
+```bash
+python -m pip install -e '.[dev,simulation]'
+
+# Compteur 8 bits : reset, enable, maintien et débordement
+python -m rtlprep simulate examples/counter/design.json --out reports/sim-counter
+
+# FSM : transitions IDLE / BUSY / DONE
+python -m rtlprep simulate examples/fsm/design.json --out reports/sim-fsm
+
+# Contrôle négatif attendu : cette simulation doit échouer (code 2)
+python -m rtlprep simulate examples/counter/buggy_design.json --out reports/sim-buggy
+```
+
+Les tests cocotb sont des **bancs de test approuvés** dans
+`rtlprep/sim_tests/` ; la CLI ne charge pas de Python arbitraire
+indiqué par un design tiers. Si Verilator/cocotb manque, le statut est
+`missing_tool` et aucun faux succès n'est affiché.
+
+[**Cours détaillé : architecture, simulation réelle, rapport XML et
+circuit volontairement faux**](docs/simulation-cocotb-verilator.md).
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
@@ -156,7 +184,7 @@ python -m rtlprep all examples/counter/design.json --out reports/counter
 python -m pytest -q
 ```
 
-Les outils EDA sont **optionnels au démarrage**. Si slang, Verilator ou Yosys sont absents, le programme renvoie explicitement `missing_tool` : il n'invente jamais un résultat.
+Les outils EDA sont **optionnels au démarrage**. Si slang, Verilator, cocotb ou Yosys sont absents pour leur opération respective, le programme renvoie explicitement `missing_tool` : il n'invente jamais un résultat.
 
 ## Outils EDA à installer
 
@@ -181,6 +209,7 @@ Pour les designs complexes comme CVA6, la prise en charge dépend du frontend, d
 | `deps` | Produit le graphe typé des dépendances connues |
 | `trace` | Recherche bornée `fanin` / `fanout` dans un graphe |
 | `source` | Affiche un extrait d'un fichier source du manifeste |
+| `simulate` | Lance un banc cocotb approuvé sous Verilator, produit JSON + xUnit |
 
 Les rapports sont écrits dans `reports/`, ignoré par Git. Les commandes créent aussi une empreinte SHA-256 du projet.
 
@@ -201,7 +230,7 @@ Créer un manifeste JSON, chemins relatifs au manifeste :
 
 - L'index structurel et le graphe de dépendances sont **des sous-ensembles du langage** : ils ne modélisent pas exhaustivement tous les circuits SystemVerilog.
 - Le nombre de cellules Yosys ne mesure ni la surface physique ni la puissance.
-- Les tests d'intégration slang ont été validés dans GitHub Actions ; la simulation cocotb et la vérification formelle ne sont pas encore intégrées.
+- Les tests d'intégration slang **et les simulations cocotb/Verilator** sont validés dans GitHub Actions sur des exemples contrôlés. La vérification formelle SBY/EQY n'est pas encore intégrée ; une simulation n'est pas une preuve exhaustive.
 - Les logs d'outils sont des données non fiables et ne doivent jamais être exécutés comme des instructions par un futur agent.
 - L'objectif actuel est l'analyse et la vérification de circuits de test ; le projet n'implémente pas l'insertion de Trojans.
 
