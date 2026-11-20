@@ -21,6 +21,15 @@ UPSTREAM_REPOSITORY = "openhwfoundation/cv32e40p"
 UPSTREAM_COMMIT = "b353438ff469c030c89f6804f3b24a2852880e8b"
 TOP = "cv32e40p_compressed_decoder"
 REQUIRED_PORTS = {"instr_i", "instr_o", "is_compressed_o", "illegal_instr_o"}
+PINNED_BLOBS = {
+    "rtl/include/cv32e40p_pkg.sv": "319e790b62623d5daa0388cc92af1ce83aed61fc",
+    "rtl/cv32e40p_compressed_decoder.sv": "4621c754d315e2cf3d5929b9d211bd382c5b32ae",
+}
+
+
+def git_blob_hash(data: bytes) -> str:
+    """Compute the content SHA-1 used by git hash-object for a regular file."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 
 
 def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
@@ -37,6 +46,15 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
     for src in sources:
         if not src.is_file():
             raise FileNotFoundError(f"CV32E40P source missing: {src}")
+    # Never claim that we tested the pinned commit unless the *actual bytes*
+    # match the two files from that revision.
+    for relative, expected_blob in PINNED_BLOBS.items():
+        actual_blob = git_blob_hash((source_root / relative).read_bytes())
+        if actual_blob != expected_blob:
+            raise ValueError(
+                f"Unexpected upstream file content: {relative}; "
+                f"expected git blob {expected_blob}, got {actual_blob}"
+            )
 
     manifest = out / "cv32e40p_design.json"
     manifest.write_text(json.dumps({
