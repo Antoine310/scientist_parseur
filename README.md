@@ -277,6 +277,37 @@ local avec `codex mcp add` et des **chemins absolus**.
 [**Guide complet : configurer Codex, outils disponibles, sécurité,
 protocole MCP et limites**](docs/mcp-codex-lecture-seule.md).
 
+## Phase G — mesurer RTLPrep avant d'ajouter d'autres agents (PR #16)
+
+Un premier **benchmark reproductible** combine le **vrai slang v12.1**,
+quatre exemples SystemVerilog étiquetés et la **véritable ALU CV32E40P**
+(OpenHW à révision et hash fixés). Il vérifie 35 relations
+de dépendance positives, 16 négatives et 7 questions simples.
+
+Trois stratégies de contexte pour un agent sont comparées
+sur **les mêmes questions** : **A** = RTL brut, **B** = index seul,
+**C** = index + parcours de graphe + extrait source limité.
+Les volumes sont mesurés en **octets JSON**, **pas en tokens
+d'IA** ni en précision réelle d'une réponse de Codex/ChatGPT.
+
+```bash
+# Exige le vrai slang dans le PATH
+python scripts/run_rtl_benchmark.py \
+  --out reports/rtl-benchmark --repeat 3
+
+# Inclure aussi le vrai CPU après préparation OpenHW :
+python scripts/run_rtl_benchmark.py \
+  --out reports/rtl-benchmark --repeat 3 \
+  --cpu-manifest reports/benchmark-cpu-prep/cv32e40p_alu_design.json
+```
+
+Le benchmark génère `benchmark_report.json` et des rapports par
+circuit, rejette les résultats EDA manquants et les graphes
+instables entre répétitions. La CI complète prépare et vérifie
+elle-même les fichiers CPU officiels.
+
+[**Lire le cours pédagogique et les mesures de la phase G**](docs/benchmark-phase-g.md).
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
