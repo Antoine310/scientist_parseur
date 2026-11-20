@@ -371,7 +371,35 @@ module, retrouver une dépendance et demander une validation EDA.
 
 ---
 
-## Phase G — Benchmark et optimisation finale (v0.8)
+### Phase G — premier jalon mesuré, sans modèle LLM
+
+La PR #16 introduit un benchmark **sans API LLM** : quatre
+petits circuits annotés (35 arêtes positives / 16 négatives,
+7 questions de `fanin`) et la vraie ALU CV32E40P
+(4 instances, 149 signaux, 319 arêtes et 11 warnings).
+
+Les trois stratégies de la feuille de route sont évaluées
+sur **les mêmes questions** : A = RTL brut, B = index ciblé,
+C = index + graphe + extrait de source. On mesure le **volume
+de charge utile JSON** et les temps de la vraie chaîne slang
+sur trois exécutions, pas les tokens LLM ou l'exactitude d'un modèle.
+
+Premier run : **35/35 arêtes attendues présentes, 16/16
+absences correctes** sur le jeu annoté, et volumes cumulés
+**161 461 octets** (brut), **15 965** (index),
+**50 462** (hybride). Le ratio C/A vaut **0,3125**
+dans cet environnement et sur cet ensemble de questions,
+mais peut être supérieur à 1 sur un petit circuit.
+
+**Phase G encore incomplète :** aucune réponse Codex/ChatGPT
+n'a été évaluée, aucun tokenizer réel ni coût LLM n'a
+été mesuré. Une évaluation indépendante avec des questions
+tenues à l'écart du développement reste nécessaire avant
+toute conclusion sur la supériorité d'une stratégie.
+
+Voir [le cours et le protocole de benchmark](benchmark-phase-g.md).
+
+## Phase G — Benchmark et optimisation finale (v0.8)## Phase G — Benchmark et optimisation finale (v0.8)
 
 **Priorité : après E/F. Ne pas choisir une architecture multi-agents avant de mesurer.**
 

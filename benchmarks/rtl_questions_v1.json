@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "description": "Étiquettes manuelles limitées aux relations documentées dans quatre petits exemples RTL autorisés; ne pas extrapoler au graphe entier.",
+  "cases": [
+    {
+      "name": "counter",
+      "manifest": "examples/counter/design.json",
+      "top": "counter",
+      "positive": [
+        [
+          "counter.clk",
+          "counter.count",
+          "event"
+        ],
+        [
+          "counter.rst_n",
+          "counter.count",
+          "event"
+        ],
+        [
+          "counter.rst_n",
+          "counter.count",
+          "control"
+        ],
+        [
+          "counter.enable",
+          "counter.count",
+          "control"
+        ],
+        [
+          "counter.count",
+          "counter.count",
+          "data"
+        ]
+      ],
+      "negative": [
+        [
+          "counter.clk",
+          "counter.count",
+          "data"
+        ],
+        [
+          "counter.enable",
+          "counter.count",
+          "data"
+        ],
+        [
+          "counter.count",
+          "counter.enable",
+          "control"
+        ]
+      ],
+      "questions": [
+        {
+          "id": "counter_count",
+          "question": "Quels signaux influencent le compteur ?",
+          "target": "counter.count",
+          "expected_reachable": [
+            "counter.enable",
+            "counter.rst_n",
+            "counter.clk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hierarchy",
+      "manifest": "examples/hierarchy/design.json",
+      "top": "hierarchy_top",
+      "positive": [
+        [
+          "hierarchy_top.enable",
+          "hierarchy_top.first.enable",
+          "port_input"
+        ],
+        [
+          "hierarchy_top.enable",
+          "hierarchy_top.second.enable",
+          "port_input"
+        ],
+        [
+          "hierarchy_top.first.enable",
+          "hierarchy_top.first.status",
+          "data"
+        ],
+        [
+          "hierarchy_top.second.enable",
+          "hierarchy_top.second.status",
+          "data"
+        ],
+        [
+          "hierarchy_top.first.status",
+          "hierarchy_top.status",
+          "port_output"
+        ],
+        [
+          "hierarchy_top.second.status",
+          "hierarchy_top.status",
+          "port_output"
+        ]
+      ],
+      "negative": [
+        [
+          "hierarchy_top.clk",
+          "hierarchy_top.status",
+          "event"
+        ],
+        [
+          "hierarchy_top.enable",
+          "hierarchy_top.status",
+          "data"
+        ],
+        [
+          "hierarchy_top.first.status",
+          "hierarchy_top.second.status",
+          "data"
+        ]
+      ],
+      "questions": [
+        {
+          "id": "hierarchy_status",
+          "question": "Quelles instances et entrées influencent status ?",
+          "target": "hierarchy_top.status",
+          "expected_reachable": [
+            "hierarchy_top.enable",
+            "hierarchy_top.first.status",
+            "hierarchy_top.second.status"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dependencies",
+      "manifest": "examples/dependencies/design.json",
+      "top": "dependency_top",
+      "positive": [
+        [
+          "dependency_top.a",
+          "dependency_top.child.a",
+          "port_input"
+        ],
+        [
+          "dependency_top.b",
+          "dependency_top.child.b",
+          "port_input"
+        ],
+        [
+          "dependency_top.sel",
+          "dependency_top.child.sel",
+          "port_input"
+        ],
+        [
+          "dependency_top.child.a",
+          "dependency_top.child.and_result",
+          "data"
+        ],
+        [
+          "dependency_top.child.b",
+          "dependency_top.child.and_result",
+          "data"
+        ],
+        [
+          "dependency_top.child.and_result",
+          "dependency_top.child.y",
+          "data"
+        ],
+        [
+          "dependency_top.child.sel",
+          "dependency_top.child.y",
+          "control"
+        ],
+        [
+          "dependency_top.child.y",
+          "dependency_top.interm",
+          "port_output"
+        ],
+        [
+          "dependency_top.interm",
+          "dependency_top.out",
+          "data"
+        ],
+        [
+          "dependency_top.enable",
+          "dependency_top.count",
+          "control"
+        ],
+        [
+          "dependency_top.rst_n",
+          "dependency_top.count",
+          "control"
+        ],
+        [
+          "dependency_top.clk",
+          "dependency_top.count",
+          "event"
+        ],
+        [
+          "dependency_top.rst_n",
+          "dependency_top.count",
+          "event"
+        ],
+        [
+          "dependency_top.count",
+          "dependency_top.count",
+          "data"
+        ]
+      ],
+      "negative": [
+        [
+          "dependency_top.clk",
+          "dependency_top.out",
+          "event"
+        ],
+        [
+          "dependency_top.sel",
+          "dependency_top.count",
+          "control"
+        ],
+        [
+          "dependency_top.child.b",
+          "dependency_top.child.and_result",
+          "control"
+        ],
+        [
+          "dependency_top.child.sel",
+          "dependency_top.child.and_result",
+          "data"
+        ],
+        [
+          "dependency_top.enable",
+          "dependency_top.out",
+          "control"
+        ]
+      ],
+      "questions": [
+        {
+          "id": "dep_out",
+          "question": "Quelles entrées influencent out ?",
+          "target": "dependency_top.out",
+          "expected_reachable": [
+            "dependency_top.a",
+            "dependency_top.b",
+            "dependency_top.sel"
+          ]
+        },
+        {
+          "id": "dep_count",
+          "question": "Quelles entrées influencent count ?",
+          "target": "dependency_top.count",
+          "expected_reachable": [
+            "dependency_top.enable",
+            "dependency_top.clk",
+            "dependency_top.rst_n"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "advanced",
+      "manifest": "examples/advanced/design.json",
+      "top": "advanced_logic",
+      "positive": [
+        [
+          "advanced_logic.data_a",
+          "advanced_logic.merged",
+          "data"
+        ],
+        [
+          "advanced_logic.data_b",
+          "advanced_logic.merged",
+          "data"
+        ],
+        [
+          "advanced_logic.data_a",
+          "advanced_logic.picked",
+          "data"
+        ],
+        [
+          "advanced_logic.idx",
+          "advanced_logic.picked",
+          "data"
+        ],
+        [
+          "advanced_logic.sel",
+          "advanced_logic.result",
+          "control"
+        ],
+        [
+          "advanced_logic.merged",
+          "advanced_logic.result",
+          "data"
+        ],
+        [
+          "advanced_logic.data_a",
+          "advanced_logic.result",
+          "data"
+        ],
+        [
+          "advanced_logic.data_b",
+          "advanced_logic.result",
+          "data"
+        ],
+        [
+          "advanced_logic.data_a",
+          "advanced_logic.mode_result",
+          "data"
+        ],
+        [
+          "advanced_logic.data_b",
+          "advanced_logic.mode_result",
+          "data"
+        ]
+      ],
+      "negative": [
+        [
+          "advanced_logic.idx",
+          "advanced_logic.mode_result",
+          "data"
+        ],
+        [
+          "advanced_logic.sel",
+          "advanced_logic.merged",
+          "control"
+        ],
+        [
+          "advanced_logic.sel",
+          "advanced_logic.picked",
+          "control"
+        ],
+        [
+          "advanced_logic.data_b",
+          "advanced_logic.picked",
+          "data"
+        ],
+        [
+          "advanced_logic.idx",
+          "advanced_logic.result",
+          "control"
+        ]
+      ],
+      "questions": [
+        {
+          "id": "advanced_result",
+          "question": "Quelles entrées et intermédiaires influencent result ?",
+          "target": "advanced_logic.result",
+          "expected_reachable": [
+            "advanced_logic.sel",
+            "advanced_logic.data_a",
+            "advanced_logic.data_b",
+            "advanced_logic.merged"
+          ]
+        },
+        {
+          "id": "advanced_picked",
+          "question": "Quelles entrées influencent picked ?",
+          "target": "advanced_logic.picked",
+          "expected_reachable": [
+            "advanced_logic.idx",
+            "advanced_logic.data_a"
+          ]
+        },
+        {
+          "id": "advanced_mode",
+          "question": "Quelles entrées influencent mode_result ?",
+          "target": "advanced_logic.mode_result",
+          "expected_reachable": [
+            "advanced_logic.data_a",
+            "advanced_logic.data_b"
+          ]
+        }
+      ]
+    }
+  ]
+}
