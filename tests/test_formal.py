@@ -50,6 +50,16 @@ def test_sby_status_contract(formal_status, exit_status, expected):
     assert formal._classify({"status": exit_status}, formal_status) == expected
 
 
+def test_sby_multifield_status_file(tmp_path):
+    path = tmp_path / "status"
+    path.write_text("UNKNOWN 4 0\n")
+    assert formal._sby_status(path) == "UNKNOWN"
+    path.write_text("PASS 0 0\n")
+    assert formal._sby_status(path) == "PASS"
+    path.write_text("FAIL 2 0\n")
+    assert formal._sby_status(path) == "FAIL"
+
+
 def test_missing_tools_never_reuses_old_pass_or_trace(tmp_path, monkeypatch):
     out = tmp_path / "proofs"
     out.mkdir()
