@@ -240,6 +240,26 @@ propriétés vérifiées et synthèse sur le compteur et une FSM.
 
 ---
 
+### Phase E — premier test EQY sur une IP RISC-V réelle
+
+Le module **`cv32e40p_popcnt`** du vrai CV32E40P a été
+comparé avec EQY (OSS CAD Suite `2026-11-18`, EQY v0.71).
+La CI récupère le fichier OpenHW original au commit
+`b353438ff469c030c89f6804f3b24a2852880e8b`
+et vérifie son empreinte Git.
+
+La transformation **commutative** du dernier `assign`
+a été **prouvée équivalente en 31 partitions**. Une variante
+introduisant une **soustraction** a été déclarée **non équivalente**
+avec un véritable contre-exemple VCD.
+
+La preuve démontre la correspondance entre **deux implémentations
+précises** du popcount. Elle ne démontre pas la correction
+du CPU ou d'une ALU complète et ne remplace pas les
+preuves contre une spécification indépendante.
+
+Voir le [cours sur EQY et le vrai popcount RISC-V](eqy-cv32e40p-popcnt.md).
+
 ## Phase E — Banc d'essai CPU et compatibilité HOST (v0.6)
 
 **Priorité : haute après A–D.**
