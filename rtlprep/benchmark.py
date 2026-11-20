@@ -104,8 +104,8 @@ def context_sizes(d: Design, index: dict, graph: dict,
     }, "signal_info": signal}
     trace = trace_dependencies(graph, node, "fanin",
                                max_depth=6, max_edges=100)
-    if trace["truncated"]:
-        raise ValueError("Trace tronquée : résultat benchmark non valide")
+    # Une troncature peut révéler une limitation de budget MCP sur un
+    # vrai gros circuit : la mesurer, ne pas la dissimuler.
     hybrid = {**indexed, "trace": {
         "edges": trace["edges"], "visited_nodes": trace["visited_nodes"],
         "graph_warnings_count": len(trace["graph_warnings"]),
@@ -123,6 +123,7 @@ def context_sizes(d: Design, index: dict, graph: dict,
         "expected_reachable": sorted(expect),
         "found_reachable": found, "missing_reachable": missing,
         "trace_edges": len(trace["edges"]),
+        "trace_truncated": trace["truncated"],
         "trace_nodes": len(trace["visited_nodes"]),
         "source_excerpt_available": hybrid["source_excerpt"] is not None,
         "payload_bytes": {"A_raw": b_raw, "B_index": b_idx,
