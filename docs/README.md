@@ -31,6 +31,11 @@ bugs découverts et corrections](test-cv32e40p-reel.md).
 CV32E40P](constantes-et-alu-cv32e40p.md). Le guide explique les identifiants
 sémantiques slang et la réduction des avertissements, sans filtrage par nom.
 
+**Nouveau TP de simulation :** [Verilator + cocotb, compteur, FSM et
+contrôle négatif](simulation-cocotb-verilator.md). Ce chapitre explique
+la différence entre un graphe structurel et une simulation comportementale,
+le runner Python officiel et la lecture des rapports xUnit.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
