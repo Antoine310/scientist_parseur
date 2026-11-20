@@ -103,6 +103,13 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
         raise AssertionError(
             f"Unresolved expected semantic parameters: {required_constants - classified}"
         )
+    # For this pinned decoder and slang v12.1, only the declared whole-vector
+    # selection approximation should remain. New unknown references indicate
+    # a regression in semantic symbol resolution.
+    unexpected = [w for w in graph["warnings"]
+                  if "Référence NamedValue inconnue" in w["reason"]]
+    if unexpected:
+        raise AssertionError(f"Decoder still has unresolved semantic identifiers: {unexpected[:5]}")
     edge_counts = dict(sorted(Counter(edge["kind"] for edge in graph["edges"]).items()))
     # Prevent a false green build when the compiler succeeds but the graph
     # silently loses the input-to-output paths (as happened with AST kind=List).
