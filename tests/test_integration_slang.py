@@ -134,3 +134,32 @@ def test_real_slang_case_concat_bit_select_and_generate(tmp_path):
     assert "advanced_logic.data_a" in trace_dependencies(
         graph, "advanced_logic.result", "fanin", max_depth=3
     )["visited_nodes"]
+
+
+def test_real_slang_alternative_generate_branch(tmp_path):
+    """Avec USE_XOR=0, slang doit élaborer la branche OR et non XOR."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    d = load_design(ROOT / "examples/advanced/alternative_design.json")
+    result = dependency_design(d, tmp_path, timeout=90)
+    assert result["status"] == "passed", result
+    ast = json.loads((tmp_path / "elaborated_ast.json").read_text(encoding="utf-8"))
+    root = next(x for x in ast["design"]["members"] if x.get("kind") == "Instance")
+    child = next(x for x in root["body"]["members"]
+                 if x.get("kind") == "Instance" and x.get("name") == "dut")
+    blocks = [x for x in child["body"]["members"] if x.get("kind") == "GenerateBlock"]
+    active = [x for x in blocks if x.get("isUninstantiated") is not True]
+    assert len(active) == 1, blocks
+    assigns = [x["assignment"] for x in active[0]["members"]
+               if x.get("kind") == "ContinuousAssign"]
+    assert len(assigns) == 1
+    assert assigns[0]["right"]["kind"] == "BinaryOp"
+    assert assigns[0]["right"]["op"] == "BinaryOr"
+
+    graph = json.loads((tmp_path / "rtl_dependencies.json").read_text(encoding="utf-8"))
+    edges = {(e["source"], e["target"], e["kind"]) for e in graph["edges"]}
+    assert ("alternative_top.dut.data_a",
+            "alternative_top.dut.mode_result", "data") in edges
+    assert ("alternative_top.dut.data_b",
+            "alternative_top.dut.mode_result", "data") in edges
