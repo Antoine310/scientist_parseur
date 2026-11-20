@@ -147,6 +147,27 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Consulte [docs/preuves-formelles-sby.md](docs/preuves-formelles-sby.md)
   avant toute modification des propriétés ou des statuts.
 
+## Équivalence RTL — Yosys EQY
+
+- `python -m rtlprep eqy examples/counter/design.json --gate examples/counter/refactored_design.json --out reports/eqy-counter`
+  : équivalence prouvée sur le vrai EQY (1 partition).
+- `python -m rtlprep eqy examples/fsm/design.json --gate examples/fsm/refactored_design.json --out reports/eqy-fsm`
+  : équivalence de la FSM à deux descriptions de next-state (6 partitions).
+- `python -m rtlprep eqy examples/counter/design.json --gate examples/counter/buggy_design.json --out reports/eqy-buggy`
+  : **non-équivalence attendue**, code 2, `equivalent=false`, trace VCD.
+- Suite datée en CI : **OSS CAD Suite 2026-11-18**, `eqy`,
+  `sby`, `yosys` et `z3`; workflow
+  `.github/workflows/eqy-equivalence.yml`.
+- Les comparaisons admissibles sont **en liste blanche**
+  (`rtlprep/equivalence.py::TRUSTED_PAIRS`). Ne pas passer
+  des chemins ou scripts .eqy provenant de designs tiers sans sandbox.
+- Ne pas annoncer `equivalent=false` sans partition `FAIL`
+  **et** contre-exemple VCD. `inconclusive` signifie seulement
+  que la preuve n'a pas pu être établie.
+- Vérifier les rapports JSON, partitions et marqueurs réels ;
+  un processus EQY de code retour 0 n'est pas seul suffisant.
+- Cours et limites : [docs/equivalence-eqy.md](docs/equivalence-eqy.md).
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

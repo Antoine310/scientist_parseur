@@ -1,0 +1,101 @@
+name: EQY RTL equivalence and non-equivalence regression
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eqy-approved-pairs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned open-source Yosys EQY SBY and Z3
+        uses: YosysHQ/setup-oss-cad-suite@c7845bc0d335c8076aa22047e85972caa8a916df # v4
+        with:
+          version: '2026-11-18'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check tool versions
+        run: |
+          eqy --version
+          yosys -V
+          sby --version
+          z3 --version
+      - name: Python unit tests of equivalence contracts
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pytest -q tests/test_equivalence.py
+      - name: Prove equivalence of original and refactored counter
+        run: |
+          python -m rtlprep eqy examples/counter/design.json \
+            --gate examples/counter/refactored_design.json \
+            --out reports/eqy-counter --timeout 180
+          python - <<'PY'
+          import json
+          r=json.load(open("reports/eqy-counter/equivalence.result.json"))
+          assert r["status"] == "passed" and r["equivalent"] is True, r
+          assert r["eqy_verdict"] == "PASS" and r["partition_count"] > 0, r
+          print("COUNTER_EQUIVALENCE_PROVEN", r["partition_count"])
+          PY
+      - name: Prove equivalence of original and refactored FSM
+        run: |
+          python -m rtlprep eqy examples/fsm/design.json \
+            --gate examples/fsm/refactored_design.json \
+            --out reports/eqy-fsm --timeout 180
+          python - <<'PY'
+          import json
+          r=json.load(open("reports/eqy-fsm/equivalence.result.json"))
+          assert r["status"] == "passed" and r["equivalent"] is True, r
+          assert r["eqy_verdict"] == "PASS" and r["partition_count"] > 0, r
+          print("FSM_EQUIVALENCE_PROVEN", r["partition_count"])
+          PY
+      - name: Demand real inequivalence and a VCD trace from buggy counter
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep eqy examples/counter/design.json \
+            --gate examples/counter/buggy_design.json \
+            --out reports/eqy-buggy --timeout 180
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Expected EQY CLI exit 2, got $code"; exit 1; }
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.load(open("reports/eqy-buggy/equivalence.result.json"))
+          assert r["status"] == "failed" and r["equivalent"] is False, r
+          assert r["eqy_verdict"] == "FAIL", r
+          assert any(x["verdict"] == "FAIL" for x in r["partition_statuses"]), r
+          traces=r["trace_files"]
+          assert traces and all(Path(path).is_file() for path in traces), r
+          print("COUNTER_INEQUIVALENCE_DETECTED", traces)
+          PY
+      - name: Upload EQY work logs, JSON and actual traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-eqy-reports
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/eqy-*/equivalence.eqy
+            reports/eqy-*/equivalence.result.json
+            reports/eqy-*/equivalence.stdout.log
+            reports/eqy-*/equivalence.stderr.log
+            reports/eqy-*/eqy_work/logfile.txt
+            reports/eqy-*/eqy_work/PASS
+            reports/eqy-*/eqy_work/FAIL
+            reports/eqy-*/eqy_work/partition.list
+            reports/eqy-*/eqy_work/strategies/**/status
+            reports/eqy-*/eqy_work/**/trace*.vcd
