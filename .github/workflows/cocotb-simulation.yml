@@ -54,6 +54,17 @@ jobs:
           assert (report["tests"], report["passed"], report["failed"]) == (3, 3, 0), report
           print("POSITIVE_SIMULATION_VALIDATED", report["testcases"])
           PY
+      - name: Run real handshake FSM simulation (must pass)
+        run: |
+          python -m rtlprep simulate examples/fsm/design.json \
+            --out reports/sim-fsm --timeout 180
+          python - <<'PY'
+          import json
+          report=json.load(open("reports/sim-fsm/simulation.result.json"))
+          assert report["status"] == "passed", report
+          assert (report["tests"], report["passed"], report["failed"]) == (2, 2, 0), report
+          print("FSM_SIMULATION_VALIDATED", report["testcases"])
+          PY
       - name: Run intentionally buggy counter (must FAIL with evidence)
         shell: bash
         run: |
