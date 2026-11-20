@@ -55,7 +55,7 @@ def create_sby_config(d: Design, *, task: str, source: Path,
 
 def _persist(out: Path, result: dict) -> dict:
     (out / "formal.result.json").write_text(
-        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return result
 
