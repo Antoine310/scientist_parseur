@@ -1,0 +1,82 @@
+name: Real CV32E40P ALU RTL test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-cv32e40p-alu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - name: Checkout pinned OpenHW CV32E40P ALU and dependencies
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cv32e40p
+          ref: b353438ff469c030c89f6804f3b24a2852880e8b
+          path: upstream_cv32e40p
+          sparse-checkout: |
+            rtl/include/cv32e40p_pkg.sv
+            rtl/cv32e40p_alu.sv
+            rtl/cv32e40p_alu_div.sv
+            rtl/cv32e40p_popcnt.sv
+            rtl/cv32e40p_ff_one.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Verify pinned upstream revision and source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_cv32e40p rev-parse HEAD)" = "b353438ff469c030c89f6804f3b24a2852880e8b"
+          test "$(git -C upstream_cv32e40p hash-object rtl/include/cv32e40p_pkg.sv)" = "319e790b62623d5daa0388cc92af1ce83aed61fc"
+          test "$(git -C upstream_cv32e40p hash-object rtl/cv32e40p_popcnt.sv)" = "c7fe53e810c411a4cef0ab6ae8591b9e54e652f9"
+          test "$(git -C upstream_cv32e40p hash-object rtl/cv32e40p_ff_one.sv)" = "57461c6114763836df894bd5da4c785d727d5afc"
+          test "$(git -C upstream_cv32e40p hash-object rtl/cv32e40p_alu_div.sv)" = "a7449e01cf1c566838d6e3478c83f34cf66fe892"
+          test "$(git -C upstream_cv32e40p hash-object rtl/cv32e40p_alu.sv)" = "aa900a787d985d9d62d55118914f2646e4ffc6e5"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install RTLPrep
+        run: python -m pip install -e '.[dev]'
+      - name: Install pinned slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Analyze actual CV32E40P ALU hierarchy and dependencies
+        run: |
+          python scripts/run_cv32e40p_alu.py \
+            --source-root upstream_cv32e40p \
+            --out reports/cv32e40p-alu --timeout 180
+      - name: Publish diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv32e40p-alu-rtlprep-results
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/cv32e40p-alu/cv32e40p_alu_test_report.json
+            reports/cv32e40p-alu/deps.result.json
+            reports/cv32e40p-alu/index.result.json
+            reports/cv32e40p-alu/analyze.result.json
+            reports/cv32e40p-alu/analyze.stderr.log
+            reports/cv32e40p-alu/analyze.stdout.log
+            reports/cv32e40p-alu/rtl_index.json
+            reports/cv32e40p-alu/rtl_dependencies.json
