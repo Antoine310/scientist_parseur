@@ -24,11 +24,16 @@ module counter_formal (
         end
     end
 
-    always @(posedge clk) begin
-        if (initialized && rst_n) begin
-            // Indépendant du code DUT : compare deux modèles d'état.
+    // L'invariant doit être évalué à CHAQUE pas formel, pas uniquement
+    // lorsqu'un front d'horloge est librement choisi par le solveur.
+    // Sinon, l'induction pourrait construire des états impossibles pendant
+    // plusieurs cycles sans front et conclure UNKNOWN.
+    always @(*) begin
+        if (initialized)
             assert(count == reference_count);
-        end
+    end
+
+    always @(posedge clk) begin
         // Non-vacuité : au moins trois incréments doivent être atteignables.
         if (initialized && rst_n)
             cover(count == 8'd3);
