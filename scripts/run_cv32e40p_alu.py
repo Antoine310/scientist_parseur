@@ -66,6 +66,14 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
         raise AssertionError(f"CV32E40P ALU output ports missing or wrong: {ports}")
     if graph.get("top") != TOP or not graph.get("edges"):
         raise AssertionError("CV32E40P ALU graph missing or empty")
+    if index["counts"]["modules"] != 4 or index["counts"]["instances"] != 4:
+        raise AssertionError(f"CV32E40P ALU submodule hierarchy incomplete: {index['counts']}")
+    if graph["counts"]["edges"] < 300:
+        raise AssertionError(f"Suspiciously incomplete ALU dependencies: {graph['counts']}")
+    unresolved = [w for w in graph["warnings"]
+                  if "Référence NamedValue inconnue" in w["reason"]]
+    if unresolved:
+        raise AssertionError(f"ALU enum/parameter symbols not resolved: {unresolved[:5]}")
 
     # Bounded traces on genuine ALU outputs; do not infer semantic correctness
     # from the mere presence of an edge or the absence of warnings.
@@ -79,6 +87,17 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
     enum_names = set(graph.get("resolved_enum_symbols", []))
     if "ALU_ADD" not in enum_names:
         raise AssertionError("ALU_ADD enum declaration not resolved from real slang AST")
+    for name in ("result_o", "comparison_result_o"):
+        response = traces[name]
+        expected_sources = {
+            f"{TOP}.operand_a_i", f"{TOP}.operand_b_i", f"{TOP}.operator_i"
+        }
+        missing = expected_sources - set(response["visited_nodes"])
+        if missing or response["truncated"]:
+            raise AssertionError(
+                f"CV32E40P ALU {name} missing expected influences: {missing}, "
+                f"truncated={response['truncated']}"
+            )
     edge_types = dict(sorted(Counter(edge["kind"] for edge in graph["edges"]).items()))
     report = {
         "project": "OpenHW CV32E40P", "upstream_repository": UPSTREAM_REPOSITORY,
