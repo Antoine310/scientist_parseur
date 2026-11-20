@@ -61,6 +61,25 @@ python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
 **[Documentation complète et explication du code de l'index](docs/index-rtl.md).**
 C'est un index **structurel**, pas encore le graphe de fan-in/fan-out.
 
+## Graphe de dépendances RTL (phase C — MVP)
+
+Le nouveau module `rtlprep/dependencies.py` extrait un **graphe orienté**
+depuis l'AST élaboré par slang. Il distingue les relations de **données**,
+de **contrôle**, d'**événement** et de **port d'instance**.
+Le parcours `fanin` / `fanout` est borné en profondeur et en nombre d'arêtes.
+
+```bash
+python -m rtlprep deps examples/dependencies/design.json --out reports/deps
+python -m rtlprep trace reports/deps/rtl_dependencies.json fanin dependency_top.out --depth 6
+python -m rtlprep trace reports/deps/rtl_dependencies.json fanout dependency_top.a --depth 6
+```
+
+**[Cours pédagogique : algorithme, exemples et limites du graphe](docs/graphe-dependances.md)**.
+
+⚠️ Ce graphe n'est pas une preuve formelle et **n'est pas exhaustif**
+pour toutes les constructions SystemVerilog. Les expressions non prises en
+charge sont signalées dans `rtl_dependencies.json` (`warnings`).
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
