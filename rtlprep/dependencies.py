@@ -69,6 +69,9 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     def resolve(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict) or expr.get("kind") != "NamedValue":
             return None
+        # Une référence de paramètre déjà évaluée par slang n'est pas un signal.
+        if "constant" in expr and _symbol_name(expr) not in known.get(path, set()):
+            return None
         name = _symbol_name(expr)
         if name not in known.get(path, set()):
             warn(path, f"Référence NamedValue inconnue : {name!r}")
@@ -105,9 +108,30 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         if kind in UNARY:
             return reads(path, expr.get("operand"))
         if kind in ("ElementSelect", "RangeSelect"):
+            # Granularité signal entier : les indices sont des sources de données
+            # potentielles (quel bit est lu), pas des signaux à indexer.
             base = reads(path, expr.get("value"))
-            selector = reads(path, expr.get("selector"))
-            return base[0] | selector[0], base[1] | selector[1]
+            selectors = [expr.get("selector")] if kind == "ElementSelect" else [
+                expr.get("left"), expr.get("right")
+            ]
+            data, control = set(base[0]), set(base[1])
+            for selector_expr in selectors:
+                sel_data, sel_control = reads(path, selector_expr)
+                data.update(sel_data | sel_control)
+            warn(path, "Sélection de bits/plage : dépendance au signal entier")
+            return data, control
+        if kind == "Concatenation":
+            operands = expr.get("operands")
+            if not isinstance(operands, list):
+                warn(path, "Concatenation sans liste d'opérandes")
+                return set(), set()
+            data: set[str] = set()
+            control: set[str] = set()
+            for operand in operands:
+                operand_data, operand_control = reads(path, operand)
+                data.update(operand_data)
+                control.update(operand_control)
+            return data, control
         if kind == "ConditionalOp":
             cond_refs: set[str] = set()
             for condition in expr.get("conditions", []):
@@ -185,6 +209,37 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                        events=events, sequential=sequential)
             statements(path, obj.get("ifFalse"), controls=nested,
                        events=events, sequential=sequential)
+        elif kind == "Case":
+            if obj.get("condition") != "Normal":
+                warn(path, f"Case à comparaisons spéciales non couvert : {obj.get('condition')}")
+            control = set(controls)
+            expr_data, expr_control = reads(path, obj.get("expr"))
+            control.update(expr_data | expr_control)
+            items = obj.get("items")
+            if not isinstance(items, list):
+                warn(path, "Case sans liste de branches")
+                return
+            # Une expression d'étiquette peut elle-même dépendre de variables.
+            # Elles participent à la décision de sélection de branche.
+            all_label_refs: set[str] = set()
+            for item in items:
+                if not isinstance(item, dict):
+                    warn(path, "Branche case malformée")
+                    continue
+                labels = item.get("expressions")
+                if not isinstance(labels, list):
+                    warn(path, "Étiquettes case malformées")
+                    continue
+                for label in labels:
+                    d, c = reads(path, label)
+                    all_label_refs.update(d | c)
+            case_controls = frozenset(control | all_label_refs)
+            for item in items:
+                if isinstance(item, dict):
+                    statements(path, item.get("stmt"), controls=case_controls,
+                               events=events, sequential=sequential)
+            statements(path, obj.get("defaultCase"), controls=case_controls,
+                       events=events, sequential=sequential)
         elif kind == "Timed":
             extracted: list[tuple[str, str]] = list(events)
             timing = obj.get("timing")
@@ -239,11 +294,25 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             if not isinstance(node, dict):
                 continue
             if node.get("kind") in ("GenerateBlock", "GenerateBlockArray", "Scope"):
+                # Les branches inactives ne font pas partie du matériel élaboré.
+                if node.get("isUninstantiated") is True:
+                    continue
                 nested = node.get("members")
                 if isinstance(nested, list):
                     visit(nested, parent)
                 else:
                     warn(parent or expected_top, "Scope non indexable dans le graphe")
+                continue
+            if node.get("kind") == "ContinuousAssign" and parent is not None:
+                assignment(parent, node.get("assignment"))
+                continue
+            if node.get("kind") == "ProceduralBlock" and parent is not None:
+                procedure_kind = node.get("procedureKind")
+                if procedure_kind not in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
+                    warn(parent, f"Procédure non prise en charge : {procedure_kind}")
+                else:
+                    statements(parent, node.get("body"),
+                               sequential=(procedure_kind == "AlwaysFF"))
                 continue
             if node.get("kind") != "Instance":
                 continue
@@ -253,17 +322,6 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             visited_instances.add(path)
             connections(node, path, parent)
             body = node["body"]
-            for item in body["members"]:
-                if not isinstance(item, dict):
-                    continue
-                if item.get("kind") == "ContinuousAssign":
-                    assignment(path, item.get("assignment"))
-                elif item.get("kind") == "ProceduralBlock":
-                    kind = item.get("procedureKind")
-                    if kind not in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
-                        warn(path, f"Procédure non prise en charge : {kind}")
-                        continue
-                    statements(path, item.get("body"), sequential=(kind == "AlwaysFF"))
             visit(body["members"], path)
 
     visit(ast["design"]["members"])
@@ -278,7 +336,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "warnings": warnings,
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
-            "Pas de résolution des fonctions, tâches, cases, generate complexes",
+            "Case normal, concaténations, sélections et generate if simples seulement",
+            "Pas de résolution des fonctions, tâches, casez/casex, generate complexes",
             "Événements toujours classés event : horloge versus reset non inférés",
             "Le graphe peut être incomplet si des avertissements sont présents",
             "Pas de preuve fonctionnelle, timing ou CDC",
