@@ -21,6 +21,9 @@ pédagogique de `rtlprep/index.py`, des métadonnées de source et de la navigat
 — apprentissage détaillé de `rtlprep/dependencies.py`, des relations typées
 et des limites de cette première version.
 
+**Nouveau chapitre :** [Case, concaténations, bit-select et generate](systemverilog-avance.md)
+— explications ligne par ligne à partir d'une véritable sortie AST slang v12.1.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
