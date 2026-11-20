@@ -57,6 +57,18 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - **Ne pas** transformer une arête en preuve de causalité ou de sécurité ;
   préserver les warnings et les limitations du graphe.
 
+## Constructions SystemVerilog avancées
+
+- Fixture : `examples/advanced/design.json` (case, concat, bit select, paramètres, generate).
+- Test réel : `tests/test_integration_slang.py::test_real_slang_case_concat_bit_select_and_generate`.
+- Tests unitaires : `tests/test_advanced_dependencies.py`.
+- Guide pédagogique : [docs/systemverilog-avance.md](docs/systemverilog-avance.md).
+- La forme réelle des nœuds de slang v12.1 doit être vérifiée avant d'interpréter une
+  catégorie nouvelle : `Concatenation.operands`, `RangeSelect.left/right`,
+  `Case.items/defaultCase`, `GenerateBlock.members`.
+- Toute sélection de bits reste une dépendance **agrégée au signal entier** et
+  doit rester explicitement signalée, jamais convertie en preuve exacte bit-à-bit.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
