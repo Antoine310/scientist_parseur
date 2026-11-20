@@ -82,6 +82,19 @@ def run(*, out: Path, repeat: int = 3, timeout: int = 180,
     questions = [x for case in cases.values() for x in case["queries"]]
     sizes = {key: sum(x["payload_bytes"][key] for x in questions)
              for key in ("A_raw", "B_index", "C_hybrid")}
+    by_case = {}
+    for name, case in cases.items():
+        q = case["queries"]
+        sub = {key: sum(item["payload_bytes"][key] for item in q)
+               for key in ("A_raw", "B_index", "C_hybrid")}
+        by_case[name] = {
+            "question_count": len(q),
+            "payload_bytes": sub,
+            "hybrid_vs_raw": round(sub["C_hybrid"] / sub["A_raw"], 4)
+            if sub["A_raw"] else None,
+            "truncated_queries": [item["id"] for item in q
+                                  if item["trace_truncated"]],
+        }
     report = {
         "schema_version": 1,
         "method": "offline_deterministic_evidence_and_context_benchmark",
@@ -98,6 +111,7 @@ def run(*, out: Path, repeat: int = 3, timeout: int = 180,
         "cases": cases,
         "aggregate_labelled": total,
         "aggregate_payload_bytes": sizes,
+        "by_case_payload_bytes": by_case,
         "aggregate_hybrid_vs_raw": round(
             sizes["C_hybrid"] / sizes["A_raw"], 4
         ) if sizes["A_raw"] else None,
@@ -124,6 +138,7 @@ def run(*, out: Path, repeat: int = 3, timeout: int = 180,
         } for k, v in cases.items()},
         "aggregate_labelled": total,
         "aggregate_payload_bytes": sizes,
+        "by_case_payload_bytes": by_case,
         "hybrid_vs_raw": report["aggregate_hybrid_vs_raw"],
         "notice": "PAS un test de qualité de réponses Codex/ChatGPT.",
     }, indent=2, ensure_ascii=False))
