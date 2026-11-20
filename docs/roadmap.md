@@ -123,6 +123,20 @@ et scopes complexes nécessitent encore des travaux.
 
 ## Phase C — Graphe de dépendances (v0.4)
 
+**Premier jalon disponible :** `rtlprep deps` construit un graphe de
+relations orientées `data`, `control`, `event`, `port_input`
+et `port_output`, et `rtlprep trace` permet des parcours bornés
+`fanin` / `fanout`. Les tests utilisent le vrai slang v12.1 sur
+un exemple combinatoire + séquentiel + inter-modules.
+
+**Statut : MVP, pas phase complète.** Le graphe est approximatif au
+niveau signal, n'interprète pas exhaustivement les case, generate,
+fonctions, tâches ou sélections de bits, et peut comporter des omissions
+signalées par des avertissements. Voir
+[le cours sur le graphe de dépendances](graphe-dependances.md).
+
+## Phase C — Graphe de dépendances (v0.4)
+
 **Priorité : très haute.** C'est la fonctionnalité différenciante de RTLPrep.
 
 **Travaux :**
