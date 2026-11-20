@@ -219,6 +219,18 @@ Si ce nom n'est pas un signal indexé, le code le traite comme une
 **constante de compilation**, et non comme une entrée RTL dont la valeur
 change à l'exécution.
 
+Pour tester **l'autre branche**, le projet fournit aussi
+[`examples/advanced/alternative_design.json`](../examples/advanced/alternative_design.json)
+avec un module parent `alternative_top` qui instancie
+`advanced_logic #(.WIDTH(8), .USE_XOR(1'b0))`. La CI vérifie alors
+que le compilateur choisit **`BinaryOr`**, pas `BinaryXor`, et que
+les dépendances arrivent au bon chemin d'instance
+`alternative_top.dut.mode_result`.
+
+```bash
+python -m rtlprep deps examples/advanced/alternative_design.json --out reports/alternate
+```
+
 **Limite :** on n'a pas encore de gestion générique et exhaustive
 des paramètres et spécialisations pour tous les modules, boucles
 `for generate`, packages et interfaces. Un simple `generate if`
