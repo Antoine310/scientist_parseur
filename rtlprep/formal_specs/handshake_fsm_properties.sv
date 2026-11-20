@@ -33,6 +33,12 @@ module handshake_fsm_formal (
 
     always @(*) begin
         if (initialized) begin
+            // Induction : les sorties codent IDLE/BUSY/DONE mais ne
+            // distinguent pas l'état invalide '11' de IDLE. Prouver
+            // l'égalité des états écarte ces faux états d'induction,
+            // sans AJOUTER une hypothèse assume sur le DUT.
+            assert(expected_state != 2'd3);
+            assert(dut.state_q == expected_state);
             assert(busy == (expected_state == BUSY));
             assert(done == (expected_state == DONE));
             assert(!(busy && done));
