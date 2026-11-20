@@ -118,6 +118,30 @@ par [GitHub Actions](.github/workflows/cv32e40p-real.yml).
 **[Lire le rapport et le cours pédagogique du test CV32E40P](docs/test-cv32e40p-reel.md).**
 Les sources du CPU ne sont pas recopiées dans ce dépôt.
 
+## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
+
+Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
+maintenant identifiés grâce aux **identifiants de symboles fournis par slang**
+— sans règle approximative basée sur un nom de type `OPCODE_*` ou `ALU_*`.
+
+Deux expériences GitHub Actions sont reproductibles sur le **CV32E40P officiel**
+et une révision figée : le décodeur compressé et l'ALU complète, avec ses
+trois sous-modules. Les avertissements du graphe ont diminué de **12 à 1**
+pour le décodeur et de **71 à 11** pour l'ALU. La couverture reste partielle.
+
+```bash
+python scripts/run_cv32e40p_alu.py \
+  --source-root upstream_cv32e40p \
+  --out reports/cv32e40p-alu
+
+python -m rtlprep trace reports/cv32e40p-alu/rtl_dependencies.json \
+  fanin cv32e40p_alu.result_o --depth 12
+```
+
+Les scripts vérifient la révision et les empreintes de chaque fichier source.
+**[Cours détaillé et mesures réelles sur l'ALU](docs/constantes-et-alu-cv32e40p.md)**.
+Ce benchmark ne prouve ni la complétude du graphe ni la correction du matériel.
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :

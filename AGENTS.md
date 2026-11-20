@@ -87,6 +87,23 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
   `Replication.count/concat`. Écrire des tests pour toute nouvelle
   construction avant de modifier le graphe.
 
+## Paramètres/enum sémantiques et ALU réelle
+
+- Voir le [guide des paramètres et de l'ALU](docs/constantes-et-alu-cv32e40p.md).
+- `build_dependency_graph` identifie les `Parameter` et les `EnumValue`
+  par leur `addr` de déclaration associé au préfixe de `NamedValue.symbol`.
+  Ces adresses ne sont **pas stables entre deux compilations**.
+- Ne jamais ignorer une expression uniquement parce que son nom commence
+  par `OPCODE_` ou `ALU_` : un symbole non résolu doit rester un warning.
+- Tester le shadowing (signal et constante de même nom) et les symboles inconnus
+  dans `tests/test_dependencies.py`.
+- La CI [CV32E40P ALU](.github/workflows/cv32e40p-alu-real.yml)
+  exécute `scripts/run_cv32e40p_alu.py` sur les **sources officielles épinglées**.
+- Les sorties `resolved_parameter_symbols` / `resolved_enum_symbols` décrivent
+  les références de compilation classées, sans supposer la complétude du graphe.
+- Conserver `dependency_coverage=partial` quand des warnings subsistent :
+  l'ALU comporte encore des `Call` et des dépendances agrégées aux vecteurs.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

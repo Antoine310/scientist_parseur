@@ -60,6 +60,26 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     warnings: list[dict[str, Any]] = []
     warning_keys: set[tuple[str, str]] = set()
 
+    # slang encodes references as "symbol-address symbol-name". The address
+    # refers to the *exact* semantic declaration in the same exported AST.
+    # Unlike ignoring names such as OPCODE_*, this is safe with shadowing.
+    constant_declarations: dict[str, tuple[str, str]] = {}
+    def collect_parameter_declarations(obj: Any) -> None:
+        if isinstance(obj, list):
+            for entry in obj:
+                collect_parameter_declarations(entry)
+        elif isinstance(obj, dict):
+            if obj.get("kind") in ("Parameter", "EnumValue") and obj.get("addr") is not None:
+                constant_declarations[str(obj["addr"])] = (
+                    obj["kind"], str(obj.get("name", ""))
+                )
+            for key, value in obj.items():
+                if key not in ("definition", "internalSymbol", "type") and isinstance(value, (dict, list)):
+                    collect_parameter_declarations(value)
+
+    collect_parameter_declarations(ast.get("design", {}))
+    constant_refs_seen: set[str] = set()
+
     def warn(path: str, reason: str) -> None:
         key = (path, reason)
         if key not in warning_keys:
@@ -69,10 +89,16 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     def resolve(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict) or expr.get("kind") != "NamedValue":
             return None
-        # Une référence de paramètre déjà évaluée par slang n'est pas un signal.
-        if "constant" in expr and _symbol_name(expr) not in known.get(path, set()):
-            return None
         name = _symbol_name(expr)
+        symbol = expr.get("symbol")
+        reference_id = symbol.split(maxsplit=1)[0] if isinstance(symbol, str) else None
+        if reference_id in constant_declarations:
+            constant_refs_seen.add(reference_id)
+            return None
+        # slang explicitly marks some already evaluated parameters as constant;
+        # use that semantic tag, never a name prefix or regex.
+        if "constant" in expr and name not in known.get(path, set()):
+            return None
         if name not in known.get(path, set()):
             warn(path, f"Référence NamedValue inconnue : {name!r}")
             return None
@@ -354,6 +380,14 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "top": expected_top, "nodes": nodes, "edges": edges,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
+        "resolved_parameter_symbols": sorted(
+            constant_declarations[addr][1] for addr in constant_refs_seen
+            if constant_declarations[addr][0] == "Parameter"
+        ),
+        "resolved_enum_symbols": sorted(
+            constant_declarations[addr][1] for addr in constant_refs_seen
+            if constant_declarations[addr][0] == "EnumValue"
+        ),
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
             "Case normal, concaténations, sélections et generate if simples seulement",

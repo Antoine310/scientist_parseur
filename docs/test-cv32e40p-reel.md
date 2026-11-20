@@ -1,5 +1,11 @@
 # Premier test sur du vrai RTL RISC-V : CV32E40P
 
+> **Mise à jour après cette expérience :** la reconnaissance sémantique des
+> constantes `Parameter` et des valeurs `EnumValue` a ensuite réduit les
+> avertissements de ce décodeur de **12 à 1**. Le relevé de **12** conservé
+> ci-dessous décrit bien le résultat *historique avant cette correction*.
+> Voir le [nouveau guide et le test de l'ALU CV32E40P](constantes-et-alu-cv32e40p.md).
+
 **Expérience reproductible, réalisée le 20 novembre 2026.**
 Ce test utilise le **vrai décodeur d'instructions compressées** du cœur
 RISC-V open source CV32E40P. Il ne s'agit ni d'un exemple recopié à la main

@@ -27,6 +27,10 @@ et des limites de cette première version.
 **Expérience sur un vrai CPU RISC-V :** [décodeur compressé CV32E40P, résultats,
 bugs découverts et corrections](test-cv32e40p-reel.md).
 
+**Nouvelle étude :** [constantes de packages, énumérations et test sur l'ALU réelle
+CV32E40P](constantes-et-alu-cv32e40p.md). Le guide explique les identifiants
+sémantiques slang et la réduction des avertissements, sans filtrage par nom.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
