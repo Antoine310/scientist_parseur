@@ -60,7 +60,8 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 ## Constructions SystemVerilog avancées
 
 - Fixture : `examples/advanced/design.json` (case, concat, bit select, paramètres, generate).
-- Test réel : `tests/test_integration_slang.py::test_real_slang_case_concat_bit_select_and_generate`.
+- Tests réels : `test_real_slang_case_concat_bit_select_and_generate` et
+  `test_real_slang_alternative_generate_branch` dans `tests/test_integration_slang.py`.
 - Tests unitaires : `tests/test_advanced_dependencies.py`.
 - Guide pédagogique : [docs/systemverilog-avance.md](docs/systemverilog-avance.md).
 - La forme réelle des nœuds de slang v12.1 doit être vérifiée avant d'interpréter une
