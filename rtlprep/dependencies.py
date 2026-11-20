@@ -120,6 +120,17 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                 data.update(sel_data | sel_control)
             warn(path, "Sélection de bits/plage : dépendance au signal entier")
             return data, control
+        if kind == "Replication":
+            # slang v12.1: {N{expression}} -> Replication(count, concat).
+            # Le nombre de répétitions est normalement une constante
+            # d'élaboration ; conserver une dépendance si l'AST en indique une.
+            content = expr.get("concat")
+            if not isinstance(content, dict):
+                warn(path, "Replication sans concaténation valide")
+                return set(), set()
+            data, control = reads(path, content)
+            number_data, number_control = reads(path, expr.get("count"))
+            return data | number_data, control | number_control
         if kind == "Concatenation":
             operands = expr.get("operands")
             if not isinstance(operands, list):
