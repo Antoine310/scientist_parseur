@@ -19,7 +19,7 @@ PROOF_SUITES = {
     "counter": ("counter_properties.sv", "counter_formal"),
     "handshake_fsm": ("handshake_fsm_properties.sv", "handshake_fsm_formal"),
 }
-FORMAL_DIR = Path(__file__).resolve().parent.parent / "formal"
+FORMAL_DIR = Path(__file__).resolve().parent / "formal_specs"
 VALID_FILENAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 
 
