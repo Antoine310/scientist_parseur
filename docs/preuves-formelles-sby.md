@@ -160,6 +160,40 @@ La FSM cherche un témoin où `done=1` et vérifie par
 assertions que `busy` et `done` correspondent à
 l'automate de référence et ne sont pas actifs ensemble.
 
+### Détail subtil : une énumération possède aussi des états illégaux
+
+La FSM réelle définit trois états (`IDLE=0`, `BUSY=1`,
+`DONE=2`) sur **2 bits** : la quatrième valeur `2'b11`
+n'est jamais atteinte depuis reset, mais un solveur inductif
+peut la choisir comme **état arbitraire** lorsqu'il cherche
+à poursuivre une trace abstraite.
+
+La preuve des *seules sorties* n'était donc pas assez forte :
+les sorties `busy=0, done=0` correspondent aussi bien
+à `IDLE` qu'à l'état illégal `2'b11`.
+La base de preuve passait, mais l'étape inductive
+renvoyait `UNKNOWN` — pas un bug matériel.
+
+Pour exprimer une vraie propriété **à prouver**, le circuit
+d'entraînement expose exceptionnellement son état interne
+via le port `formal_state`, **seulement si `FORMAL` est défini** :
+
+```systemverilog
+`ifdef FORMAL
+    assign formal_state = state_q;
+`endif
+```
+
+La commande `read -formal` de Yosys active `FORMAL`.
+Cette instrumentation n'ajoute **aucun port** à la
+simulation Verilator/cocotb ou à une synthèse normale.
+Le banc formel peut dès lors vérifier **par assertion**
+`actual_state == expected_state`, en plus de la cohérence
+des sorties, sans utiliser d'hypothèse `assume` sur l'état
+interne du DUT. Cette assertion exclut les états
+incohérents lors de l'induction **en les démontrant**, et
+pas en supposant arbitrairement qu'ils n'existent pas.
+
 **Nuance :** un `cover PASS` est un témoin d'atteignabilité,
 pas une preuve que toutes les transitions possibles
 ont été couvertes.
