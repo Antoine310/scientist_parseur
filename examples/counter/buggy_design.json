@@ -1,0 +1,6 @@
+{
+  "top": "counter",
+  "sources": ["counter_buggy.sv"],
+  "include_dirs": [],
+  "defines": []
+}
