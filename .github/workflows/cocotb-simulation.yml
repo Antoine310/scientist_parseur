@@ -1,0 +1,93 @@
+name: Verilator cocotb behavioral simulations
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  counter-behavior:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned Verilator >= 5.036
+        uses: veryl-lang/setup-verilator@v2
+        with:
+          version: 5.040
+      - name: Check the actual simulator version
+        run: |
+          verilator --version
+          python - <<'PY'
+          import re
+          import subprocess
+          version = subprocess.check_output(["verilator", "--version"], text=True)
+          matched = re.search(r"Verilator (\d+)\.(\d+)", version)
+          assert matched and tuple(map(int, matched.groups())) >= (5, 36), version
+          PY
+          make --version | head -1
+          g++ --version | head -1
+      - name: Install optional cocotb package
+        run: |
+          python -m pip install -e '.[dev,simulation]'
+          python -c 'import cocotb; print("cocotb", cocotb.__version__)'
+      - name: Check pure Python simulation/report tests
+        run: python -m pytest -q tests/test_simulation.py
+      - name: Run correct counter simulation (must pass)
+        run: |
+          python -m rtlprep simulate examples/counter/design.json \
+            --out reports/sim-counter --timeout 180
+          python - <<'PY'
+          import json
+          report=json.load(open("reports/sim-counter/simulation.result.json"))
+          assert report["status"] == "passed", report
+          assert (report["tests"], report["passed"], report["failed"]) == (3, 3, 0), report
+          print("POSITIVE_SIMULATION_VALIDATED", report["testcases"])
+          PY
+      - name: Run intentionally buggy counter (must FAIL with evidence)
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep simulate examples/counter/buggy_design.json \
+            --out reports/sim-buggy --timeout 180
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Unexpected CLI exit code: $code"; exit 1; }
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("reports/sim-buggy/simulation.result.json")
+          report=json.loads(p.read_text())
+          assert report["status"] == "failed", report
+          assert report["tests"] == 3, report
+          assert report["failed"] >= 1, report
+          assert Path(report["results_xml"]).is_file(), report
+          assert any(c["status"] == "failed" for c in report["testcases"]), report
+          print("EXPECTED_COUNTER_BUG_DETECTED", report["testcases"])
+          PY
+      - name: Upload positive and negative simulation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cocotb-verilator-counter-reports
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/sim-counter/simulation.result.json
+            reports/sim-counter/simulation_results.xml
+            reports/sim-counter/simulation.stdout.log
+            reports/sim-counter/simulation.stderr.log
+            reports/sim-buggy/simulation.result.json
+            reports/sim-buggy/simulation_results.xml
+            reports/sim-buggy/simulation.stdout.log
+            reports/sim-buggy/simulation.stderr.log
