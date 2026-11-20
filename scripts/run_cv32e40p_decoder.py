@@ -95,6 +95,14 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
             max_depth=10, max_edges=2500,
         ) for name in sorted(REQUIRED_PORTS - {"instr_i"})
     }
+    # Regression against the real slang AST: imported opcode constants and
+    # a module parameter must not be reported as unknown runtime signals.
+    classified = set(graph.get("resolved_parameter_symbols", []))
+    required_constants = {"OPCODE_JAL", "OPCODE_OPIMM", "ZFINX"}
+    if not required_constants <= classified:
+        raise AssertionError(
+            f"Unresolved expected semantic parameters: {required_constants - classified}"
+        )
     edge_counts = dict(sorted(Counter(edge["kind"] for edge in graph["edges"]).items()))
     # Prevent a false green build when the compiler succeeds but the graph
     # silently loses the input-to-output paths (as happened with AST kind=List).
@@ -124,6 +132,8 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
         "dependency_coverage": "partial" if graph["warnings"] else "within_supported_scope",
         "index_counts": index["counts"],
         "graph_counts": graph["counts"],
+        "resolved_parameter_symbols": graph.get("resolved_parameter_symbols", []),
+        "resolved_enum_symbols": graph.get("resolved_enum_symbols", []),
         "edge_types": edge_counts,
         "ports": ports,
         "fanin_outputs": {
@@ -143,7 +153,10 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
     (out / "cv32e40p_test_report.json").write_text(
         json.dumps(test_report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    summary = {key: value for key, value in test_report.items() if key != "warnings"}
+    summary = {key: value for key, value in test_report.items()
+               if key not in ("warnings", "resolved_parameter_symbols", "resolved_enum_symbols")}
+    summary["parameter_symbol_count"] = len(test_report["resolved_parameter_symbols"])
+    summary["enum_symbol_count"] = len(test_report["resolved_enum_symbols"])
     summary["warning_examples"] = test_report["warnings"][:12]
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return test_report
