@@ -61,7 +61,7 @@ jobs:
             --source-root upstream_cv32e40p \
             --out reports/cv32e40p \
             --timeout 180
-      - name: Inspect slang list-shaped statements (temporary diagnostic)
+      - name: Inspect remaining unsupported expression forms (temporary)
         if: always()
         run: |
           python - <<'PY'
@@ -71,25 +71,30 @@ jobs:
           try: obj=json.load(open(p))
           except FileNotFoundError: exit(0)
           root=next(x for x in obj["design"]["members"] if x.get("kind")=="Instance")
-          print("REAL_MEMBER_KINDS",dict(Counter(m.get("kind") for m in root["body"]["members"] if isinstance(m,dict))))
-          def recurse(obj,depth=0):
-              if depth>15:return
-              if isinstance(obj,list):
-                  for x in obj[:4]:recurse(x,depth+1)
-              elif isinstance(obj,dict):
-                  k=obj.get("kind")
-                  if k=="List":
-                      print("AST_LIST_KEYS",list(obj.keys()))
-                      for key,val in obj.items():
-                          if isinstance(val,list):
-                              print("AST_LIST_CHILDREN",key,len(val),[x.get("kind") if isinstance(x,dict) else str(type(x)) for x in val[:7]])
-                          elif isinstance(val,dict):
-                              print("AST_LIST_CHILD_OBJ",key,val.get("kind"),list(val.keys())[:10])
-                  for key,val in obj.items():
-                      if key in ("addr","internalSymbol","definition","connections","type"):continue
-                      if isinstance(val,(dict,list)):recurse(val,depth+1)
-          for m in root["body"]["members"]:
-              if m.get("kind")=="ProceduralBlock":recurse(m,0)
+          interesting={"Replication","NamedValue"}
+          found=set()
+          kinds=Counter()
+          def walk(x,depth=0):
+              if depth>40:return
+              if isinstance(x,list):
+                  for y in x:walk(y,depth+1)
+              elif isinstance(x,dict):
+                  kind=x.get("kind")
+                  if kind:kinds[kind]+=1
+                  if kind=="Replication" and kind not in found:
+                      print("REPLICATION_NODE",json.dumps(x,ensure_ascii=False)[:3000])
+                      found.add(kind)
+                  if kind=="NamedValue" and isinstance(x.get("symbol"),str) and "OPCODE_" in x["symbol"] and "OPCODE" not in found:
+                      print("OPCODE_NODE",json.dumps(x,ensure_ascii=False)[:1500])
+                      found.add("OPCODE")
+                  if kind=="NamedValue" and isinstance(x.get("symbol"),str) and ("FPU" in x["symbol"] or "ZFINX" in x["symbol"]) and "PARAM" not in found:
+                      print("PARAM_NODE",json.dumps(x,ensure_ascii=False)[:1500])
+                      found.add("PARAM")
+                  for k,v in x.items():
+                      if k in ("definition","internalSymbol","addr","type"):continue
+                      if isinstance(v,(list,dict)):walk(v,depth+1)
+          walk(root["body"],0)
+          print("COMMON_KINDS",kinds.most_common(20))
           PY
       - name: Upload reports and relevant logs (even on failure)
         if: always()
