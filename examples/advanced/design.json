@@ -1,0 +1,6 @@
+{
+  "top": "advanced_logic",
+  "sources": ["advanced_logic.sv"],
+  "include_dirs": [],
+  "defines": []
+}
