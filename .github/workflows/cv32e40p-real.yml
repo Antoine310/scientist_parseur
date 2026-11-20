@@ -61,6 +61,36 @@ jobs:
             --source-root upstream_cv32e40p \
             --out reports/cv32e40p \
             --timeout 180
+      - name: Inspect slang list-shaped statements (temporary diagnostic)
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          p="reports/cv32e40p/elaborated_ast.json"
+          try: obj=json.load(open(p))
+          except FileNotFoundError: exit(0)
+          root=next(x for x in obj["design"]["members"] if x.get("kind")=="Instance")
+          print("REAL_MEMBER_KINDS",dict(Counter(m.get("kind") for m in root["body"]["members"] if isinstance(m,dict))))
+          def recurse(obj,depth=0):
+              if depth>15:return
+              if isinstance(obj,list):
+                  for x in obj[:4]:recurse(x,depth+1)
+              elif isinstance(obj,dict):
+                  k=obj.get("kind")
+                  if k=="List":
+                      print("AST_LIST_KEYS",list(obj.keys()))
+                      for key,val in obj.items():
+                          if isinstance(val,list):
+                              print("AST_LIST_CHILDREN",key,len(val),[x.get("kind") if isinstance(x,dict) else str(type(x)) for x in val[:7]])
+                          elif isinstance(val,dict):
+                              print("AST_LIST_CHILD_OBJ",key,val.get("kind"),list(val.keys())[:10])
+                  for key,val in obj.items():
+                      if key in ("addr","internalSymbol","definition","connections","type"):continue
+                      if isinstance(val,(dict,list)):recurse(val,depth+1)
+          for m in root["body"]["members"]:
+              if m.get("kind")=="ProceduralBlock":recurse(m,0)
+          PY
       - name: Upload reports and relevant logs (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
