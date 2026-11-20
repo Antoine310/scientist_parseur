@@ -44,7 +44,7 @@ POPCNT_GATES = {
 
 def git_blob_digest(data: bytes) -> str:
     """Git SHA-1 blob identity, also checked by the pinned upstream workflow."""
-    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + bytes([0]) + data).hexdigest()
 
 
 def popcnt_variant(original: str, *, filename: str) -> str:
