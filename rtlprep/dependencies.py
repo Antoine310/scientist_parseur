@@ -15,7 +15,7 @@ from .index import build_index
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
                       "Null", "EmptyArgument", "UnbasedUnsizedIntegerLiteral"})
-BINARY = frozenset({"BinaryOp", "MinTypMax", "InsideExpression"})
+BINARY = frozenset({"BinaryOp"})
 UNARY = frozenset({"UnaryOp", "Conversion", "SignedConversion"})
 
 
@@ -117,14 +117,6 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             a = reads(path, expr.get("left"))
             b = reads(path, expr.get("right"))
             return a[0] | b[0], cond_refs | a[1] | b[1]
-        if kind in ("Concatenation", "Replication"):
-            data: set[str] = set()
-            ctrl: set[str] = set()
-            for element in expr.get("elements", []):
-                a, b = reads(path, element)
-                data.update(a)
-                ctrl.update(b)
-            return data, ctrl
         warn(path, f"Expression non prise en charge : {kind}")
         return set(), set()
 
@@ -158,6 +150,11 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
 
     def statements(path: str, obj: Any, *, controls: frozenset[str] = frozenset(),
                    events: tuple[tuple[str, str], ...] = (), sequential: bool = False) -> None:
+        if isinstance(obj, list):
+            for child in obj:
+                statements(path, child, controls=controls, events=events,
+                           sequential=sequential)
+            return
         if not isinstance(obj, dict):
             return
         kind = obj.get("kind")
@@ -201,7 +198,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                     else:
                         warn(path, "Événement temporel non pris en charge")
             elif timing is not None:
-                warn(path, f"Timing non pris en charge : {timing.get('kind')}")
+                warn(path, f"Timing non pris en charge : {timing.get('kind') if isinstance(timing, dict) else type(timing).__name__}")
             statements(path, obj.get("stmt"), controls=controls,
                        events=tuple(extracted), sequential=sequential)
         elif kind in ("Empty", "EmptyStatement"):
@@ -235,15 +232,25 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             else:
                 warn(path, f"Port {port['name']} direction {direction} non prise en charge")
 
+    visited_instances: set[str] = set()
+
     def visit(members: list[Any], parent: str | None = None) -> None:
         for node in members:
             if not isinstance(node, dict):
+                continue
+            if node.get("kind") in ("GenerateBlock", "GenerateBlockArray", "Scope"):
+                nested = node.get("members")
+                if isinstance(nested, list):
+                    visit(nested, parent)
+                else:
+                    warn(parent or expected_top, "Scope non indexable dans le graphe")
                 continue
             if node.get("kind") != "Instance":
                 continue
             path = f"{parent}.{node['name']}" if parent else node["name"]
             if path not in instances:
                 raise ValueError(f"Instance non indexée : {path}")
+            visited_instances.add(path)
             connections(node, path, parent)
             body = node["body"]
             for item in body["members"]:
@@ -260,6 +267,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             visit(body["members"], path)
 
     visit(ast["design"]["members"])
+    for missing_path in sorted(set(instances) - visited_instances):
+        warn(missing_path, "Instance connue de l'index mais absente du graphe")
     edges.sort(key=lambda x: (x["target"], x["source"], x["kind"], x["detail"]))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
     return {
