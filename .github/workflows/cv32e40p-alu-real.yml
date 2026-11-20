@@ -64,6 +64,40 @@ jobs:
           python scripts/run_cv32e40p_alu.py \
             --source-root upstream_cv32e40p \
             --out reports/cv32e40p-alu --timeout 180
+      - name: Inspect slang enum declaration shapes (temporary)
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          ast=json.load(open("reports/cv32e40p-alu/elaborated_ast.json"))
+          root=ast["design"]
+          units=[x for x in root.get("members",[]) if isinstance(x,dict) and x.get("kind")=="CompilationUnit"]
+          print("UNITS",[(list(u.keys()),len(u.get("members",[]))) for u in units])
+          for u in units:
+              for pkg in u.get("members",[]):
+                  if isinstance(pkg,dict) and pkg.get("kind")=="Package":
+                      print("PACKAGE_HEAD",pkg.get("name"),Counter(x.get("kind") for x in pkg.get("members",[]) if isinstance(x,dict)))
+                      for m in pkg.get("members",[]):
+                          if isinstance(m,dict) and m.get("kind") in ("TypeAlias","Typedef","EnumType","EnumValue"):
+                              print("TYPE_DECL",m.get("kind"),m.get("name"),str(m)[:1300])
+          seen=set()
+          def walk(x,depth=0):
+              if depth>19:return
+              if isinstance(x,list):
+                  for y in x[:5000]:walk(y,depth+1)
+              elif isinstance(x,dict):
+                  kind=x.get("kind")
+                  if kind in ("EnumValue","EnumType","TypeAlias","Typedef") and kind not in seen:
+                      print("ENUM_SHAPE",kind,str(x)[:1800]);seen.add(kind)
+                  if x.get("name") in ("ALU_ADD","ALU_SUB") and "named"+str(x.get("name")) not in seen:
+                      print("ENUM_DECLARE",str(x)[:1500]);seen.add("named"+str(x.get("name")))
+                  if kind=="NamedValue" and "ALU_ADD" in str(x.get("symbol")) and "ref" not in seen:
+                      print("ENUM_REF",str(x)[:1500]);seen.add("ref")
+                  for k,v in x.items():
+                      if k not in ("addr","definition","internalSymbol","type") and isinstance(v,(dict,list)):walk(v,depth+1)
+          walk(ast)
+          PY
       - name: Publish diagnostic reports
         if: always()
         uses: actions/upload-artifact@v4
