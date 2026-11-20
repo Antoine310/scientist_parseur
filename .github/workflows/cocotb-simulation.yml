@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pinned Verilator >= 5.036
-        uses: veryl-lang/setup-verilator@v2
+        uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089 # v2
         with:
           version: '5.040'
       - name: Check the actual simulator version
