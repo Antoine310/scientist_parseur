@@ -125,6 +125,28 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Lire le [cours Verilator/cocotb](docs/simulation-cocotb-verilator.md)
   avant de modifier le worker, les statuts ou les rapports.
 
+## Vérification formelle — SBY/Yosys/Z3
+
+- `python -m rtlprep formal examples/counter/design.json --out reports/formal-counter`
+  prouve les propriétés d'un **compteur** et cherche un `cover`.
+- `python -m rtlprep formal examples/fsm/design.json --out reports/formal-fsm`
+  prouve la correspondance des états/sorties et la possibilité d'atteindre `DONE`.
+- `python -m rtlprep formal examples/counter/buggy_design.json --out reports/formal-buggy`
+  doit produire `FAIL` et un vrai contre-exemple VCD (contrôle négatif).
+- La CI `.github/workflows/sby-formal.yml` utilise la version datée
+  **2026-11-18** d'OSS CAD Suite avec Yosys, SBY et z3.
+- Les bancs de preuve **inclus dans le paquet**
+  `rtlprep/formal_specs/` forment une liste blanche `PROOF_SUITES`.
+  Ne **jamais** lire des scripts .sby fournis par un manifeste tiers.
+- SBY `UNKNOWN` signifie **non conclusif**, pas une violation prouvée.
+  Ne pas déclarer « prouvé » sans le verdict `PASS` pour `prove`.
+- Les `cover` vérifient la non-vacuité de *certains* scénarios et
+  ne constituent pas une couverture fonctionnelle exhaustive.
+- L'hypothèse initiale `assume(!rst_n)` est explicitement documentée ;
+  ne jamais élargir les garanties au-delà de ces hypothèses.
+- Consulte [docs/preuves-formelles-sby.md](docs/preuves-formelles-sby.md)
+  avant toute modification des propriétés ou des statuts.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

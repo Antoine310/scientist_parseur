@@ -186,9 +186,17 @@ cocotb approuvés sur **Verilator 5.040 + cocotb 2.0.1**. Le compteur
 et déterministes. Un **compteur volontairement faux (+2 au lieu de +1)**
 doit échouer : la CI vérifie l'échec dans les résultats JSON et xUnit.
 
-Ce jalon **ne termine pas la phase D** : les preuves SBY/EQY, la
-couverture, l'isolation renforcée des designs tiers et des tests
-fonctionnels sur les vrais modules RISC-V restent à intégrer.
+**Second jalon en PR #12 :** un backend formel SBY/Yosys/Z3 exécute des
+assertions avec `mode prove` (induction) et une recherche `cover`
+(non-vacuité) sur **le compteur et la FSM**. Le compteur volontairement
+défectueux doit produire un vrai `FAIL` et une trace VCD.
+Les rapports distinguent `UNKNOWN` d'un bug démontré.
+
+La **phase D reste incomplète** : EQY, les preuves pertinentes sur des
+vrais modules CPU, la couverture exhaustive, les garanties de sandbox
+et les propriétés de sécurité avancées restent à développer.
+
+Voir [le cours sur les preuves SBY](preuves-formelles-sby.md).
 
 Voir le [cours Verilator et cocotb](simulation-cocotb-verilator.md).
 
