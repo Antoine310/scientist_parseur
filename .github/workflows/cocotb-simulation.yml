@@ -98,6 +98,10 @@ jobs:
             reports/sim-counter/simulation_results.xml
             reports/sim-counter/simulation.stdout.log
             reports/sim-counter/simulation.stderr.log
+            reports/sim-fsm/simulation.result.json
+            reports/sim-fsm/simulation_results.xml
+            reports/sim-fsm/simulation.stdout.log
+            reports/sim-fsm/simulation.stderr.log
             reports/sim-buggy/simulation.result.json
             reports/sim-buggy/simulation_results.xml
             reports/sim-buggy/simulation.stdout.log
