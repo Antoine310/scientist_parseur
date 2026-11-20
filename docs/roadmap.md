@@ -237,6 +237,23 @@ sans réglage codé en dur pour un seul processeur.
 
 ---
 
+### Premier test CPU réel — décodeur CV32E40P
+
+Le décodeur d'instructions compressées du **vrai CV32E40P OpenHW**
+a été analysé sur une révision Git épinglée, avec le package RTL
+correspondant. Le vrai slang v12.1 **compile** et le graphe
+montre une influence `instr_i` vers les trois sorties.
+Mesure initiale après corrections : **4 nœuds, 4 arêtes, 12
+avertissements** (couverture partielle).
+
+Le test a permis de corriger deux constructions AST :
+`List.list` (suite d'instructions) et
+`Replication.count/concat` (répétition de bits).
+L'analyseur doit encore distinguer les **constantes importées de
+packages** des signaux RTL sans les ignorer par heuristique textuelle.
+
+Documentation détaillée : [test CV32E40P réel](test-cv32e40p-reel.md).
+
 ## Phase F — Codex, conversation et MCP (v0.7)
 
 **Priorité : après un socle de validation fiable. Budget API : 0 € possible.**
