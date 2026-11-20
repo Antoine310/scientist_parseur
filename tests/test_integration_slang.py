@@ -103,3 +103,34 @@ def test_real_slang_dependency_graph(tmp_path):
     assert "dependency_top.a" in trace_dependencies(
         graph, "dependency_top.out", "fanin", max_depth=6
     )["visited_nodes"]
+
+
+def test_real_slang_case_concat_bit_select_and_generate(tmp_path):
+    """Toutes les dépendances attendues viennent du compilateur slang réel."""
+    import json
+    from rtlprep.runner import dependency_design
+    from rtlprep.dependencies import trace_dependencies
+
+    d = load_design(ROOT / "examples/advanced/design.json")
+    result = dependency_design(d, tmp_path, timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    edges = {(e["source"], e["target"], e["kind"]) for e in graph["edges"]}
+    expected = {
+        ("advanced_logic.data_a", "advanced_logic.merged", "data"),
+        ("advanced_logic.data_b", "advanced_logic.merged", "data"),
+        ("advanced_logic.data_a", "advanced_logic.picked", "data"),
+        ("advanced_logic.idx", "advanced_logic.picked", "data"),
+        ("advanced_logic.sel", "advanced_logic.result", "control"),
+        ("advanced_logic.merged", "advanced_logic.result", "data"),
+        ("advanced_logic.data_a", "advanced_logic.result", "data"),
+        ("advanced_logic.data_b", "advanced_logic.result", "data"),
+        ("advanced_logic.data_a", "advanced_logic.mode_result", "data"),
+        ("advanced_logic.data_b", "advanced_logic.mode_result", "data"),
+    }
+    assert expected.issubset(edges), sorted(expected - edges)
+    assert graph["counts"]["warnings"] == 1, graph["warnings"]
+    assert "Sélection de bits/plage" in graph["warnings"][0]["reason"]
+    assert "advanced_logic.data_a" in trace_dependencies(
+        graph, "advanced_logic.result", "fanin", max_depth=3
+    )["visited_nodes"]
