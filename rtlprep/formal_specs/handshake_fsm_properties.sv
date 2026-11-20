@@ -31,14 +31,17 @@ module handshake_fsm_formal (
         end
     end
 
-    always @(posedge clk) begin
-        if (initialized && rst_n) begin
+    always @(*) begin
+        if (initialized) begin
             assert(busy == (expected_state == BUSY));
             assert(done == (expected_state == DONE));
             assert(!(busy && done));
         end
-        // Vérifie que DONE est atteignable, au lieu de seulement prouver
-        // des propriétés sous des hypothèses qui bloqueraient toute activité.
+    end
+
+    always @(posedge clk) begin
+        // Vérifie que DONE est atteignable, plutôt que seulement prouver
+        // des propriétés sous des hypothèses qui bloquent toute activité.
         if (initialized && rst_n)
             cover(done);
     end
