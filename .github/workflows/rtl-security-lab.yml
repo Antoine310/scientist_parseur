@@ -1,0 +1,140 @@
+name: Hardware-security CSR regression lab (real EDA)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-csr-attack-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install real Verilator 5.040
+        uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089
+        with:
+          version: '5.040'
+      - name: Install pinned OSS CAD Suite Yosys SBY EQY Z3
+        uses: YosysHQ/setup-oss-cad-suite@c7845bc0d335c8076aa22047e85972caa8a916df
+        with:
+          version: '2026-11-18'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install real slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+      - name: Check actual versions and dependencies
+        run: |
+          verilator --version
+          yosys -V
+          sby --version
+          eqy --version
+          z3 --version
+          slang --version
+          python -m pip install -e '.[dev,simulation]'
+          python -m pytest -q tests/test_security_lab.py
+      - name: Analyze BOTH RTL variants with genuine slang
+        run: |
+          python -m rtlprep deps examples/security_csr/design.json \
+            --out reports/security-lab/rtl-gold --timeout 120
+          python -m rtlprep deps examples/security_csr/buggy_design.json \
+            --out reports/security-lab/rtl-buggy --timeout 120
+      - name: Prove behavioral tests PASS on correct design
+        run: |
+          python -m rtlprep simulate examples/security_csr/design.json \
+            --out reports/security-lab/sim-gold --timeout 180
+      - name: Demand cocotb detects UNPRIVILEGED bypass on buggy design
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep simulate examples/security_csr/buggy_design.json \
+            --out reports/security-lab/sim-buggy --timeout 180
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Expected CLI 2 on vulnerable RTL, got $code"; exit 1; }
+      - name: Prove formal authorization invariants on GOOD design
+        run: |
+          python -m rtlprep formal examples/security_csr/design.json \
+            --out reports/security-lab/formal-gold --timeout 150
+      - name: Demand a real SBY formal counterexample for the bypass
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep formal examples/security_csr/buggy_design.json \
+            --out reports/security-lab/formal-buggy --timeout 150
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Expected SBY CLI 2, got $code"; exit 1; }
+      - name: Prove EQY gold vs safe refactoring
+        run: |
+          python -m rtlprep eqy examples/security_csr/design.json \
+            --gate examples/security_csr/refactored_design.json \
+            --out reports/security-lab/eqy-good --timeout 150
+      - name: Demand EQY divergence with a REAL counterexample
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep eqy examples/security_csr/design.json \
+            --gate examples/security_csr/buggy_design.json \
+            --out reports/security-lab/eqy-buggy --timeout 150
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Expected EQY CLI 2, got $code"; exit 1; }
+      - name: Consolidate ACTUAL evidence (graph, xUnit, formal, equivalence)
+        run: |
+          python scripts/check_security_lab.py --root reports/security-lab
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("reports/security-lab/security_lab_report.json").read_text())
+          assert r["benchmark_real_agent"] is False
+          assert r["simulation"]["buggy"]["failed"] >= 1
+          assert r["formal"]["gold_proof"] == "PASS"
+          assert r["formal"]["gold_cover"] == "PASS"
+          assert r["formal"]["buggy_proof"] == "FAIL"
+          assert r["equivalence"]["good"] == "PASS"
+          assert r["equivalence"]["bad"] == "FAIL"
+          print("REAL_SECURITY_LAB_VALIDATED",r["graph"])
+          PY
+      - name: Upload JSON, xUnit and real VCD counterexamples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-security-csr-lab-evidence
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/security-lab/security_lab_report.json
+            reports/security-lab/rtl-*/rtl_index.json
+            reports/security-lab/rtl-*/rtl_dependencies.json
+            reports/security-lab/rtl-*/deps.result.json
+            reports/security-lab/sim-*/simulation.result.json
+            reports/security-lab/sim-*/simulation_results.xml
+            reports/security-lab/sim-*/simulation.stdout.log
+            reports/security-lab/sim-*/simulation.stderr.log
+            reports/security-lab/formal-*/formal.result.json
+            reports/security-lab/formal-*/formal_*.sby
+            reports/security-lab/formal-*/formal_*_work/**/trace*.vcd
+            reports/security-lab/formal-*/formal_*_work/logfile.txt
+            reports/security-lab/eqy-*/equivalence.result.json
+            reports/security-lab/eqy-*/equivalence.eqy
+            reports/security-lab/eqy-*/eqy_work/**/trace*.vcd
+            reports/security-lab/eqy-*/eqy_work/logfile.txt
