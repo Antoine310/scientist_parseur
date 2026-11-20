@@ -164,6 +164,20 @@ chemins RTL concernés.
 
 ---
 
+### Phase C — progression : AST complexes
+
+L'analyseur gère désormais les `case` ordinaires, les concaténations
+(`operands`), les lectures `ElementSelect` / `RangeSelect` et
+les `GenerateBlock` simples déjà élaborés. Les références de
+paramètres résolus ne sont pas traitées comme des signaux dynamiques.
+
+L'exemple `examples/advanced` est testé avec le **vrai slang v12.1**
+en CI. La granularité reste **signal entier**, et les sélections de bits
+émettent un warning. D'autres constructions SV, y compris `casez`/
+`casex`, tableaux complexes et generate imbriqués, restent à traiter.
+
+Voir [docs/systemverilog-avance.md](systemverilog-avance.md).
+
 ## Phase D — Validation matérielle automatisée (v0.5)
 
 **Priorité : haute.** Les réponses de l'index doivent ensuite être confrontées
