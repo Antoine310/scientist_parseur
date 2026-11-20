@@ -1,0 +1,6 @@
+{
+  "top": "dependency_top",
+  "sources": ["logic_leaf.sv", "dependency_top.sv"],
+  "include_dirs": [],
+  "defines": []
+}
