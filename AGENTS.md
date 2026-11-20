@@ -191,6 +191,35 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Ne pas transformer cette équivalence **inter-versions**
   en preuve de correction de l'IP, de l'ALU ou du CPU.
 
+## Serveur MCP de consultation pour Codex (PR #15)
+
+- Installer la dépendance facultative avec
+  `python -m pip install -e '.[dev,mcp]'` sous Python **3.11+**.
+  La version du **SDK officiel** est épinglée à `mcp==2.3.0`.
+- Produire les artefacts avec `rtlprep deps` ou `rtlprep index`
+  **avant** de lancer `rtlprep mcp`.
+- `rtlprep mcp --index ... --graph ... --manifest ... --reports-dir ...`
+  démarre un serveur **stdio**, qui ne doit imprimer
+  aucun texte de diagnostic sur stdout.
+- Dix outils : `rtl_capabilities`, `rtl_modules`,
+  `rtl_instances`, `rtl_module`, `rtl_instance`,
+  `rtl_signal`, `rtl_trace`, `rtl_warnings`,
+  `rtl_source`, `rtl_validations`.
+- Aucune commande EDA, lancement shell, écriture de source,
+  chemin arbitraire ni HTTP n'est autorisé dans ce MVP.
+  Les fichiers JSON sont fixés dans la configuration
+  de démarrage par l'opérateur.
+- Les paginations et profondeurs sont **bornées**. Un trace
+  ne constitue pas une preuve matérielle ; les rapports
+  `status=passed` sont **historiques**, non réexécutés.
+- `tests/test_mcp_data.py` passe **sans SDK ni EDA** ;
+  `scripts/test_mcp_stdio.py` utilise un **vrai client MCP**
+  et des rapports compilés par slang dans le workflow
+  `.github/workflows/mcp-stdio.yml`.
+- Lire [docs/mcp-codex-lecture-seule.md](docs/mcp-codex-lecture-seule.md)
+  avant de modifier les permissions, la surface de protocole
+  ou d'ajouter un outil susceptible d'exécuter du RTL.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
