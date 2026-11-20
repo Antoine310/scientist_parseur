@@ -40,6 +40,11 @@ le runner Python officiel et la lecture des rapports xUnit.
 contrôle négatif et traces VCD](preuves-formelles-sby.md). Le cours distingue
 preuve inductive, témoin `cover`, `UNKNOWN` et hypothèses de reset.
 
+**Nouveau cours d'équivalence :**
+[EQY — comparer deux versions gold/gate, prouver une refactorisation
+et détecter une régression](equivalence-eqy.md). La CI utilise le vrai
+EQY et conserve une trace VCD sur la variante incorrecte du compteur.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
