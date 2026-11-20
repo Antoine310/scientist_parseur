@@ -24,7 +24,7 @@ def test_config_has_no_unreviewed_script_and_selects_correct_properties():
     d = design("counter")
     cfg = formal.create_sby_config(
         d, task="prove", source=d.sources[0],
-        properties=ROOT / "formal/counter_properties.sv",
+        properties=ROOT / "rtlprep/formal_specs/counter_properties.sv",
     )
     assert "[script]" in cfg
     assert "mode prove" in cfg
@@ -34,7 +34,7 @@ def test_config_has_no_unreviewed_script_and_selects_correct_properties():
     assert "[files]" in cfg
     with pytest.raises(ValueError):
         formal.create_sby_config(d, task="invalid", source=d.sources[0],
-                                properties=ROOT / "formal/counter_properties.sv")
+                                properties=ROOT / "rtlprep/formal_specs/counter_properties.sv")
 
 
 @pytest.mark.parametrize("formal_status,exit_status,expected", [
