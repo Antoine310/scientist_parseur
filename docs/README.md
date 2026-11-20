@@ -50,6 +50,11 @@ EQY et conserve une trace VCD sur la variante incorrecte du compteur.
 — sources OpenHW figées, 31 partitions, refactorisation
 commutative et mutant détecté avec contre-exemple VCD.
 
+**Phase F — interface pour agents :**
+[serveur MCP local en lecture seule pour Codex](mcp-codex-lecture-seule.md).
+Ce guide présente les dix outils MCP, les commandes de connexion à Codex,
+les limites de lecture et le test réel `stdio` avec le SDK officiel.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
