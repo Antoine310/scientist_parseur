@@ -228,6 +228,29 @@ admises restent en **liste blanche** pour ce premier jalon.
 
 [**Cours pédagogique : gold/gate, partitions, preuves, erreurs et limites**](docs/equivalence-eqy.md).
 
+## Équivalence sur un vrai bloc RISC-V CV32E40P (PR #14)
+
+Le backend **Yosys EQY** a maintenant été exécuté sur
+**`cv32e40p_popcnt`**, véritable module du CV32E40P OpenHW.
+Les sources officielles sont récupérées à une révision Git figée
+et **vérifiées par leur hash** ; aucun RTL propriétaire ni module CPU
+recopié n'est ajouté au dépôt.
+
+Le script crée deux variantes locales : une addition à opérandes
+permutés (**équivalente, 31 partitions prouvées**) et une soustraction
+volontairement incorrecte (**non équivalente, trace VCD**).
+
+```bash
+# Après checkout du dépôt OpenHW à la révision épinglée
+python scripts/run_cv32e40p_popcnt_eqy.py \
+  --source-root upstream_cv32e40p \
+  --out reports/cv32e40p-popcnt-eqy
+```
+
+**[Tutoriel : première équivalence réelle sur un sous-module RISC-V](docs/eqy-cv32e40p-popcnt.md)**.
+La preuve d'équivalence concerne **ces deux versions**, pas la correction
+du CPU ou la conformité fonctionnelle du module à sa spécification.
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
