@@ -254,6 +254,21 @@ packages** des signaux RTL sans les ignorer par heuristique textuelle.
 
 Documentation détaillée : [test CV32E40P réel](test-cv32e40p-reel.md).
 
+### Deuxième test CPU réel : ALU CV32E40P et paramètres sémantiques
+
+Sur la même révision OpenHW épinglée, slang v12.1 élabore l'ALU
+`cv32e40p_alu` et trois sous-modules (`popcnt`, `ff_one`,
+`alu_div`). RTLPrep produit **149 nœuds, 319 arêtes, 4 instances**.
+
+La classification par adresse sémantique des `Parameter` et
+`EnumValue` a réduit les avertissements du décodeur **de 12 à 1**,
+et ceux de l'ALU **de 71 à 11**. Cela ne signifie **pas**
+que le graphe est exhaustif : les `Call` et l'analyse bit à bit
+restent à améliorer. Les benchmarks vérifient la continuité de
+plusieurs chemins de fan-in, sans en faire une preuve formelle.
+
+Guide : [constantes et test réel de l'ALU](constantes-et-alu-cv32e40p.md).
+
 ## Phase F — Codex, conversation et MCP (v0.7)
 
 **Priorité : après un socle de validation fiable. Budget API : 0 € possible.**
