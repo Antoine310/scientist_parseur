@@ -146,10 +146,35 @@ ou « Codex 3 fois plus rapide » : **aucun tokenizer de modèle,
 aucun coût d'API et aucune réponse de modèle n'ont été mesurés**.
 
 Ce ratio global est **fortement influencé par la taille de l'ALU**.
-Le rapport JSON inclut également les volumes **par circuit** :
-sur un tout petit fichier, le JSON hybride peut parfaitement être
-**plus volumineux que le RTL brut** à cause des métadonnées !
-Nous conservons ces cas au lieu de les masquer.
+Voici la ventilation réelle du même run :
+
+| Design | A brut | B index | C hybride | C/A |
+| --- | ---: | ---: | ---: | ---: |
+| Compteur (1 question) | 466 o | 1 003 o | 2 021 o | **4,34×** |
+| Hiérarchie (1 question) | 525 o | 927 o | 2 450 o | **4,67×** |
+| Dépendances (2 questions) | 1 802 o | 3 226 o | 6 734 o | **3,74×** |
+| Advanced (3 questions) | 3 137 o | 4 565 o | 7 351 o | **2,34×** |
+| ALU CV32E40P (2 questions) | 155 531 o | 6 244 o | 31 906 o | **0,21×** |
+
+**Résultat important :** sur chacun des **quatre petits designs**,
+le contexte hybride est plus lourd que le RTL brut. Le
+gain global n'existe ici que parce que la grande ALU domine
+les octets transmis. Pour de petits modules, envoyer l'index
+détaillé et plusieurs arêtes peut être inutilement coûteux :
+c'est une piste d'optimisation concrète pour RTLPrep.
+
+Le parcours `cpu_result` est **tronqué à 100 arêtes**, limite
+de consultation inspirée du premier serveur MCP. Le rapport contient
+`truncated_queries=["cpu_result"]` ; la petite taille de ce
+contexte **ne démontre donc pas que toutes les influences ont été
+retrouvées**. L'autre parcours CPU n'était pas tronqué dans ce run.
+Une future expérience devra comparer des budgets de 100, 500 et
+1 000 arêtes, tout en mesurant les oublis sur une référence indépendante.
+
+Ces chiffres sont **les sommes pour toutes les questions de
+chaque design**, pas des coûts moyens par requête. Le rapport
+JSON inclut la ventilation et conserve les indicateurs de
+troncature au lieu de les masquer.
 
 ## 4. Mesure de temps et vraie ALU CV32E40P
 
