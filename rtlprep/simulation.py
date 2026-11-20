@@ -20,7 +20,10 @@ from .runner import fingerprint, run_command
 
 
 # Testbenches revus et inclus dans le paquet. Pas de Python provenant du RTL.
-TEST_SUITES = {"counter": "rtlprep.sim_tests.counter"}
+TEST_SUITES = {
+    "counter": "rtlprep.sim_tests.counter",
+    "handshake_fsm": "rtlprep.sim_tests.handshake_fsm",
+}
 
 
 def parse_cocotb_results(path: Path) -> dict[str, object]:
