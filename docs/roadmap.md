@@ -180,6 +180,20 @@ Voir [docs/systemverilog-avance.md](systemverilog-avance.md).
 
 ## Phase D — Validation matérielle automatisée (v0.5)
 
+**Premier jalon implémenté :** `rtlprep simulate` exécute des bancs
+cocotb approuvés sur **Verilator 5.040 + cocotb 2.0.1**. Le compteur
+8 bits et la FSM IDLE/BUSY/DONE sont contrôlés par des tests dirigés
+et déterministes. Un **compteur volontairement faux (+2 au lieu de +1)**
+doit échouer : la CI vérifie l'échec dans les résultats JSON et xUnit.
+
+Ce jalon **ne termine pas la phase D** : les preuves SBY/EQY, la
+couverture, l'isolation renforcée des designs tiers et des tests
+fonctionnels sur les vrais modules RISC-V restent à intégrer.
+
+Voir le [cours Verilator et cocotb](simulation-cocotb-verilator.md).
+
+## Phase D — Validation matérielle automatisée (v0.5)
+
 **Priorité : haute.** Les réponses de l'index doivent ensuite être confrontées
 aux outils EDA et aux spécifications.
 
