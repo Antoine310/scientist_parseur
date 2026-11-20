@@ -6,6 +6,7 @@ L'opérateur sélectionne explicitement les artefacts au démarrage.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from .mcp_data import ReadOnlyRtl
 
@@ -21,54 +22,54 @@ def create_server(snapshot: ReadOnlyRtl):
 
     server = MCPServer("RTLPrep")
 
-    @server.tool()
-    def rtl_capabilities() -> dict:
+    @server.tool(structured_output=True)
+    def rtl_capabilities() -> dict[str, Any]:
         """Décrire les sources disponibles, limites et absence d'exécution EDA."""
         return snapshot.capabilities()
 
-    @server.tool()
-    def rtl_modules(limit: int = 50, offset: int = 0) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_modules(limit: int = 50, offset: int = 0) -> dict[str, Any]:
         """Lister les modules depuis un index RTLPrep v1, avec pagination."""
         return snapshot.modules(limit, offset)
 
-    @server.tool()
-    def rtl_instances(limit: int = 50, offset: int = 0) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_instances(limit: int = 50, offset: int = 0) -> dict[str, Any]:
         """Lister les chemins d'instances élaborées, de façon paginée."""
         return snapshot.instances(limit, offset)
 
-    @server.tool()
-    def rtl_module(name: str, limit: int = 50, offset: int = 0) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_module(name: str, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         """Afficher la définition et les occurrences d'un module."""
         return snapshot.module(name, limit, offset)
 
-    @server.tool()
-    def rtl_instance(path: str) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_instance(path: str) -> dict[str, Any]:
         """Afficher les ports et la provenance d'une instance exacte."""
         return snapshot.instance(path)
 
-    @server.tool()
-    def rtl_signal(instance_path: str, name: str) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_signal(instance_path: str, name: str) -> dict[str, Any]:
         """Lire les déclarations et les ports d'un signal de l'index."""
         return snapshot.signal(instance_path, name)
 
-    @server.tool()
+    @server.tool(structured_output=True)
     def rtl_trace(signal: str, direction: str = "fanin", depth: int = 3,
-                  max_edges: int = 50) -> dict:
+                  max_edges: int = 50) -> dict[str, Any]:
         """Parcours borné des influences possibles, PAS preuve de causalité."""
         return snapshot.trace(signal, direction, depth, max_edges)
 
-    @server.tool()
-    def rtl_warnings(limit: int = 20, offset: int = 0) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_warnings(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les limitations explicites du graphe (pagination obligatoire)."""
         return snapshot.warnings(limit, offset)
 
-    @server.tool()
-    def rtl_source(filename: str, line: int, radius: int = 3) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_source(filename: str, line: int, radius: int = 3) -> dict[str, Any]:
         """Lire un extrait d'un fichier expressément autorisé par le manifeste."""
         return snapshot.source(filename, line, radius)
 
-    @server.tool()
-    def rtl_validations(limit: int = 20, offset: int = 0) -> dict:
+    @server.tool(structured_output=True)
+    def rtl_validations(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les statuts de rapports existants, sans exécuter de validation."""
         return snapshot.validations(limit, offset)
 
