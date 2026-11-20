@@ -24,6 +24,9 @@ et des limites de cette première version.
 **Nouveau chapitre :** [Case, concaténations, bit-select et generate](systemverilog-avance.md)
 — explications ligne par ligne à partir d'une véritable sortie AST slang v12.1.
 
+**Expérience sur un vrai CPU RISC-V :** [décodeur compressé CV32E40P, résultats,
+bugs découverts et corrections](test-cv32e40p-reel.md).
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
