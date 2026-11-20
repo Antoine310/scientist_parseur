@@ -321,6 +321,31 @@ plusieurs chemins de fan-in, sans en faire une preuve formelle.
 
 Guide : [constantes et test réel de l'ALU](constantes-et-alu-cv32e40p.md).
 
+### Phase F — premier jalon MCP en lecture seule
+
+La PR #15 introduit `rtlprep mcp` avec le SDK **MCP Python
+officiel 2.3.0** en transport `stdio`, et dix outils de
+consultation : modules, hiérarchie, instances, signaux,
+`fanin`/`fanout`, avertissements, extraits RTL et
+rapports de validation **préexistants**.
+
+Les chemins d'artefacts sont autorisés **au démarrage**, jamais
+fournis comme accès disque libre par le modèle. Les résultats
+sont paginés, les traversées limitées, les warnings conservés.
+MCP ne compile pas, ne simule pas et ne **prouve rien par lui-même**.
+
+La CI vérifie un véritable échange `tools/list` puis
+`tools/call` par le **client MCP officiel**, lancé en
+sous-processus `stdio` et branché sur les JSON réellement
+produits par slang v12.1. La connexion utilisateur à Codex
+nécessite encore une installation explicite du serveur local.
+
+La phase F reste **partielle** : pas de génération de requêtes
+multi-design, de lancement EDA avec approbation, de sandbox
+forte ou de benchmark qualité/cout de contexte.
+
+Voir [le guide Codex/MCP](mcp-codex-lecture-seule.md).
+
 ## Phase F — Codex, conversation et MCP (v0.7)
 
 **Priorité : après un socle de validation fiable. Budget API : 0 € possible.**

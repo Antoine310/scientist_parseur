@@ -251,6 +251,32 @@ python scripts/run_cv32e40p_popcnt_eqy.py \
 La preuve d'équivalence concerne **ces deux versions**, pas la correction
 du CPU ou la conformité fonctionnelle du module à sa spécification.
 
+## Brancher RTLPrep sur Codex grâce au serveur MCP (PR #15)
+
+**Première interface agent en lecture seule :** `rtlprep mcp` utilise
+le **SDK MCP Python officiel 2.3.0** et le transport local `stdio`.
+Codex peut interroger les modules, instances, signaux, dépendances et
+rapports de validation existants, sans lancer d'outils EDA ni modifier
+un fichier. Le SDK MCP est facultatif et demande Python **3.11+**.
+
+```bash
+python -m pip install -e '.[dev,mcp]'
+python -m rtlprep deps examples/hierarchy/design.json --out reports/hierarchy
+
+python -m rtlprep mcp \
+  --index reports/hierarchy/rtl_index.json \
+  --graph reports/hierarchy/rtl_dependencies.json \
+  --manifest examples/hierarchy/design.json \
+  --reports-dir reports/hierarchy
+```
+
+**Le programme attend sur stdin : c'est normal pour un serveur MCP.**
+Pour l'utiliser depuis Codex, ajouter la commande comme serveur stdio
+local avec `codex mcp add` et des **chemins absolus**.
+
+[**Guide complet : configurer Codex, outils disponibles, sécurité,
+protocole MCP et limites**](docs/mcp-codex-lecture-seule.md).
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
@@ -293,6 +319,7 @@ Pour les designs complexes comme CVA6, la prise en charge dépend du frontend, d
 | `simulate` | Lance un banc cocotb approuvé sous Verilator, produit JSON + xUnit |
 | `formal` | Vérifie des assertions SBY approuvées et des témoins `cover` |
 | `eqy` | Compare deux variantes RTL approuvées par équivalence formelle |
+| `mcp` | Lance un serveur MCP local de consultation des résultats existants |
 
 Les rapports sont écrits dans `reports/`, ignoré par Git. Les commandes créent aussi une empreinte SHA-256 du projet.
 

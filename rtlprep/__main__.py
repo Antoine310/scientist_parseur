@@ -28,6 +28,11 @@ def main() -> int:
     eq.add_argument("--gate", required=True, help="design.json du candidat (gate)")
     eq.add_argument("--out", default="reports/eqy", help="répertoire des résultats")
     eq.add_argument("--timeout", type=int, default=180, help="timeout EQY en secondes")
+    mcp_cmd = sub.add_parser("mcp", help="serveur MCP local en lecture seule (stdio)")
+    mcp_cmd.add_argument("--index", type=Path, default=None, help="rtl_index.json déjà calculé")
+    mcp_cmd.add_argument("--graph", type=Path, default=None, help="rtl_dependencies.json déjà calculé")
+    mcp_cmd.add_argument("--manifest", type=Path, default=None, help="design.json autorisant les extraits RTL")
+    mcp_cmd.add_argument("--reports-dir", type=Path, default=None, help="dossier des rapports JSON existants")
     q = sub.add_parser("query", help="interroger un rtl_index.json déjà généré")
     q.add_argument("index_file")
     qsub = q.add_subparsers(dest="query_type", required=True)
@@ -52,6 +57,15 @@ def main() -> int:
     trace.add_argument("--depth", type=int, default=3)
     trace.add_argument("--max-edges", type=int, default=200)
     args = p.parse_args()
+    if args.cmd == "mcp":
+        try:
+            # Import local : les autres commandes n'exigent pas le SDK MCP.
+            from .mcp_server import serve
+            serve(index_file=args.index, graph_file=args.graph,
+                  manifest_file=args.manifest, reports_dir=args.reports_dir)
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            p.exit(2, f"Erreur MCP : {exc}\\n")
     if args.cmd == "doctor":
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0
