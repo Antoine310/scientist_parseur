@@ -220,6 +220,34 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
   avant de modifier les permissions, la surface de protocole
   ou d'ajouter un outil susceptible d'exécuter du RTL.
 
+## Phase G — benchmark mesuré (PR #16)
+
+- Exécuter `python scripts/run_rtl_benchmark.py --out reports/rtl-benchmark --repeat 3`
+  avec le **vrai slang 12.1**. Aucun score n'est fabriqué si slang
+  manque ou si l'analyse échoue.
+- Le jeu de référence est `benchmarks/rtl_questions_v1.json` :
+  **35 triplets positifs**, **16 négatifs** et **7 questions** sur
+  quatre circuits de formation. Modifier les étiquettes
+  demande une revue contre le RTL et les tests d'intégration.
+- `rtlprep/benchmark.py::labelled_edge_scores()` ne mesure
+  **que ces triplets étiquetés**, et ne doit jamais être
+  présenté comme précision globale du graphe, du CPU ou d'un LLM.
+- Trois charges utiles pour la même question :
+  A = RTL complet, B = index ciblé, C = index ciblé +
+  `fanin` borné + éventuel extrait de provenance slang.
+  Les métriques sont des **octets JSON** et des mots
+  approximatifs, **pas des tokens de modèle**.
+- La CI `.github/workflows/rtl-benchmark.yml` vérifie
+  les labels contre les vrais graphes slang, prépare
+  l'ALU CV32E40P officielle avec empreintes épinglées,
+  mesure trois répétitions et sauvegarde les rapports JSON.
+- Un score de graphe sur les exemples n'est pas une
+  évaluation d'agent. Évaluer Codex demanderait un
+  jeu de questions indépendant, les mêmes paramètres,
+  des réponses réellement notées et un tokenizer réel.
+- Lire [docs/benchmark-phase-g.md](docs/benchmark-phase-g.md)
+  avant toute nouvelle optimisation basée sur ces métriques.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
