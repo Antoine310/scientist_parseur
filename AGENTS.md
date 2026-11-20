@@ -25,7 +25,7 @@ Développer RTLPrep, une CLI Python gratuite permettant d'analyser, documenter e
 ## Travail prioritaire
 - Étendre l'index structurel slang : références fichier/ligne, hiérarchie, ports et signaux.
 - Ajouter des tests avec fixtures AST synthétiques et, séparément, des tests d'intégration conditionnels aux outils EDA.
-- Ajouter cocotb, puis SBY/EQY sans les rendre obligatoires.
+- Étendre les deux bancs de test cocotb existants (compteur et FSM), puis ajouter SBY/EQY sans les rendre obligatoires.
 - Prévoir ultérieurement une interface LLM interchangeable, désactivée par défaut.
 
 Les modifications fonctionnelles expérimentales doivent rester confinées à des bancs d'essai contrôlés et documentés.
@@ -103,6 +103,27 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
   les références de compilation classées, sans supposer la complétude du graphe.
 - Conserver `dependency_coverage=partial` quand des warnings subsistent :
   l'ALU comporte encore des `Call` et des dépendances agrégées aux vecteurs.
+
+## Simulation comportementale cocotb / Verilator
+
+- `python -m pip install -e '.[dev,simulation]'` installe la dépendance
+  facultative et épinglée `cocotb==2.0.1`.
+- Version de référence : **Verilator 5.040**, exigence cocotb >= 5.036.
+  En CI : `.github/workflows/cocotb-simulation.yml`.
+- `python -m rtlprep simulate examples/counter/design.json --out reports/sim-counter`
+  : **3 tests** (enable, overflow, reset asynchrone).
+- `python -m rtlprep simulate examples/fsm/design.json --out reports/sim-fsm`
+  : **2 tests** (transitions dirigées et aléatoires reproductibles).
+- Un circuit volontairement faux `examples/counter/buggy_design.json`
+  doit produire `status=failed`, un code retour CLI 2 et au moins
+  un `testcase` échoué dans le xUnit (ne pas le corriger).
+- Toute nouvelle suite doit être explicitement ajoutée à la liste blanche
+  `TEST_SUITES` de `rtlprep/simulation.py` ; aucun nom de module
+  Python ne doit être accepté depuis un manifeste RTL non fiable.
+- `simulation.result.json` et `simulation_results.xml` sont des preuves
+  **de tests par scénarios**, jamais une preuve formelle exhaustive.
+- Lire le [cours Verilator/cocotb](docs/simulation-cocotb-verilator.md)
+  avant de modifier le worker, les statuts ou les rapports.
 
 ## Documentation pédagogique
 
