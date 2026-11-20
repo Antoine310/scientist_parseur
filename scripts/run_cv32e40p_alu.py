@@ -74,6 +74,11 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
                                    max_depth=12, max_edges=3000)
         for target in sorted(REQUIRED_OUTPUTS)
     }
+    # The real ALU reads enum items defined in cv32e40p_pkg. Fail if this
+    # semantic distinction regresses and they become fake RTL signal reads.
+    enum_names = set(graph.get("resolved_enum_symbols", []))
+    if "ALU_ADD" not in enum_names:
+        raise AssertionError("ALU_ADD enum declaration not resolved from real slang AST")
     edge_types = dict(sorted(Counter(edge["kind"] for edge in graph["edges"]).items()))
     report = {
         "project": "OpenHW CV32E40P", "upstream_repository": UPSTREAM_REPOSITORY,
@@ -88,6 +93,7 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
         "edge_types": edge_types, "ports": ports,
         "instance_paths": [item["path"] for item in index["instances"]],
         "resolved_parameter_symbols": graph.get("resolved_parameter_symbols", []),
+        "resolved_enum_symbols": graph.get("resolved_enum_symbols", []),
         "fanin_outputs": {
             port: {"reachable_signals": len(trace["visited_nodes"]),
                    "truncated": trace["truncated"],
@@ -102,8 +108,11 @@ def run_experiment(source_root: Path, out: Path, timeout: int = 180) -> dict:
     }
     (out / "cv32e40p_alu_test_report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    summary = {k: v for k, v in report.items() if k not in ("warnings", "ports", "resolved_parameter_symbols")}
+    summary = {k: v for k, v in report.items()
+               if k not in ("warnings", "ports", "resolved_parameter_symbols",
+                            "resolved_enum_symbols")}
     summary["resolved_parameters_count"] = len(report["resolved_parameter_symbols"])
+    summary["resolved_enum_count"] = len(report["resolved_enum_symbols"])
     summary["warning_examples"] = report["warnings"][:12]
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return report
