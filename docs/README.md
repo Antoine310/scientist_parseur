@@ -17,6 +17,10 @@ Bienvenue ! Cette documentation explique **le code réel de RTLPrep v0.1**, pas 
 **Nouveau :** [Index RTL v1 et requêtes CLI](index-rtl.md) — explication
 pédagogique de `rtlprep/index.py`, des métadonnées de source et de la navigation.
 
+**Phase C :** [Graphe de dépendances, fan-in / fan-out et connexions](graphe-dependances.md)
+— apprentissage détaillé de `rtlprep/dependencies.py`, des relations typées
+et des limites de cette première version.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
