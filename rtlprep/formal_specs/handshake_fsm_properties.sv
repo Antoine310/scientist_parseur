@@ -6,9 +6,11 @@ module handshake_fsm_formal (
     input wire ack
 );
     wire busy, done;
+    wire [1:0] actual_state;
+    // Visibilité non invasive : port de diagnostic compilé sous FORMAL.
     handshake_fsm dut(
         .clk(clk), .rst_n(rst_n), .start(start), .ack(ack),
-        .busy(busy), .done(done)
+        .busy(busy), .done(done), .formal_state(actual_state)
     );
 
     localparam [1:0] IDLE = 2'd0, BUSY = 2'd1, DONE = 2'd2;
@@ -38,7 +40,7 @@ module handshake_fsm_formal (
             // l'égalité des états écarte ces faux états d'induction,
             // sans AJOUTER une hypothèse assume sur le DUT.
             assert(expected_state != 2'd3);
-            assert(dut.state_q == expected_state);
+            assert(actual_state == expected_state);
             assert(busy == (expected_state == BUSY));
             assert(done == (expected_state == DONE));
             assert(!(busy && done));
