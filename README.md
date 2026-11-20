@@ -308,6 +308,43 @@ elle-même les fichiers CPU officiels.
 
 [**Lire le cours pédagogique et les mesures de la phase G**](docs/benchmark-phase-g.md).
 
+## Laboratoire de sécurité RTL : contrôler les privilèges (PR #17)
+
+Premier exercice défensif sur une **IP de formation inspirée d'un CSR RISC-V** :
+trois versions d'un registre protégé (correcte, refactorisée,
+**volontairement vulnérable**) et un contrat indépendant de contrôle d'accès.
+
+Le même banc de test doit **réussir** pour le RTL sain et **échouer**
+sur la variante où `machine_mode && !debug_locked` devient
+`machine_mode || !debug_locked`. La CI utilise **le vrai slang,
+Verilator/cocotb, Yosys/SBY et EQY** puis conserve les traces VCD.
+
+```bash
+# Générer les graphes comparés
+python -m rtlprep deps examples/security_csr/design.json \
+  --out reports/security-lab/rtl-gold
+python -m rtlprep deps examples/security_csr/buggy_design.json \
+  --out reports/security-lab/rtl-buggy
+
+# Après installation facultative des outils de simulation et formels
+python -m rtlprep simulate examples/security_csr/design.json \
+  --out reports/security-lab/sim-gold
+python -m rtlprep formal examples/security_csr/design.json \
+  --out reports/security-lab/formal-gold
+```
+
+**Fait intéressant :** le circuit sain et le mutant ont les
+**8 mêmes arêtes de dépendances typées**, malgré un comportement
+de sécurité différent. Le graphe **localise les influences**,
+mais **ne remplace pas** les assertions et les essais.
+
+[**Tutoriel complet : scénarios, contrat de sécurité, contre-exemples et
+exercice à poser à un agent**](docs/laboratoire-securite-csr.md).
+
+**Cet exercice utilise une faille artificielle. Aucune vulnérabilité
+n'est revendiquée sur le véritable processeur CV32E40P et aucun agent
+autonome n'a encore été évalué.**
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
