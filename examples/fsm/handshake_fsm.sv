@@ -7,6 +7,11 @@ module handshake_fsm (
     input  logic ack,
     output logic busy,
     output logic done
+`ifdef FORMAL
+    // Port de diagnostic présent UNIQUEMENT avec Yosys read -formal.
+    // Aucun effet sur la simulation/synthèse normale du DUT.
+    , output wire [1:0] formal_state
+`endif
 );
     typedef enum logic [1:0] {IDLE, BUSY, DONE} state_t;
     state_t state_q, state_d;
@@ -30,4 +35,7 @@ module handshake_fsm (
 
     assign busy = (state_q == BUSY);
     assign done = (state_q == DONE);
+`ifdef FORMAL
+    assign formal_state = state_q;
+`endif
 endmodule
