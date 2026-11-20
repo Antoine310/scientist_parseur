@@ -1,0 +1,109 @@
+name: RTLPrep Phase G reproducible benchmarks (real slang)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-local-and-real-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Checkout pinned official OpenHW CV32E40P ALU dependency sources
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cv32e40p
+          ref: b353438ff469c030c89f6804f3b24a2852880e8b
+          path: upstream_cv32e40p
+          sparse-checkout: |
+            rtl/include/cv32e40p_pkg.sv
+            rtl/cv32e40p_alu.sv
+            rtl/cv32e40p_alu_div.sv
+            rtl/cv32e40p_popcnt.sv
+            rtl/cv32e40p_ff_one.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Verify actual upstream revision
+        run: |
+          test "$(git -C upstream_cv32e40p rev-parse HEAD)" = "b353438ff469c030c89f6804f3b24a2852880e8b"
+      - name: Install RTLPrep for offline unit tests
+        run: python -m pip install -e '.[dev]'
+      - name: Unit-test benchmark contracts without EDA or an LLM
+        run: python -m pytest -q tests/test_benchmark.py
+      - name: Install REAL pinned slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Prepare official RISC-V ALU manifest with upstream file-hash checks
+        run: |
+          python scripts/run_cv32e40p_alu.py \
+            --source-root upstream_cv32e40p \
+            --out reports/benchmark-cpu-prep \
+            --timeout 180
+      - name: Run identical query workloads across raw, index and hybrid contexts
+        run: |
+          python scripts/run_rtl_benchmark.py \
+            --out reports/rtl-benchmark \
+            --repeat 3 --timeout 180 \
+            --cpu-manifest reports/benchmark-cpu-prep/cv32e40p_alu_design.json
+      - name: Verify ALL labelled examples and distinguish metrics from LLM claims
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("reports/rtl-benchmark/benchmark_report.json").read_text())
+          assert not r["benchmarked_real_llm"] and not r["validated_llm_accuracy"]
+          assert len(r["cases"]) == 5, r["cases"].keys()
+          agg=r["aggregate_labelled"]
+          assert agg["positive_labels"] == 35 and agg["negative_labels"] == 16, agg
+          assert (agg["tp"], agg["fn"], agg["fp"], agg["tn"]) == (35, 0, 0, 16), agg
+          assert r["cases"]["cv32e40p_alu"]["counts"]["instances"] == 4
+          assert r["cases"]["cv32e40p_alu"]["counts"]["edges"] >= 300
+          for name, case in r["cases"].items():
+              assert len(case["timing"]["runs"]) == 3
+              assert case["counts"]["nodes"] > 0
+              for q in case["queries"]:
+                  if name != "cv32e40p_alu":
+                      assert not q["trace_truncated"], q
+                      assert not q["missing_reachable"], q
+                  assert all(v > 0 for v in q["payload_bytes"].values()), q
+          print("BENCHMARK_REAL_SLANG_LABELLED_PASS", agg)
+          print("BENCHMARK_CONTEXT_PAYLOAD_BYTES", r["aggregate_payload_bytes"])
+          print("BENCHMARK_CONTEXT_RATIO", r["aggregate_hybrid_vs_raw"])
+          print("BENCHMARK_CPU_WARNINGS", r["cases"]["cv32e40p_alu"]["counts"]["warnings"])
+          PY
+      - name: Upload audit-ready benchmark measurements and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-phase-g-benchmark-report
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/rtl-benchmark/benchmark_report.json
+            reports/rtl-benchmark/*/benchmark.case.json
+            reports/benchmark-cpu-prep/cv32e40p_alu_test_report.json
+            reports/rtl-benchmark/*/run-01/deps.result.json
+            reports/rtl-benchmark/*/run-01/index.result.json
+            reports/rtl-benchmark/*/run-01/analyze.result.json
+            reports/rtl-benchmark/*/run-01/analyze.stderr.log
