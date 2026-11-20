@@ -57,6 +57,15 @@ def main() -> int:
     trace.add_argument("--depth", type=int, default=3)
     trace.add_argument("--max-edges", type=int, default=200)
     args = p.parse_args()
+    if args.cmd == "mcp":
+        try:
+            # Import local : les autres commandes n'exigent pas le SDK MCP.
+            from .mcp_server import serve
+            serve(index_file=args.index, graph_file=args.graph,
+                  manifest_file=args.manifest, reports_dir=args.reports_dir)
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            p.exit(2, f"Erreur MCP : {exc}\\n")
     if args.cmd == "doctor":
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0
