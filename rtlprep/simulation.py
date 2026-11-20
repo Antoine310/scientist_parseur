@@ -23,6 +23,7 @@ from .runner import fingerprint, run_command
 TEST_SUITES = {
     "counter": "rtlprep.sim_tests.counter",
     "handshake_fsm": "rtlprep.sim_tests.handshake_fsm",
+    "secure_csr": "rtlprep.sim_tests.secure_csr",
 }
 
 
@@ -87,6 +88,13 @@ def simulate(d: Design, out: Path, timeout: int = 180) -> dict:
     if timeout < 1:
         report.update(status="failed", error="timeout doit être >= 1 seconde")
         return _save(out, report)
+    if d.top == "secure_csr":
+        from .security_lab import validate_security_design
+        try:
+            validate_security_design(d)
+        except ValueError as exc:
+            report.update(status="failed", error=str(exc))
+            return _save(out, report)
     if d.top not in TEST_SUITES:
         report.update(status="failed",
                       error=f"Aucun banc cocotb approuvé pour le top {d.top!r}")
