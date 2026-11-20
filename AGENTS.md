@@ -168,6 +168,29 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
   un processus EQY de code retour 0 n'est pas seul suffisant.
 - Cours et limites : [docs/equivalence-eqy.md](docs/equivalence-eqy.md).
 
+## Équivalence EQY sur la véritable IP OpenHW popcount
+
+- Lire le [tutoriel de preuve sur le CV32E40P](docs/eqy-cv32e40p-popcnt.md).
+- Le workflow `.github/workflows/cv32e40p-popcnt-eqy.yml` récupère
+  **`rtl/cv32e40p_popcnt.sv`** au commit OpenHW
+  `b353438ff469c030c89f6804f3b24a2852880e8b`.
+  Son Git blob attendu est `c7fe53e810c411a4cef0ab6ae8591b9e54e652f9`.
+- `scripts/run_cv32e40p_popcnt_eqy.py` génère **deux candidats**
+  à partir du fichier authentique **sans modifier le clone officiel** :
+  refactorisation `a+b` → `b+a` et mutant `a+b` → `a-b`.
+- Résultat réel : **31 partitions prouvées équivalentes** pour
+  la refactorisation ; **31 partitions analysées**, avec
+  contre-exemple VCD, pour le mutant non équivalent.
+- L'exception à la liste blanche `TRUSTED_PAIRS` dans
+  `rtlprep/equivalence.py` est fondée sur **les octets exacts**
+  de la source et des transformations approuvées ; ne jamais
+  accepter un candidat seulement parce que son nom paraît bon.
+- Les tests Python `tests/test_eqy_cv32e40p.py` empêchent
+  les imports de sources mutées, les candidats non autorisés
+  et les simulations de faux fichiers d'origine.
+- Ne pas transformer cette équivalence **inter-versions**
+  en preuve de correction de l'IP, de l'ALU ou du CPU.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
