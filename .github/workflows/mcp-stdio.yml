@@ -1,0 +1,75 @@
+name: MCP read-only stdio integration with real slang
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-real-protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install optional MCP v2 SDK and unit tests
+        run: |
+          python -m pip install -e '.[dev,mcp]'
+          python - <<'PY'
+          import importlib.metadata
+          from mcp.server import MCPServer
+          v=importlib.metadata.version("mcp")
+          print("OFFICIAL_MCP_SDK_VERSION", v, MCPServer)
+          assert v == "2.3.0", v
+          PY
+      - name: Test read-only snapshot and security boundaries without EDA
+        run: python -m pytest -q tests/test_mcp_data.py
+      - name: Install real slang v12.1 to generate non-invented reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Produce genuine precomputed structure and dependency graph
+        run: |
+          python -m rtlprep deps examples/hierarchy/design.json --out reports/mcp-hierarchy
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out=Path("reports/mcp-hierarchy")
+          index=json.loads((out/"rtl_index.json").read_text())
+          graph=json.loads((out/"rtl_dependencies.json").read_text())
+          assert index["schema_version"] == 1 and graph["schema_version"] == 1
+          assert index["top"] == graph["top"] == "hierarchy_top"
+          assert len(graph["edges"]) >= 4
+          print("REAL_MCP_INPUT_COUNTS", index["counts"], graph["counts"])
+          PY
+      - name: Exercise SDK v2 tools/list and tools/call over a REAL stdio subprocess
+        run: |
+          python scripts/test_mcp_stdio.py \
+            --index reports/mcp-hierarchy/rtl_index.json \
+            --graph reports/mcp-hierarchy/rtl_dependencies.json \
+            --manifest examples/hierarchy/design.json \
+            --reports-dir reports/mcp-hierarchy
+      - name: Upload reports if integration fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-stdio-diagnostics
+          retention-days: 14
+          if-no-files-found: warn
+          path: reports/mcp-hierarchy/
