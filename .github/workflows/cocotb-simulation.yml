@@ -24,7 +24,7 @@ jobs:
       - name: Install pinned Verilator >= 5.036
         uses: veryl-lang/setup-verilator@v2
         with:
-          version: 5.040
+          version: '5.040'
       - name: Check the actual simulator version
         run: |
           verilator --version
