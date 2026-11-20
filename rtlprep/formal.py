@@ -62,9 +62,12 @@ def _persist(out: Path, result: dict) -> dict:
 
 def _sby_status(path: Path) -> str | None:
     try:
-        value = path.read_text(encoding="utf-8").strip().upper()
+        # sby écrit par exemple "UNKNOWN 4 0" et non seulement "UNKNOWN".
+        # Seul le premier champ contient le verdict; la suite code rc/temps.
+        tokens = path.read_text(encoding="utf-8").strip().upper().split()
     except OSError:
         return None
+    value = tokens[0] if tokens else None
     return value if value in ("PASS", "FAIL", "UNKNOWN", "ERROR", "TIMEOUT") else None
 
 
