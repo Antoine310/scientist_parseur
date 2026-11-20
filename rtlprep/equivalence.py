@@ -27,6 +27,10 @@ TRUSTED_PAIRS = {
     "handshake_fsm": ("examples/fsm/handshake_fsm.sv", {
         "examples/fsm/handshake_fsm_refactored.sv",
     }),
+    "secure_csr": ("examples/security_csr/secure_csr.sv", {
+        "examples/security_csr/secure_csr_refactored.sv",
+        "examples/security_csr/secure_csr_buggy.sv",
+    }),
 }
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SAFE_FILENAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
