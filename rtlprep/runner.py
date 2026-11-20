@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .analysis import summarize_ast
 from .index import build_index
+from .dependencies import build_dependency_graph
 from .manifest import Design
 
 TOOL_NAMES = ("slang", "verilator", "yosys", "sby", "eqy", "openroad")
@@ -208,6 +209,30 @@ def index_design(d: Design, out: Path, timeout: int) -> dict:
             result["status"] = "failed"
             result["error"] = f"Index AST impossible : {exc}"
     (out / "index.result.json").write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return result
+
+
+def dependency_design(d: Design, out: Path, timeout: int) -> dict:
+    """Générer index + graphe, uniquement si slang a correctement élaboré le RTL."""
+    graph_path = out / "rtl_dependencies.json"
+    graph_path.unlink(missing_ok=True)
+    result = index_design(d, out, timeout)
+    if result["status"] == "passed":
+        try:
+            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+            idx = json.loads((out / "rtl_index.json").read_text(encoding="utf-8"))
+            graph = build_dependency_graph(ast, expected_top=d.top, index=idx)
+            graph["source_fingerprint"] = fingerprint(d)
+            graph_path.write_text(json.dumps(graph, ensure_ascii=False, indent=2), encoding="utf-8")
+            result["dependencies"] = str(graph_path)
+            result["edges"] = graph["counts"]["edges"]
+            result["graph_warnings"] = graph["counts"]["warnings"]
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            result["status"] = "failed"
+            result["error"] = f"Graphe RTL impossible : {exc}"
+    (out / "deps.result.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return result

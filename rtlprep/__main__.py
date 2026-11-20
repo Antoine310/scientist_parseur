@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 
 from .manifest import load_design
-from .runner import analyze, doctor, fingerprint, lint, synth, index_design
+from .runner import analyze, doctor, fingerprint, lint, synth, index_design, dependency_design
+from .dependencies import trace_dependencies
 from .index import (get_instance, get_instance_tree, get_module_summary,
                     get_signal_info, get_source_context, list_modules)
 
@@ -14,7 +15,7 @@ def main() -> int:
     p = argparse.ArgumentParser(prog="rtlprep", description="Outils RTL locaux, sans cle API")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("doctor", help="afficher les outils et paquets disponibles")
-    for name in ("analyze", "lint", "synth", "all", "index"):
+    for name in ("analyze", "lint", "synth", "all", "index", "deps"):
         s = sub.add_parser(name)
         s.add_argument("manifest", help="chemin vers design.json")
         s.add_argument("--out", default="reports", help="dossier de sortie")
@@ -36,11 +37,23 @@ def main() -> int:
     source.add_argument("filename")
     source.add_argument("--line", type=int, required=True)
     source.add_argument("--radius", type=int, default=3)
+    trace = sub.add_parser("trace", help="fan-in / fan-out à partir du graphe")
+    trace.add_argument("graph_file", help="rtl_dependencies.json")
+    trace.add_argument("direction", choices=("fanin", "fanout"))
+    trace.add_argument("node", help="signal au format chemin_instance.signal")
+    trace.add_argument("--depth", type=int, default=3)
+    trace.add_argument("--max-edges", type=int, default=200)
     args = p.parse_args()
     if args.cmd == "doctor":
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0
     try:
+        if args.cmd == "trace":
+            graph = json.loads(Path(args.graph_file).read_text(encoding="utf-8"))
+            result = trace_dependencies(graph, args.node, args.direction,
+                                        max_depth=args.depth, max_edges=args.max_edges)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
         if args.cmd == "query":
             data = json.loads(Path(args.index_file).read_text(encoding="utf-8"))
             if not isinstance(data, dict) or data.get("schema_version") != 1:
@@ -67,7 +80,7 @@ def main() -> int:
             "include_dirs": [str(x) for x in d.includes],
             "defines": d.defines, "fingerprint": fingerprint(d),
         }, indent=2), encoding="utf-8")
-        tasks = {"analyze": analyze, "lint": lint, "synth": synth, "index": index_design}
+        tasks = {"analyze": analyze, "lint": lint, "synth": synth, "index": index_design, "deps": dependency_design}
         keys = ["analyze", "lint", "synth"] if args.cmd == "all" else [args.cmd]
         statuses = []
         for key in keys:
@@ -76,6 +89,9 @@ def main() -> int:
             print(f"[{key}] {result['status']}")
             if result.get("error"):
                 print(f"  {result['error']}")
+            if result.get("dependencies"):
+                print(f"  graphe : {result['dependencies']}")
+                print(f"  arêtes : {result['edges']} ; avertissements : {result['graph_warnings']}")
             if result.get("index"):
                 print(f"  index : {result['index']}")
             if result.get("summary"):

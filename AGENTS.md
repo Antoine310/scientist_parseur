@@ -44,6 +44,19 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - Ajouter un test sur le vrai slang dans `tests/test_integration_slang.py`
   pour toute nouvelle catégorie de symbole.
 
+## Graphe de dépendances — MVP
+
+- `python -m rtlprep deps examples/dependencies/design.json --out reports/deps`
+  génère `rtl_dependencies.json` à partir du vrai slang.
+- `python -m rtlprep trace reports/deps/rtl_dependencies.json fanin dependency_top.out --depth 6`
+  suit les influences représentées ; utiliser `fanout` pour l'autre sens.
+- Consulter [docs/graphe-dependances.md](docs/graphe-dependances.md)
+  avant de modifier le schéma d'arêtes.
+- Toute nouvelle catégorie d'AST doit être confirmée sur le vrai slang,
+  testée sur au moins un circuit autorisé, puis documentée.
+- **Ne pas** transformer une arête en preuve de causalité ou de sécurité ;
+  préserver les warnings et les limitations du graphe.
+
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.

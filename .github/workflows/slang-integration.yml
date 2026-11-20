@@ -37,7 +37,7 @@ jobs:
           sudo install -m 0755 "$BIN_PATH" /usr/local/bin/slang
           slang --version
       - name: Run unit tests
-        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py tests/test_index.py
+        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py tests/test_index.py tests/test_dependencies.py
       - name: Run REAL slang tests (must not be skipped)
         run: |
           python -m pytest -vv -rs -o addopts='' tests/test_integration_slang.py
@@ -52,6 +52,19 @@ jobs:
           python -m rtlprep query reports/ci-index/rtl_index.json module leaf
           python -m rtlprep query reports/ci-index/rtl_index.json signal hierarchy_top.first status
           python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
+      - name: Verify dependency graph and signal traces
+        run: |
+          python -m rtlprep deps examples/dependencies/design.json --out reports/ci-deps
+          python -m rtlprep trace reports/ci-deps/rtl_dependencies.json fanin dependency_top.out --depth 6
+          python -m rtlprep trace reports/ci-deps/rtl_dependencies.json fanout dependency_top.a --depth 6
+          python - <<'PY'
+          import json
+          graph=json.load(open("reports/ci-deps/rtl_dependencies.json"))
+          print("DEPENDENCY_COUNTS", graph["counts"])
+          print("WARNINGS", graph["warnings"])
+          assert graph["counts"]["warnings"] == 0
+          assert graph["counts"]["edges"] >= 14
+          PY
       - name: Upload diagnostic logs if job fails
         if: failure()
         uses: actions/upload-artifact@v4

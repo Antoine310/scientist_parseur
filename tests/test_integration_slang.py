@@ -69,3 +69,37 @@ def test_real_slang_structured_index(tmp_path):
         assert info["ports"][0]["source"]["file"].endswith("leaf.sv")
         assert info["ports"][0]["source"]["line"] >= 1
     assert idx["instances"][0]["source"]["file"].endswith("top.sv")
+
+
+def test_real_slang_dependency_graph(tmp_path):
+    """Contrôle sémantique des vrais nœuds slang : data/control/event/ports."""
+    import json
+    from rtlprep.runner import dependency_design
+    from rtlprep.dependencies import trace_dependencies
+
+    d = load_design(ROOT / "examples/dependencies/design.json")
+    result = dependency_design(d, tmp_path, timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    edges = {(e["source"], e["target"], e["kind"]) for e in graph["edges"]}
+    expected = {
+        ("dependency_top.a", "dependency_top.child.a", "port_input"),
+        ("dependency_top.b", "dependency_top.child.b", "port_input"),
+        ("dependency_top.sel", "dependency_top.child.sel", "port_input"),
+        ("dependency_top.child.a", "dependency_top.child.and_result", "data"),
+        ("dependency_top.child.b", "dependency_top.child.and_result", "data"),
+        ("dependency_top.child.and_result", "dependency_top.child.y", "data"),
+        ("dependency_top.child.sel", "dependency_top.child.y", "control"),
+        ("dependency_top.child.y", "dependency_top.interm", "port_output"),
+        ("dependency_top.interm", "dependency_top.out", "data"),
+        ("dependency_top.enable", "dependency_top.count", "control"),
+        ("dependency_top.rst_n", "dependency_top.count", "control"),
+        ("dependency_top.clk", "dependency_top.count", "event"),
+        ("dependency_top.rst_n", "dependency_top.count", "event"),
+        ("dependency_top.count", "dependency_top.count", "data"),
+    }
+    assert expected.issubset(edges), sorted(expected - edges)
+    assert graph["counts"]["warnings"] == 0, graph["warnings"]
+    assert "dependency_top.a" in trace_dependencies(
+        graph, "dependency_top.out", "fanin", max_depth=6
+    )["visited_nodes"]
