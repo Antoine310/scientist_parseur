@@ -6,6 +6,7 @@ EQY prouve des partitions des circuits gold/gate, pas une propriété de sécuri
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -29,6 +30,53 @@ TRUSTED_PAIRS = {
 }
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SAFE_FILENAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
+# Pinned OpenHW CV32E40P release source; exact Git blob object from commit
+# b353438ff469c030c89f6804f3b24a2852880e8b. No vendor file copied.
+POPCNT_GOLD_BLOB = "c7fe53e810c411a4cef0ab6ae8591b9e54e652f9"
+POPCNT_ASSIGN = "  assign result_o = {1'b0, cnt_l4[0]} + {1'b0, cnt_l4[1]};"
+POPCNT_REFACTORED = "  assign result_o = {1'b0, cnt_l4[1]} + {1'b0, cnt_l4[0]};"
+POPCNT_BUGGY = "  assign result_o = {1'b0, cnt_l4[0]} - {1'b0, cnt_l4[1]};"
+POPCNT_GATES = {
+    "cv32e40p_popcnt_refactored.sv": POPCNT_REFACTORED,
+    "cv32e40p_popcnt_buggy.sv": POPCNT_BUGGY,
+}
+
+
+def git_blob_digest(data: bytes) -> str:
+    """Git SHA-1 blob identity, also checked by the pinned upstream workflow."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + bytes([0]) + data).hexdigest()
+
+
+def popcnt_variant(original: str, *, filename: str) -> str:
+    """Deterministic one-line output refactor/mutant; never edit upstream source."""
+    if filename not in POPCNT_GATES:
+        raise ValueError(f"Variante popcnt non approuvée : {filename}")
+    if original.count(POPCNT_ASSIGN) != 1:
+        raise ValueError("La ligne originale du résultat popcnt est absente ou ambiguë")
+    return original.replace(POPCNT_ASSIGN, POPCNT_GATES[filename], 1)
+
+
+def _validate_real_popcnt(gold: Design, gate: Design) -> None:
+    """Accept only original pinned CPU bytes and precisely generated variants.
+
+    Unlike a name-based allowlist, checking contents prevents arbitrary
+    third-party source execution under the trusted CV32E40P top name.
+    """
+    reference, candidate = gold.sources[0], gate.sources[0]
+    if reference.name != "cv32e40p_popcnt.sv" or candidate.name not in POPCNT_GATES:
+        raise ValueError("Noms des fichiers CV32E40P popcnt non approuvés")
+    if reference.stat().st_size > 100_000 or candidate.stat().st_size > 100_000:
+        raise ValueError("Fichier CV32E40P anormalement volumineux")
+    ref_bytes = reference.read_bytes()
+    if git_blob_digest(ref_bytes) != POPCNT_GOLD_BLOB:
+        raise ValueError("Référence popcnt différente du fichier OpenHW épinglé")
+    try:
+        expected = popcnt_variant(ref_bytes.decode("utf-8"), filename=candidate.name)
+    except UnicodeDecodeError as exc:
+        raise ValueError("Source OpenHW invalide (UTF-8)") from exc
+    if candidate.read_bytes() != expected.encode("utf-8"):
+        raise ValueError("Variante popcnt non conforme à la transformation approuvée")
+
 
 
 def _trusted_path(path: Path, allowed: str) -> bool:
@@ -38,16 +86,19 @@ def _trusted_path(path: Path, allowed: str) -> bool:
 
 def validate_pair(gold: Design, gate: Design) -> None:
     """Confirme deux circuits d'entraînement autorisés, pas seulement même top."""
-    if gold.top != gate.top or gold.top not in TRUSTED_PAIRS:
+    if gold.top != gate.top or gold.top not in (*TRUSTED_PAIRS, "cv32e40p_popcnt"):
         raise ValueError("Comparaison EQY non autorisée : tops incompatibles ou non approuvés")
     if (len(gold.sources) != 1 or len(gate.sources) != 1
             or gold.includes or gate.includes or gold.defines or gate.defines):
         raise ValueError("EQY v1 : une source RTL de chaque côté, sans includes/defines")
-    expected_gold, allowed_gates = TRUSTED_PAIRS[gold.top]
-    if not _trusted_path(gold.sources[0], expected_gold):
-        raise ValueError("La référence gold n'est pas un fichier RTL approuvé")
-    if not any(_trusted_path(gate.sources[0], x) for x in allowed_gates):
-        raise ValueError("La variante gate n'est pas un fichier RTL approuvé")
+    if gold.top == "cv32e40p_popcnt":
+        _validate_real_popcnt(gold, gate)
+    else:
+        expected_gold, allowed_gates = TRUSTED_PAIRS[gold.top]
+        if not _trusted_path(gold.sources[0], expected_gold):
+            raise ValueError("La référence gold n'est pas un fichier RTL approuvé")
+        if not any(_trusted_path(gate.sources[0], x) for x in allowed_gates):
+            raise ValueError("La variante gate n'est pas un fichier RTL approuvé")
     for file in (gold.sources[0], gate.sources[0]):
         if not SAFE_FILENAME.fullmatch(file.name):
             raise ValueError("Nom de fichier incompatible avec Yosys/EQY")

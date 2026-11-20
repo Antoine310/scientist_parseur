@@ -45,6 +45,11 @@ preuve inductive, témoin `cover`, `UNKNOWN` et hypothèses de reset.
 et détecter une régression](equivalence-eqy.md). La CI utilise le vrai
 EQY et conserve une trace VCD sur la variante incorrecte du compteur.
 
+**Étude sur vrai CPU :**
+[preuve d'équivalence EQY sur le popcount CV32E40P](eqy-cv32e40p-popcnt.md)
+— sources OpenHW figées, 31 partitions, refactorisation
+commutative et mutant détecté avec contre-exemple VCD.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal
