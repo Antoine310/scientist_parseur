@@ -14,6 +14,9 @@ Bienvenue ! Cette documentation explique **le code réel de RTLPrep v0.1**, pas 
 | 4 | [TP guidé : du compteur au rapport](tutoriel-compteur.md) | Installer, exécuter, lire les résultats et modifier un exemple |
 | 5 | [Tests, évolutions et exercices](tests-et-evolutions.md) | Comment tester les fonctions, améliorer le parseur, préparer les grandes architectures |
 
+**Nouveau :** [Index RTL v1 et requêtes CLI](index-rtl.md) — explication
+pédagogique de `rtlprep/index.py`, des métadonnées de source et de la navigation.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal

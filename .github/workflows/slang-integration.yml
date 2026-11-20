@@ -37,7 +37,7 @@ jobs:
           sudo install -m 0755 "$BIN_PATH" /usr/local/bin/slang
           slang --version
       - name: Run unit tests
-        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py
+        run: python -m pytest -q tests/test_starter.py tests/test_analysis.py tests/test_index.py
       - name: Run REAL slang tests (must not be skipped)
         run: |
           python -m pytest -vv -rs -o addopts='' tests/test_integration_slang.py
@@ -45,6 +45,13 @@ jobs:
         run: |
           python -m rtlprep analyze examples/hierarchy/design.json --out reports/ci-hierarchy
           python -m json.tool reports/ci-hierarchy/design_summary.json
+      - name: Exercise RTL index and CLI queries
+        run: |
+          python -m rtlprep index examples/hierarchy/design.json --out reports/ci-index
+          python -m rtlprep query reports/ci-index/rtl_index.json modules
+          python -m rtlprep query reports/ci-index/rtl_index.json module leaf
+          python -m rtlprep query reports/ci-index/rtl_index.json signal hierarchy_top.first status
+          python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
       - name: Upload diagnostic logs if job fails
         if: failure()
         uses: actions/upload-artifact@v4

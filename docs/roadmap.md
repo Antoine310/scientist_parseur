@@ -109,6 +109,18 @@ plutôt qu'un énorme fichier de RTL brut.
 
 ---
 
+### Phase B — premier jalon implémenté
+
+Le nouveau module `rtlprep/index.py` produit un index JSON
+`schema_version: 1` des **modules, instances, ports et déclarations
+`Variable/Net`**, avec leur provenance quand slang la fournit.
+Les requêtes `modules`, `tree`, `module`, `instance`, `signal`
+et les extraits de fichier sont disponibles depuis la CLI.
+
+Voir [docs/index-rtl.md](index-rtl.md). Ce n'est **pas** encore
+un graphe de dépendances, et les spécialisations paramétrées, interfaces
+et scopes complexes nécessitent encore des travaux.
+
 ## Phase C — Graphe de dépendances (v0.4)
 
 **Priorité : très haute.** C'est la fonctionnalité différenciante de RTLPrep.

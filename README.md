@@ -42,6 +42,25 @@ python -m pytest -v tests/test_integration_slang.py
 python -m rtlprep analyze examples/hierarchy/design.json --out reports/hierarchy
 ```
 
+## Nouvel index RTL : navigation dans les modules et signaux
+
+RTLPrep peut maintenant construire un **index JSON versionné** des modules,
+instances, ports et déclarations de signaux depuis l'AST réel de slang.
+Les positions de source (`source_file`, `source_line`, `source_column`)
+sont recopiées depuis le compilateur, sans deviner les emplacements.
+
+```bash
+python -m rtlprep index examples/hierarchy/design.json --out reports/hierarchy
+python -m rtlprep query reports/hierarchy/rtl_index.json modules
+python -m rtlprep query reports/hierarchy/rtl_index.json tree
+python -m rtlprep query reports/hierarchy/rtl_index.json module leaf
+python -m rtlprep query reports/hierarchy/rtl_index.json signal hierarchy_top.first status
+python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
+```
+
+**[Documentation complète et explication du code de l'index](docs/index-rtl.md).**
+C'est un index **structurel**, pas encore le graphe de fan-in/fan-out.
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
