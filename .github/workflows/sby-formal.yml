@@ -1,0 +1,96 @@
+name: SymbiYosys formal proof and counterexample
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  counter-and-fsm-formal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned open-source Yosys SBY and SMT tools
+        uses: YosysHQ/setup-oss-cad-suite@c7845bc0d335c8076aa22047e85972caa8a916df # v4
+        with:
+          version: '2026-11-18'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check actual formal toolchain
+        run: |
+          yosys -V
+          sby --version
+          z3 --version
+      - name: Install Python package and unit tests
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pytest -q tests/test_formal.py
+      - name: PROVE counter properties and COVER non-vacuity
+        run: |
+          python -m rtlprep formal examples/counter/design.json \
+            --out reports/formal-counter --timeout 150
+          python - <<'PY'
+          import json
+          report=json.load(open("reports/formal-counter/formal.result.json"))
+          assert report["status"] == "passed", report
+          assert report["proof"]["sby_status"] == "PASS", report
+          assert report["cover"]["sby_status"] == "PASS", report
+          print("COUNTER_FORMAL_VERIFIED", report["proof"], report["cover"])
+          PY
+      - name: PROVE FSM transition properties and COVER DONE state
+        run: |
+          python -m rtlprep formal examples/fsm/design.json \
+            --out reports/formal-fsm --timeout 150
+          python - <<'PY'
+          import json
+          report=json.load(open("reports/formal-fsm/formal.result.json"))
+          assert report["status"] == "passed", report
+          assert report["proof"]["sby_status"] == "PASS", report
+          assert report["cover"]["sby_status"] == "PASS", report
+          print("FSM_FORMAL_VERIFIED", report["proof"], report["cover"])
+          PY
+      - name: REQUIRE a genuine SBY counterexample on buggy counter
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep formal examples/counter/buggy_design.json \
+            --out reports/formal-buggy --timeout 150
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 2 || { echo "Expected RTLPrep exit 2, got $exit_code"; exit 1; }
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.load(open("reports/formal-buggy/formal.result.json"))
+          assert report["status"] == "failed", report
+          assert report["proof"]["sby_status"] == "FAIL", report
+          traces=report["proof"]["trace_files"]
+          assert traces and all(Path(p).is_file() for p in traces), report
+          print("BUGGY_COUNTEREXAMPLE_DETECTED", traces)
+          PY
+      - name: Upload formal reports, proof logs and traces (even on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-sby-formal-results
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/formal-*/formal.result.json
+            reports/formal-*/formal_*.sby
+            reports/formal-*/formal_*.result.json
+            reports/formal-*/formal_*.stdout.log
+            reports/formal-*/formal_*.stderr.log
+            reports/formal-*/formal_*_work/logfile.txt
+            reports/formal-*/formal_*_work/status
+            reports/formal-*/formal_*_work/engine_*/trace*.vcd
