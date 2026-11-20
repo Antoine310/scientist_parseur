@@ -63,14 +63,16 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     # slang encodes references as "symbol-address symbol-name". The address
     # refers to the *exact* semantic declaration in the same exported AST.
     # Unlike ignoring names such as OPCODE_*, this is safe with shadowing.
-    constant_declarations: dict[str, str] = {}
+    constant_declarations: dict[str, tuple[str, str]] = {}
     def collect_parameter_declarations(obj: Any) -> None:
         if isinstance(obj, list):
             for entry in obj:
                 collect_parameter_declarations(entry)
         elif isinstance(obj, dict):
-            if obj.get("kind") == "Parameter" and obj.get("addr") is not None:
-                constant_declarations[str(obj["addr"])] = str(obj.get("name", ""))
+            if obj.get("kind") in ("Parameter", "EnumValue") and obj.get("addr") is not None:
+                constant_declarations[str(obj["addr"])] = (
+                    obj["kind"], str(obj.get("name", ""))
+                )
             for key, value in obj.items():
                 if key not in ("definition", "internalSymbol", "type") and isinstance(value, (dict, list)):
                     collect_parameter_declarations(value)
@@ -379,7 +381,12 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
         "resolved_parameter_symbols": sorted(
-            constant_declarations[addr] for addr in constant_refs_seen
+            constant_declarations[addr][1] for addr in constant_refs_seen
+            if constant_declarations[addr][0] == "Parameter"
+        ),
+        "resolved_enum_symbols": sorted(
+            constant_declarations[addr][1] for addr in constant_refs_seen
+            if constant_declarations[addr][0] == "EnumValue"
         ),
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
