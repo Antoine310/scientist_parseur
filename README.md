@@ -194,6 +194,40 @@ provenant d'un projet tiers.
 **[Cours détaillé : induction, hypothèse de reset, non-vacuité et
 contre-exemples](docs/preuves-formelles-sby.md).**
 
+## Vérification d'équivalence RTL : Yosys EQY (PR #13)
+
+RTLPrep peut maintenant comparer une **référence RTL (gold)** à une
+**implémentation candidate (gate)** à l'aide de **Yosys EQY + SBY/Z3**.
+
+```bash
+# Refactorisation du compteur : équivalence attendue
+python -m rtlprep eqy examples/counter/design.json \
+  --gate examples/counter/refactored_design.json \
+  --out reports/eqy-counter
+
+# Refactorisation de la FSM : équivalence attendue
+python -m rtlprep eqy examples/fsm/design.json \
+  --gate examples/fsm/refactored_design.json \
+  --out reports/eqy-fsm
+
+# Contrôle négatif (+2 au lieu de +1) : non-équivalence ATTENDUE
+python -m rtlprep eqy examples/counter/design.json \
+  --gate examples/counter/buggy_design.json \
+  --out reports/eqy-buggy
+```
+
+Les trois comparaisons sont exécutées dans la CI sur la vraie
+**OSS CAD Suite 2026-11-18**. EQY a démontré l'équivalence
+du compteur (**1 partition**) et de la FSM (**6 partitions**),
+et fournit un **contre-exemple VCD** sur la variante incorrecte.
+
+Le rapport `equivalence.result.json` distingue **`equivalent=true`**
+(preuve), **`equivalent=false`** (contre-exemple réel) et
+**`equivalent=null`** (résultat inconclusif). Les comparaisons
+admises restent en **liste blanche** pour ce premier jalon.
+
+[**Cours pédagogique : gold/gate, partitions, preuves, erreurs et limites**](docs/equivalence-eqy.md).
+
 ## Démarrage rapide
 
 Sur Linux ou WSL2 avec Python 3.10+ :
@@ -235,6 +269,7 @@ Pour les designs complexes comme CVA6, la prise en charge dépend du frontend, d
 | `source` | Affiche un extrait d'un fichier source du manifeste |
 | `simulate` | Lance un banc cocotb approuvé sous Verilator, produit JSON + xUnit |
 | `formal` | Vérifie des assertions SBY approuvées et des témoins `cover` |
+| `eqy` | Compare deux variantes RTL approuvées par équivalence formelle |
 
 Les rapports sont écrits dans `reports/`, ignoré par Git. Les commandes créent aussi une empreinte SHA-256 du projet.
 
@@ -255,7 +290,7 @@ Créer un manifeste JSON, chemins relatifs au manifeste :
 
 - L'index structurel et le graphe de dépendances sont **des sous-ensembles du langage** : ils ne modélisent pas exhaustivement tous les circuits SystemVerilog.
 - Le nombre de cellules Yosys ne mesure ni la surface physique ni la puissance.
-- Les tests slang et les simulations cocotb/Verilator sont validés dans GitHub Actions. **SBY/Yosys/Z3** vérifie les assertions du compteur et de la FSM sur des bancs contrôlés ; l'équivalence **EQY** et la preuve du CPU complet ne sont pas encore intégrées.
+- Les tests slang, les simulations cocotb/Verilator, les preuves **SBY/Yosys/Z3** et les premiers tests d'équivalence **EQY** sont validés sur des bancs contrôlés. Le CPU complet n'est pas prouvé correct ; l'équivalence EQY est limitée aux paires de RTL approuvées.
 - Les logs d'outils sont des données non fiables et ne doivent jamais être exécutés comme des instructions par un futur agent.
 - L'objectif actuel est l'analyse et la vérification de circuits de test ; le projet n'implémente pas l'insertion de Trojans.
 
