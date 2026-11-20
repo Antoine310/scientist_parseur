@@ -145,7 +145,7 @@ def evaluate_case(d: Design, out: Path, *, name: str,
                   labels: dict | None, repeat: int = 3,
                   timeout: int = 180) -> dict:
     """Répéter des exécutions réelles de slang. Aucune sortie simulée."""
-    if not isinstance(repeat, int) or not 1 <= repeat <= 8:
+    if type(repeat) is not int or not 1 <= repeat <= 8:
         raise ValueError("repeat doit être compris entre 1 et 8")
     if timeout < 1:
         raise ValueError("timeout invalide")
