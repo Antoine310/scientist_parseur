@@ -66,6 +66,26 @@ def verify(root: Path) -> dict:
     eqy_good = load(root / "eqy-good/equivalence.result.json")
     eqy_bad = load(root / "eqy-buggy/equivalence.result.json")
 
+    # Refuse d'associer une preuve ancienne à un autre RTL (même top).
+    # Cela contrôle la cohérence des empreintes RTLPrep au sein du run,
+    # mais ce n'est pas une authentification cryptographique de la CI.
+    for label, graph, simulation, formal in (
+        ("gold", gold, sim_good, formal_good),
+        ("buggy", buggy, sim_bad, formal_bad),
+    ):
+        source_fp = graph["source_fingerprint"]
+        if not source_fp or any(
+            report.get("source_fingerprint") != source_fp
+            for report in (simulation, formal)
+        ):
+            raise AssertionError(
+                f"Empreintes incompatibles : graphe/simulation/SBY ({label})"
+            )
+    if (eqy_good.get("gold_fingerprint") != gold["source_fingerprint"]
+            or eqy_bad.get("gold_fingerprint") != gold["source_fingerprint"]
+            or eqy_bad.get("gate_fingerprint") != buggy["source_fingerprint"]):
+        raise AssertionError("Empreintes incompatibles avec les paires EQY")
+
     if not (sim_good["status"] == "passed"
             and sim_good["tests"] == sim_good["passed"] == 3
             and sim_good["failed"] == 0):
