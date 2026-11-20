@@ -10,10 +10,12 @@ import asyncio
 import sys
 from pathlib import Path
 
-from mcp import Client, StdioServerParameters
 
 
 async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
+    # Import tardif : pytest -q peut collecter ce script sans l'extra MCP.
+    from mcp import Client, StdioServerParameters
+
     argv = [
         "-m", "rtlprep", "mcp",
         "--index", str(index.resolve()),
@@ -37,10 +39,10 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             for x in names
         ), names
 
-        async def call(name: str, **kwargs):
-            res = await client.call_tool(name, kwargs)
-            assert not res.is_error, (name, res)
-            assert isinstance(res.structured_content, dict), (name, res)
+        async def call(tool_name: str, **kwargs):
+            res = await client.call_tool(tool_name, kwargs)
+            assert not res.is_error, (tool_name, res)
+            assert isinstance(res.structured_content, dict), (tool_name, res)
             return res.structured_content
 
         caps = await call("rtl_capabilities")
