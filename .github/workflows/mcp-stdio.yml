@@ -65,6 +65,10 @@ jobs:
             --graph reports/mcp-hierarchy/rtl_dependencies.json \
             --manifest examples/hierarchy/design.json \
             --reports-dir reports/mcp-hierarchy
+      - name: Verify procedural assignments using real slang and real MCP stdio
+        run: |
+          python -m rtlprep deps examples/counter/design.json --out reports/mcp-counter
+          python scripts/test_mcp_procedural_stdio.py
       - name: Upload reports if integration fails
         if: failure()
         uses: actions/upload-artifact@v4

@@ -354,3 +354,14 @@ ne sont pas interprétés ; le compteur `procedural_blocks_skipped` avertit
 de ce manque. Aucun résultat n'est équivalent à une preuve formelle.
 
 Exemple de test : [expressions-mcp.md](expressions-mcp.md).
+
+
+## 12. Contexte des `always_*` (PR #20)
+
+`rtl_expressions` présente également les affectations procédurales
+reconnues ; `guards` conserve les branches `if/else` et le contexte
+des `case` normaux, `events` conserve les événements explicites de
+slang. La réponse **n'infère aucune priorité nonblocking, fréquence,
+latence ni comportement à l'état X**. Consulter
+[conditions-procedurales-mcp.md](conditions-procedurales-mcp.md) pour
+les limites et pour configurer un serveur sur le compteur.

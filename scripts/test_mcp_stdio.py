@@ -73,7 +73,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert trace["edges"], trace
         assert trace["coverage"] in ("partial", "within_supported_scope")
         expressions = await call("rtl_expressions", signal="hierarchy_top.first.status")
-        assert expressions["scope"] == "continuous_assign_rhs_only", expressions
+        assert expressions["scope"] == "continuous_and_supported_procedural_assignments", expressions
         assert expressions["total"] == 1, expressions
         assert expressions["items"][0]["expression"]["kind"] == "signal", expressions
         assert expressions["items"][0]["expression"]["path"] == (

@@ -78,17 +78,25 @@ def test_unknown_rhs_fails_explicitly_without_fabricating_expression():
     assert idx["items"][0]["expression"]["right"]["kind"] == "unsupported"
 
 
-def test_procedural_assignments_explicitly_outside_scope():
+def test_procedural_assignments_are_captured_without_inventing_timing():
     ast = _ast("LogicalAnd")
     members = ast["design"]["members"][0]["body"]["members"]
-    members.append({"kind": "ProceduralBlock", "procedureKind": "AlwaysFF",
+    members.append({"kind": "ProceduralBlock", "procedureKind": "AlwaysComb",
                     "body": {"kind": "ExpressionStatement",
                              "expr": {"kind": "Assignment", "left": _ref("grant"),
-                                      "right": _ref("write_i")}}})
+                                      "right": _ref("write_i"),
+                                      "isNonBlocking": False}}})
     data = build_dependency_graph(ast, expected_top="unit")["expressions"]
-    assert data["counts"]["captured"] == 1
-    assert data["counts"]["procedural_blocks_skipped"] == 1
-    assert data["scope"] == "continuous_assign_rhs_only"
+    assert data["counts"]["captured"] == 2
+    assert data["counts"]["procedural_blocks_visited"] == 1
+    assert data["counts"]["procedural_blocks_skipped"] == 0
+    assert data["scope"] == "continuous_and_supported_procedural_assignments"
+    row = next(item for item in data["items"]
+               if item.get("assignment_kind") == "procedural")
+    assert row["procedure_kind"] == "AlwaysComb"
+    assert row["events"] == []  # No explicit clock edge implied.
+    assert row["nonblocking"] is False
+    assert row["coverage"] == "syntax_supported"
 
 
 def test_mcp_reads_only_saved_bounded_expressions(tmp_path):
@@ -121,3 +129,108 @@ def test_old_graph_does_not_pretend_expressions_are_empty(tmp_path):
     assert api.capabilities()["expressions_available"] is False
     with pytest.raises(ValueError, match="régénérer"):
         api.expressions("unit.grant")
+
+
+def _assign_procedural(rhs, *, nb=True):
+    return {"kind": "ExpressionStatement", "expr": {
+        "kind": "Assignment", "left": _ref("grant"), "right": rhs,
+        "isNonBlocking": nb,
+    }}
+
+
+def test_nested_if_else_and_always_ff_events_are_preserved():
+    ast = _ast("LogicalAnd")
+    members = ast["design"]["members"][0]["body"]["members"]
+    members.append({
+        "kind": "ProceduralBlock", "procedureKind": "AlwaysFF",
+        "body": {
+            "kind": "Timed",
+            "timing": {"kind": "EventList", "events": [
+                {"kind": "SignalEvent", "expr": _ref("write_i"), "edge": "PosEdge"},
+                {"kind": "SignalEvent", "expr": _ref("debug_locked_i"), "edge": "NegEdge"},
+            ]},
+            "stmt": {"kind": "List", "list": [{
+                "kind": "Conditional",
+                "conditions": [{"expr": {
+                    "kind": "UnaryOp", "op": "LogicalNot",
+                    "operand": _ref("debug_locked_i")}}],
+                "ifTrue": _assign_procedural({"kind": "IntegerLiteral", "value": "1'b0"}),
+                "ifFalse": {
+                    "kind": "Conditional",
+                    "conditions": [{"expr": _ref("machine_mode_i")}],
+                    "ifTrue": _assign_procedural(_ref("write_i")),
+                },
+            }]},
+        },
+    })
+    data = build_dependency_graph(ast, expected_top="unit")["expressions"]
+    rows = [x for x in data["items"] if x.get("assignment_kind") == "procedural"]
+    assert len(rows) == 2
+    reset, update = sorted(rows, key=lambda x: len(x["guards"]))
+    assert [g["branch"] for g in reset["guards"]] == ["then"]
+    assert reset["guards"][0]["expression"]["operator"] == "LogicalNot"
+    assert [g["branch"] for g in update["guards"]] == ["else", "then"]
+    assert update["guards"][1]["expression"]["path"] == "unit.machine_mode_i"
+    assert update["expression"]["path"] == "unit.write_i"
+    for item in rows:
+        assert item["coverage"] == "syntax_supported"
+        assert item["nonblocking"] is True
+        assert item["procedure_kind"] == "AlwaysFF"
+        assert [(e["edge"], e["expression"]["path"]) for e in item["events"]] == [
+            ("PosEdge", "unit.write_i"), ("NegEdge", "unit.debug_locked_i")
+        ]
+    assert data["counts"]["procedural_blocks_visited"] == 1
+
+
+def test_normal_case_items_and_default_report_selector_and_labels():
+    ast = _ast("LogicalAnd")
+    members = ast["design"]["members"][0]["body"]["members"]
+    members.append({
+        "kind": "ProceduralBlock", "procedureKind": "AlwaysComb",
+        "body": {
+            "kind": "Case", "condition": "Normal", "expr": _ref("machine_mode_i"),
+            "items": [{
+                "expressions": [{"kind": "IntegerLiteral", "value": "1'b0"}],
+                "stmt": _assign_procedural(_ref("write_i"), nb=False),
+            }],
+            "defaultCase": _assign_procedural(_ref("debug_locked_i"), nb=False),
+        },
+    })
+    data = build_dependency_graph(ast, expected_top="unit")["expressions"]
+    rows = [x for x in data["items"] if x.get("assignment_kind") == "procedural"]
+    assert len(rows) == 2
+    assert all(x["coverage"] == "syntax_supported" for x in rows)
+    assert {x["guards"][0]["branch"] for x in rows} == {"item", "default"}
+    case_item = next(x for x in rows if x["guards"][0]["branch"] == "item")
+    assert case_item["guards"][0]["selector"]["path"] == "unit.machine_mode_i"
+    assert case_item["guards"][0]["labels"][0]["value"] == "1'b0"
+    assert case_item["events"] == []
+
+
+def test_unsupported_timing_and_multiple_conditions_are_partial():
+    ast = _ast("LogicalAnd")
+    members = ast["design"]["members"][0]["body"]["members"]
+    members.append({
+        "kind": "ProceduralBlock", "procedureKind": "AlwaysFF",
+        "body": {"kind": "Timed",
+                 "timing": {"kind": "UnsupportedClocking"},
+                 "stmt": {"kind": "Conditional", "conditions": [
+                     {"expr": _ref("write_i")}, {"expr": _ref("machine_mode_i")}],
+                     "ifTrue": _assign_procedural(_ref("write_i"))}},
+    })
+    data = build_dependency_graph(ast, expected_top="unit")["expressions"]
+    row = next(x for x in data["items"] if x.get("assignment_kind") == "procedural")
+    assert row["coverage"] == "partial"
+    assert row["guards"] == [{"kind": "unsupported_guard"}]
+    assert row["events"] == []
+
+
+def test_unsupported_statements_are_counted_not_fabricated():
+    ast = _ast("LogicalAnd")
+    ast["design"]["members"][0]["body"]["members"].append({
+        "kind": "ProceduralBlock", "procedureKind": "Always",
+        "body": {"kind": "Wait", "condition": _ref("write_i")},
+    })
+    idx = build_dependency_graph(ast, expected_top="unit")["expressions"]
+    assert idx["counts"]["unsupported_statements"] == 1
+    assert idx["counts"]["captured"] == 1
