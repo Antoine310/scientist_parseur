@@ -198,3 +198,79 @@ def test_real_slang_csr_operator_difference_is_visible_in_expressions(tmp_path):
     assert "LogicalOr" not in operators(trees[0]), trees[0]
     assert "LogicalOr" in operators(trees[1]), trees[1]
     assert "LogicalAnd" in operators(trees[0]) & operators(trees[1])
+
+
+def test_real_slang_counter_if_else_and_event_provenance(tmp_path):
+    """Vrai AST slang : reset et incrément non bloquants sous gardes distinctes."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/counter/design.json")
+    result = dependency_design(design, tmp_path / "counter", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    data = graph["expressions"]
+    rows = [item for item in data["items"] if item["target"] == "counter.count"]
+    assert len(rows) == 2, data["counts"]
+    assert all(row["assignment_kind"] == "procedural" for row in rows)
+    assert all(row["procedure_kind"] == "AlwaysFF" for row in rows)
+    assert all(row["nonblocking"] is True for row in rows)
+    assert all(row["coverage"] == "syntax_supported" for row in rows), rows
+    assert {row["source"]["line"] for row in rows} == {8, 10}, rows
+    for row in rows:
+        assert {(event["edge"], event["expression"].get("path"))
+                for event in row["events"]} == {
+                    ("PosEdge", "counter.clk"),
+                    ("NegEdge", "counter.rst_n"),
+                }, row
+    reset, increment = sorted(rows, key=lambda row: len(row["guards"]))
+    assert [g["branch"] for g in reset["guards"]] == ["then"]
+    assert reset["guards"][0]["expression"]["operator"] == "LogicalNot"
+    assert reset["guards"][0]["expression"]["operand"]["path"] == "counter.rst_n"
+    assert [g["branch"] for g in increment["guards"]] == ["else", "then"]
+    assert increment["guards"][1]["expression"]["path"] == "counter.enable"
+    assert increment["expression"]["operator"] == "Add"
+
+
+def test_real_slang_csr_write_guard_in_always_ff(tmp_path):
+    """La condition write_accepted_o apparaît dans le chemin de mise à jour."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/security_csr/design.json")
+    result = dependency_design(design, tmp_path / "csr", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    rows = [item for item in graph["expressions"]["items"]
+            if item["target"] == "secure_csr.value_o"]
+    assert len(rows) == 2, rows
+    updates = [row for row in rows if len(row["guards"]) == 2]
+    assert len(updates) == 1, rows
+    update = updates[0]
+    assert [g["branch"] for g in update["guards"]] == ["else", "then"]
+    assert update["guards"][1]["expression"]["path"] == (
+        "secure_csr.write_accepted_o"
+    )
+    assert update["nonblocking"] is True
+    assert update["expression"]["path"] == "secure_csr.wdata_i"
+    assert update["coverage"] == "syntax_supported", update
+
+
+def test_real_slang_advanced_case_selection_context(tmp_path):
+    """Normal case : garder sélecteur et étiquettes, sans synthétiser un prédicat."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/advanced/design.json")
+    result = dependency_design(design, tmp_path / "advanced", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    rows = [item for item in graph["expressions"]["items"]
+            if item["target"] == "advanced_logic.result"
+            and item.get("assignment_kind") == "procedural"]
+    assert len(rows) >= 2, graph["expressions"]["counts"]
+    assert all(any(guard["kind"] == "case" for guard in item["guards"])
+               for item in rows), rows
+    assert all(any(guard["selector"].get("path") == "advanced_logic.sel"
+                   for guard in item["guards"] if guard["kind"] == "case")
+               for item in rows), rows
