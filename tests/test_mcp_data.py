@@ -133,6 +133,77 @@ def test_missing_config_and_oversized_json_denied(sample):
         ReadOnlyRtl(index_file=index)
 
 
+def test_signal_search_is_case_insensitive_bounded_and_deduplicated(sample):
+    _, index, graph, _ = sample
+    api = ReadOnlyRtl(index_file=index, graph_file=graph)
+    matches = api.find_signals("TEST_TOP.A")
+    assert matches["total"] == 1
+    assert matches["items"][0]["name"] == "a"
+    assert api.find_signals("does_not_exist")["total"] == 0
+    assert api.find_signals("a", limit=1)["next_offset"] is None
+    for query in ("", " ", "x" * 81, 5):
+        with pytest.raises(ValueError):
+            api.find_signals(query)
+    with pytest.raises(ValueError):
+        api.find_signals("a", limit=1000)
+
+
+def test_source_fingerprint_detects_stale_rtl_and_prevents_stale_excerpts(sample):
+    from rtlprep.runner import fingerprint
+    from rtlprep.manifest import load_design
+
+    manifest, index, graph, root = sample
+    fp = fingerprint(load_design(manifest))
+    for path in (index, graph):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["source_fingerprint"] = fp
+        path.write_text(json.dumps(data), encoding="utf-8")
+    report = root / "formal.result.json"
+    data = json.loads(report.read_text(encoding="utf-8"))
+    data["source_fingerprint"] = fp
+    report.write_text(json.dumps(data), encoding="utf-8")
+
+    api = ReadOnlyRtl(index_file=index, graph_file=graph,
+                      manifest_file=manifest, reports_dir=root)
+    assert api.capabilities()["source_snapshot_status"] == "matching"
+    assert api.source("known.sv", 2)["source_snapshot_status"] == "matching"
+    assert api.validations()["items"][0]["source_relation"] == "matches_current_sources"
+
+    # The server must not present a newly edited file beside stale graph data.
+    (root / "known.sv").write_text("module test_top;\nlogic changed;\nendmodule\n",
+                                   encoding="utf-8")
+    assert api.capabilities()["source_snapshot_status"] == "stale"
+    assert api.trace("test_top.a")["source_snapshot_status"] == "stale"
+    assert api.validations()["items"][0]["source_relation"] == "stale_current_sources"
+    with pytest.raises(ValueError, match="régénérer"):
+        api.source("known.sv", 2)
+
+
+def test_mismatched_index_and_graph_fingerprints_rejected(sample):
+    _, index, graph, _ = sample
+    idx = json.loads(index.read_text(encoding="utf-8"))
+    idx["source_fingerprint"] = "first"
+    index.write_text(json.dumps(idx), encoding="utf-8")
+    g = json.loads(graph.read_text(encoding="utf-8"))
+    g["source_fingerprint"] = "second"
+    graph.write_text(json.dumps(g), encoding="utf-8")
+    with pytest.raises(ValueError, match="empreintes"):
+        ReadOnlyRtl(index_file=index, graph_file=graph)
+
+
+def test_report_with_other_source_fingerprint_is_flagged(sample):
+    _, index, graph, root = sample
+    g = json.loads(graph.read_text(encoding="utf-8"))
+    g["source_fingerprint"] = "expected"
+    graph.write_text(json.dumps(g), encoding="utf-8")
+    report = root / "formal.result.json"
+    r = json.loads(report.read_text(encoding="utf-8"))
+    r["source_fingerprint"] = "different"
+    report.write_text(json.dumps(r), encoding="utf-8")
+    api = ReadOnlyRtl(index_file=index, graph_file=graph, reports_dir=root)
+    assert api.validations()["items"][0]["source_relation"] == "different_artifact"
+
+
 def test_mcp_server_is_optional_when_dependency_missing(sample):
     # Access to already generated reports never needs the MCP package.
     _, index, _, _ = sample

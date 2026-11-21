@@ -30,7 +30,8 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         names = {tool.name for tool in tools.tools}
         required = {
             "rtl_capabilities", "rtl_modules", "rtl_instances",
-            "rtl_module", "rtl_instance", "rtl_signal", "rtl_trace",
+            "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
+            "rtl_trace",
             "rtl_warnings", "rtl_source", "rtl_validations",
         }
         assert names == required, (names, required)
@@ -63,6 +64,10 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         signal = await call("rtl_signal", instance_path="hierarchy_top.first",
                             name="status")
         assert signal["instance_path"] == "hierarchy_top.first"
+        found = await call("rtl_find_signals", query="status", limit=10)
+        assert found["total"] >= 1 and all(
+            "status" in item["name"].lower() for item in found["items"]
+        ), found
         trace = await call("rtl_trace", signal="hierarchy_top.status",
                            direction="fanin", depth=3, max_edges=20)
         assert trace["edges"], trace

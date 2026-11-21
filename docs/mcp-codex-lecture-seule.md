@@ -153,7 +153,7 @@ n'installe **pas** de configuration Codex dans votre compte
 ou votre machine. La connexion effective à Codex exige
 votre installation explicite.
 
-## 6. Les dix outils disponibles
+## 6. Les onze outils disponibles
 
 | Outil MCP | Contenu / résultat |
 | --- | --- |
@@ -163,6 +163,7 @@ votre installation explicite.
 | `rtl_module` | Module demandé et occurrences paginées |
 | `rtl_instance` | Ports et provenance d'une instance |
 | `rtl_signal` | Informations sur une déclaration et ses ports |
+| `rtl_find_signals` | Recherche paginée, insensible à la casse, dans les noms de signaux et ports (1–80 caractères) |
 | `rtl_trace` | Chemins `fanin` / `fanout` bornés |
 | `rtl_warnings` | Avertissements du graphe, paginés |
 | `rtl_source` | Quelques lignes de source **autorisé** |
@@ -242,7 +243,34 @@ Si `rtl_capabilities` ou `rtl_warnings` rapporte
 des avertissements, ils doivent être présentés,
 et non supprimés de la réponse par un agent.
 
-### 7.4 Limites de sécurité encore ouvertes
+### 7.4 Empreintes et fraîcheur des sources (PR #18)
+
+À l'ouverture, le serveur rejette désormais deux artefacts `rtl_index.json`
+et `rtl_dependencies.json` ayant des `source_fingerprint` contradictoires.
+Quand un manifeste est fourni, `rtl_capabilities.source_snapshot_status`
+compare l'empreinte des sources **actuellement déclarées** à celle
+des artefacts. Valeurs : `matching`, `stale`, `unavailable` ou
+`unverifiable`. Ce contrôle est recalculé quand l'agent consulte les
+capacités, une trace, ou demande un extrait.
+
+Si l'empreinte a changé depuis la génération du graphe, `rtl_source`
+refuse de lire un extrait qui risquerait d'être associé à un graphe périmé.
+`rtl_validations[].source_relation` distingue `matches_current_sources`,
+`stale_current_sources`, `different_artifact`,
+`matches_artifacts_only` et `unverifiable`.
+L'absence d'empreinte est explicitement **inconclusive**, jamais un accord
+implicite. Même `matching` ne remplace pas une preuve : les en-têtes
+`include` transitifs non déclarés ne sont pas tous incorporés dans
+l'empreinte actuelle, et une CI compromise pourrait produire un rapport
+mensonger. Le MCP reste un snapshot et nécessite un redémarrage après
+régénération des fichiers.
+
+La recherche `rtl_find_signals(query, limit=20, offset=0)` retourne des
+noms de signaux/ports et leur provenance lorsqu'elle est connue. Elle
+ne cherche ni les affectations ni les expressions logiques. Les résultats
+sont paginés et ne constituent pas une découverte de vulnérabilité.
+
+### 7.5 Limites de sécurité encore ouvertes
 
 Ce MVP ne propose que le transport **stdio local** :
 pas de serveur HTTP accessible au réseau ni d'authentification
@@ -266,7 +294,7 @@ lance **`python -m rtlprep mcp` comme sous-processus**,
 connecte le client officiel `mcp.Client` via **stdio**,
 puis vérifie :
 
-- la découverte des **10 outils** avec `tools/list` ;
+- la découverte des **11 outils** avec `tools/list` ;
 - les appels réels `tools/call` ;
 - les modules, instances, ports, signal et fan-in ;
 - l'extraction d'une ligne RTL autorisée ;
@@ -283,7 +311,15 @@ MCP ni les exécutables EDA**.
 Le workflow dédié se trouve dans
 [`.github/workflows/mcp-stdio.yml`](../.github/workflows/mcp-stdio.yml).
 
-## 9. Ce qui vient ensuite
+## 9. Premier test Codex sous Debian WSL
+
+Un parcours de connexion pas à pas, avec environnement virtuel Python,
+vrai slang, lancement des artefacts et commandes `codex mcp add`, est
+disponible dans [le tutoriel Codex WSL](codex-wsl-premier-agent.md).
+La connexion sur une machine utilisateur **n'est pas** faite automatiquement
+par l'ouverture de cette PR.
+
+## 10. Ce qui vient ensuite
 
 Après ce premier accès **à des résultats pré-calculés**,
 on pourra ajouter, avec des autorisations explicites :
