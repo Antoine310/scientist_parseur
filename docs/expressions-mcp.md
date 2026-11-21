@@ -105,3 +105,13 @@ Cette phase représente la **syntaxe élaborée** d'un sous-ensemble RTL.
 Les prochaines phases devront modéliser les gardes des branches,
 l'écriture par bits/tranches, le temps et les registres avant de
 prétendre expliquer le comportement fonctionnel complet.
+
+
+## Évolution suivante : PR #20
+
+Ce chapitre décrit le périmètre historique de la PR #19. Depuis la PR #20,
+`rtl_expressions` expose **aussi** les RHS d'affectations procédurales,
+leurs gardes `if/else` et `case` ordinaires, ainsi que les événements
+d'horloge/reset présents dans slang. Les règles et limitations actuelles
+sont documentées dans
+[conditions-procedurales-mcp.md](conditions-procedurales-mcp.md).
