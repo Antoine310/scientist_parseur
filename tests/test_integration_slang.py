@@ -275,3 +275,52 @@ def test_real_slang_advanced_case_selection_context(tmp_path):
     assert all(any(guard["selector"].get("path") == "advanced_logic.sel"
                    for guard in item["guards"] if guard["kind"] == "case")
                for item in rows), rows
+
+
+def test_real_slang_register_flow_counter_candidates_and_guard_order(tmp_path):
+    """Trois chemins AST : reset, incrément et absence syntaxique d'écriture."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/counter/design.json")
+    result = dependency_design(design, tmp_path / "register-paths", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    records = graph["register_flow"]["items"]
+    matched = [r for r in records if r["target"] == "counter.count"]
+    assert len(matched) == 1, graph["register_flow"]["counts"]
+    row = matched[0]
+    assert row["coverage"] == "syntactic_paths_supported", row
+    assert row["path_count"] == 3, row
+    assert row["hold_candidate"] == "syntactic_unwritten_path", row
+    assert row["same_path_multiple_nba"] is False
+    assert {(e["edge"], e["signal"]) for e in row["events"]} == {
+        ("PosEdge", "counter.clk"), ("NegEdge", "counter.rst_n")
+    }
+    assert sorted(p["write_count"] for p in row["paths"]) == [0, 1, 1]
+    assert any([g["branch"] for g in p["guards"]] == ["else", "else"]
+               and p["last_nonblocking_write"] is None
+               for p in row["paths"])
+    assert {p["last_nonblocking_write"]["source"]["line"] for p in row["paths"]
+            if p["last_nonblocking_write"]} == {9, 11}
+
+
+def test_real_slang_register_flow_csr_hold_candidate(tmp_path):
+    """Le contrôle write_accepted_o laisse un chemin sans écriture dans FF."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/security_csr/design.json")
+    result = dependency_design(design, tmp_path / "csr-register-paths", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    rows = [r for r in graph["register_flow"]["items"]
+            if r["target"] == "secure_csr.value_o"]
+    assert len(rows) == 1, rows
+    row = rows[0]
+    assert row["coverage"] == "syntactic_paths_supported", row
+    assert row["hold_candidate"] == "syntactic_unwritten_path"
+    assert row["path_count"] == 3
+    assert any(p["guards"][-1]["condition"].get("path") ==
+               "secure_csr.write_accepted_o" for p in row["paths"]
+               if p["guards"][-1]["branch"] == "then"), row
