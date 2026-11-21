@@ -79,6 +79,21 @@ les nœuds AST non couverts ne sont **pas** interprétés dans cette première p
 Les arbres d'expression ne prouvent ni l'équivalence ni la sécurité d'un module.
 [Documentation et protocole de test](docs/expressions-mcp.md).
 
+## Gardes des `always_*` et événements de déclenchement (PR #20)
+
+L'index d'expressions s'étend aux affectations procédurales des
+`always_ff`, `always_comb`, `always_latch` et `always`.
+`rtl_expressions` rend les conditions `if/else` imbriquées, le contexte
+des branches `case` normales, la distinction affectation bloquante/non
+bloquante lorsque slang l'indique, ainsi que les événements
+`posedge/negedge` présents dans l'AST élaboré.
+
+**Ces données restent syntaxiques** : elles ne calculent pas les priorités
+des affectations, le maintien implicite, la latence ni la sémantique X/Z.
+Les constructions non prises en charge sont signalées et les réponses MCP
+sont bornées. Le serveur n'exécute toujours aucun EDA.
+[Guide et commandes de test](docs/conditions-procedurales-mcp.md).
+
 ## Graphe de dépendances RTL (phase C — MVP)
 
 Le nouveau module `rtlprep/dependencies.py` extrait un **graphe orienté**

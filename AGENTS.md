@@ -303,3 +303,24 @@ Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md]
 - Rejeter une requête sur un ancien graphe sans bloc `expressions` : demander de régénérer avec `deps`, puis de redémarrer le serveur MCP.
 - Les tests `tests/test_expressions.py` et `tests/test_integration_slang.py` comparent les opérateurs sur les deux variants CSR entraînement. Le workflow `mcp-stdio.yml` teste le nouvel outil sur le protocole stdio réel.
 - Lire [docs/expressions-mcp.md](docs/expressions-mcp.md) pour les limites et l'utilisation.
+
+
+## Phase I — contexte procédural d'affectations (PR #20)
+
+- L'outil MCP reste `rtl_expressions` (12 outils au total) : il retourne
+  désormais les affectations des `ContinuousAssign` **et** les affectations
+  procédurales reconnues depuis l'AST slang.
+- Chaque entrée procédurale conserve `procedure_kind`, `nonblocking` quand
+  slang le fournit, les chemins syntaxiques `guards` (`if then/else`,
+  `case` Normal item/default), et les `events` d'un `EventList`.
+- Ne jamais déduire automatiquement l'ordre/priorité de mises à jour NBA,
+  le maintien d'état, la latence, les valeurs X/Z, ni un verdict de sécurité.
+  Un garde conditionnel est une preuve **syntaxique** de chemin, pas une preuve
+  qu'un stimulus produit un effet observable.
+- Les arbres et contextes sont bornés ; `unsupported_statements`, la couverture
+  `partial` et les comptes d'objets ignorés rendent les limites visibles.
+- Les snapshots précédents doivent être recalculés avec `rtlprep deps`.
+  Conserver la cohérence index/graphe/manifest, puis redémarrer Codex.
+- Tests : `tests/test_expressions.py`, vrais cas counter/CSR/advanced dans
+  `tests/test_integration_slang.py`, et MCP stdio sur `counter.count`.
+- Lire [docs/conditions-procedurales-mcp.md](docs/conditions-procedurales-mcp.md).
