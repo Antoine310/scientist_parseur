@@ -53,6 +53,12 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.signal(instance_path, name)
 
     @server.tool(structured_output=True)
+    def rtl_find_signals(query: str, limit: int = 20,
+                         offset: int = 0) -> dict[str, Any]:
+        """Rechercher par sous-chaîne dans les noms de signaux et ports."""
+        return snapshot.find_signals(query, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_trace(signal: str, direction: str = "fanin", depth: int = 3,
                   max_edges: int = 50) -> dict[str, Any]:
         """Parcours borné des influences possibles, PAS preuve de causalité."""
