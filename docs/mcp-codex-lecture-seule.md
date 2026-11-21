@@ -365,3 +365,13 @@ slang. La réponse **n'infère aucune priorité nonblocking, fréquence,
 latence ni comportement à l'état X**. Consulter
 [conditions-procedurales-mcp.md](conditions-procedurales-mcp.md) pour
 les limites et pour configurer un serveur sur le compteur.
+
+
+## 13. Chemins d'affectation `always_ff` (PR #21)
+
+Un treizième outil en lecture seule, `rtl_register_flow`, décrit les
+alternatives syntaxiques des branches `if/else` et l'ordre des NBA
+vers une même cible **dans un même processus**. Une branche sans
+écriture est un **candidat de maintien**, non une preuve fonctionnelle.
+Les constructions non couvertes retournent `partial` / `unknown`.
+Voir [register-flow-mcp.md](register-flow-mcp.md).
