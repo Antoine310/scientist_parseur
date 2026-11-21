@@ -153,7 +153,7 @@ n'installe **pas** de configuration Codex dans votre compte
 ou votre machine. La connexion effective à Codex exige
 votre installation explicite.
 
-## 6. Les onze outils disponibles
+## 6. Les douze outils disponibles
 
 | Outil MCP | Contenu / résultat |
 | --- | --- |
@@ -164,6 +164,7 @@ votre installation explicite.
 | `rtl_instance` | Ports et provenance d'une instance |
 | `rtl_signal` | Informations sur une déclaration et ses ports |
 | `rtl_find_signals` | Recherche paginée, insensible à la casse, dans les noms de signaux et ports (1–80 caractères) |
+| `rtl_expressions` | AST borné des affectations continues vers un signal exact, sans recompiler le RTL |
 | `rtl_trace` | Chemins `fanin` / `fanout` bornés |
 | `rtl_warnings` | Avertissements du graphe, paginés |
 | `rtl_source` | Quelques lignes de source **autorisé** |
@@ -294,7 +295,7 @@ lance **`python -m rtlprep mcp` comme sous-processus**,
 connecte le client officiel `mcp.Client` via **stdio**,
 puis vérifie :
 
-- la découverte des **11 outils** avec `tools/list` ;
+- la découverte des **12 outils** avec `tools/list` ;
 - les appels réels `tools/call` ;
 - les modules, instances, ports, signal et fan-in ;
 - l'extraction d'une ligne RTL autorisée ;
@@ -336,3 +337,20 @@ on pourra ajouter, avec des autorisations explicites :
 **Aucune API LLM payante n'est nécessaire au serveur MCP** :
 il expose des preuves et données que l'on peut auditer
 indépendamment du modèle qui pose les questions.
+
+
+## 11. Premières expressions RTL (PR #19)
+
+`rtlprep deps` construit désormais l'index `expressions` **à l'intérieur
+du graphe JSON v1 existant**. La commande `rtl_expressions(signal="hierarchy_top.first.status")`
+retourne un objet paginé : arbre d'opérateurs issu de slang, cible, référence
+source si connue, `coverage` (`syntax_supported` ou `partial`),
+`scope=continuous_assign_rhs_only`, `source_snapshot_status` et limites.
+
+Le serveur ne lit **pas** `elaborated_ast.json` à la demande et ne lance pas
+slang. Un ancien graphe sans `expressions` doit être **régénéré**
+avec `rtlprep deps`, puis Codex redémarré. Les `ProceduralBlock`
+ne sont pas interprétés ; le compteur `procedural_blocks_skipped` avertit
+de ce manque. Aucun résultat n'est équivalent à une preuve formelle.
+
+Exemple de test : [expressions-mcp.md](expressions-mcp.md).
