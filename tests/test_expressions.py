@@ -108,7 +108,7 @@ def test_mcp_reads_only_saved_bounded_expressions(tmp_path):
     for limit, offset in ((0, 0), (101, 0), (1, -1)):
         with pytest.raises(ValueError):
             api.expressions("unit.grant", limit=limit, offset=offset)
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         api.expressions("../etc/passwd")
 
 
