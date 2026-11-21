@@ -188,6 +188,10 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
             if kind in ("List", "StatementList", "Block"):
                 key = {"List": "list", "StatementList": "statements", "Block": "body"}[kind]
                 children = node.get(key)
+                if isinstance(children, dict):
+                    # slang may serialize a one-statement List/Block as an AST
+                    # object instead of an array, including for real counters.
+                    return walk(children, states, depth + 1, inside_timed)
                 if not isinstance(children, list):
                     raise _Unknown("statement_list_malformed")
                 for child in children:
