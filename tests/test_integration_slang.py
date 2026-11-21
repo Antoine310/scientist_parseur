@@ -163,3 +163,38 @@ def test_real_slang_alternative_generate_branch(tmp_path):
             "alternative_top.dut.mode_result", "data") in edges
     assert ("alternative_top.dut.data_b",
             "alternative_top.dut.mode_result", "data") in edges
+
+
+def test_real_slang_csr_operator_difference_is_visible_in_expressions(tmp_path):
+    """Vérifie que slang distingue OU/ET même avec un graphe de liens identique."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    trees = []
+    edges = []
+    for name in ("design.json", "buggy_design.json"):
+        d = load_design(ROOT / "examples/security_csr" / name)
+        out = tmp_path / name
+        result = dependency_design(d, out, timeout=90)
+        assert result["status"] == "passed", result
+        graph = json.loads((out / "rtl_dependencies.json").read_text(encoding="utf-8"))
+        entries = [item for item in graph["expressions"]["items"]
+                   if item["target"] == "secure_csr.write_accepted_o"]
+        assert len(entries) == 1, graph["expressions"]["counts"]
+        assert entries[0]["coverage"] == "syntax_supported", entries[0]
+        trees.append(entries[0]["expression"])
+        edges.append({(edge["source"], edge["target"], edge["kind"])
+                      for edge in graph["edges"]})
+    assert edges[0] == edges[1]
+    assert trees[0] != trees[1]
+    # Only the buggy CSR has a LogicalOr operator; both use LogicalAnd.
+    def operators(tree):
+        if not isinstance(tree, dict):
+            return set()
+        result = {tree["operator"]} if "operator" in tree else set()
+        for key in ("left", "right", "operand"):
+            result.update(operators(tree.get(key)))
+        return result
+    assert "LogicalOr" not in operators(trees[0]), trees[0]
+    assert "LogicalOr" in operators(trees[1]), trees[1]
+    assert "LogicalAnd" in operators(trees[0]) & operators(trees[1])

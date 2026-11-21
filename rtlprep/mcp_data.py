@@ -117,6 +117,8 @@ class ReadOnlyRtl:
             "runs_eda": False, "edits_files": False, "uses_paid_llm_api": False,
             "index_available": self.index is not None,
             "graph_available": self.graph is not None,
+            "expressions_available": isinstance(
+                self.graph.get("expressions"), dict) if self.graph else False,
             "source_available": self.design is not None,
             "report_names": sorted(self.reports),
             "artifact_fingerprint_present": self.artifact_fingerprint is not None,
@@ -218,6 +220,33 @@ class ReadOnlyRtl:
         result["source_snapshot_status"] = self._source_snapshot_status()
         result["caveat"] = "Influence possible au niveau signal, pas preuve causale."
         return result
+
+    def expressions(self, signal: str, limit: int = 20,
+                    offset: int = 0) -> dict[str, Any]:
+        """Read bounded, precomputed RHS AST trees for one exact signal.
+
+        No compiler or RTL text parser is invoked. Old graphs require a new
+        `rtlprep deps` run; missing expression data is not a negative result.
+        """
+        if not isinstance(signal, str) or not 1 <= len(signal) <= 256:
+            raise ValueError("Expression : signal complet requis (1..256 caractères)")
+        graph = self._graph()
+        if signal not in graph.get("nodes", []):
+            raise KeyError(f"Signal introuvable : {signal}")
+        data = graph.get("expressions")
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("Expressions absentes : régénérer le graphe avec rtlprep deps")
+        records = data.get("items")
+        if not isinstance(records, list):
+            raise ValueError("Index d'expressions invalide")
+        matches = [entry for entry in records if entry.get("target") == signal]
+        return {
+            **_page(matches, limit, offset),
+            "scope": data.get("scope"),
+            "counts": data.get("counts"),
+            "source_snapshot_status": self._source_snapshot_status(),
+            "caveat": data.get("caveat"),
+        }
 
     def warnings(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         return _page(self._graph().get("warnings", []), limit, offset)

@@ -61,6 +61,24 @@ python -m rtlprep source examples/hierarchy/design.json leaf.sv --line 2
 **[Documentation complète et explication du code de l'index](docs/index-rtl.md).**
 C'est un index **structurel**, pas encore le graphe de fan-in/fan-out.
 
+## Expressions RTL structurées pour Codex (PR #19)
+
+`rtlprep deps` enregistre aussi dans `rtl_dependencies.json`
+les arbres AST des **parties droites d'affectations continues simples**.
+Le nouvel outil MCP `rtl_expressions(signal="instance.signal")`
+interroge ces arbres sans exécuter slang ou lire de RTL à la demande.
+Chaque réponse conserve les noms d'opérateurs issus de slang,
+un chemin hiérarchique, la provenance source et un indicateur de portée.
+Exemple : `LogicalAnd` n'est plus confondu avec `LogicalOr`
+dans le laboratoire CSR, même si les arêtes de dépendances sont identiques.
+
+Pour mettre à jour un rapport **déjà généré** avant cette évolution, relancer
+`rtlprep deps` et **redémarrer Codex**, le MCP étant un snapshot.
+Les procédures `always_*`, les conditions de branche, le mapping bit-à-bit et
+les nœuds AST non couverts ne sont **pas** interprétés dans cette première phase.
+Les arbres d'expression ne prouvent ni l'équivalence ni la sécurité d'un module.
+[Documentation et protocole de test](docs/expressions-mcp.md).
+
 ## Graphe de dépendances RTL (phase C — MVP)
 
 Le nouveau module `rtlprep/dependencies.py` extrait un **graphe orienté**

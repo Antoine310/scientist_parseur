@@ -31,7 +31,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         required = {
             "rtl_capabilities", "rtl_modules", "rtl_instances",
             "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
-            "rtl_trace",
+            "rtl_trace", "rtl_expressions",
             "rtl_warnings", "rtl_source", "rtl_validations",
         }
         assert names == required, (names, required)
@@ -72,6 +72,13 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
                            direction="fanin", depth=3, max_edges=20)
         assert trace["edges"], trace
         assert trace["coverage"] in ("partial", "within_supported_scope")
+        expressions = await call("rtl_expressions", signal="hierarchy_top.first.status")
+        assert expressions["scope"] == "continuous_assign_rhs_only", expressions
+        assert expressions["total"] == 1, expressions
+        assert expressions["items"][0]["expression"]["kind"] == "signal", expressions
+        assert expressions["items"][0]["expression"]["path"] == (
+            "hierarchy_top.first.enable"
+        ), expressions
         warnings = await call("rtl_warnings", limit=5)
         assert "total" in warnings
         source = await call("rtl_source", filename="leaf.sv", line=2, radius=1)
@@ -87,6 +94,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             ("rtl_source", {"filename": "leaf.sv", "line": 1, "radius": 50}),
             ("rtl_trace", {"signal": "hierarchy_top.status", "depth": 12}),
             ("rtl_modules", {"limit": 100000}),
+            ("rtl_expressions", {"signal": "hierarchy_top.first.status", "limit": 9999}),
         ]:
             result = await client.call_tool(tool, arguments)
             assert result.is_error, (tool, result)

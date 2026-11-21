@@ -65,6 +65,12 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.trace(signal, direction, depth, max_edges)
 
     @server.tool(structured_output=True)
+    def rtl_expressions(signal: str, limit: int = 20,
+                        offset: int = 0) -> dict[str, Any]:
+        """Lire l'AST borné des affectations continues vers un signal exact."""
+        return snapshot.expressions(signal, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_warnings(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les limitations explicites du graphe (pagination obligatoire)."""
         return snapshot.warnings(limit, offset)
