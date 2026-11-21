@@ -16,6 +16,7 @@ from .index import (
     get_signal_info, get_source_context, list_modules,
 )
 from .manifest import load_design
+from .runner import fingerprint
 
 MAX_INDEX_BYTES = 12 * 1024 * 1024
 MAX_GRAPH_BYTES = 32 * 1024 * 1024
@@ -79,6 +80,17 @@ class ReadOnlyRtl:
             if self.index.get("top") != self.graph.get("top"):
                 raise ValueError("Index et graphe : modules top différents")
         self.design = load_design(manifest_file) if manifest_file is not None else None
+        # The same top is not sufficient to establish the same RTL revision.
+        # Missing fingerprints remain explicitly unverifiable (older fixtures).
+        fingerprints = {
+            item["source_fingerprint"]
+            for item in (self.index, self.graph)
+            if item is not None and isinstance(item.get("source_fingerprint"), str)
+            and item["source_fingerprint"]
+        }
+        if len(fingerprints) > 1:
+            raise ValueError("Index et graphe : empreintes RTL incompatibles")
+        self.artifact_fingerprint = next(iter(fingerprints), None)
         tops = [item["top"] for item in (self.index, self.graph) if item is not None]
         if self.design is not None and tops and any(top != self.design.top for top in tops):
             raise ValueError("Le top du manifeste diffère des rapports")
@@ -107,6 +119,8 @@ class ReadOnlyRtl:
             "graph_available": self.graph is not None,
             "source_available": self.design is not None,
             "report_names": sorted(self.reports),
+            "artifact_fingerprint_present": self.artifact_fingerprint is not None,
+            "source_snapshot_status": self._source_snapshot_status(),
             "top": self.index.get("top") if self.index else (
                 self.graph.get("top") if self.graph else (
                     self.design.top if self.design else None)),
@@ -114,6 +128,33 @@ class ReadOnlyRtl:
             if self.graph else None,
             "caveat": "Rapports existants, non recalculés ; graphe partiel et non preuve formelle.",
         }
+
+    def _source_snapshot_status(self) -> str:
+        """Compare the recorded RTL with current declared sources when possible.
+
+        This is not cryptographic authentication of CI or transitive include files.
+        The check is repeated on use: sources can change after MCP startup.
+        """
+        if self.artifact_fingerprint is None or self.design is None:
+            return "unverifiable"
+        try:
+            return ("matching" if fingerprint(self.design) == self.artifact_fingerprint
+                    else "stale")
+        except OSError:
+            return "unavailable"
+
+    def _report_source_status(self, report: dict[str, Any]) -> str:
+        recorded = report.get("source_fingerprint")
+        if not isinstance(recorded, str) or not recorded:
+            return "unverifiable"
+        if self.artifact_fingerprint is not None and recorded != self.artifact_fingerprint:
+            return "different_artifact"
+        source_status = self._source_snapshot_status()
+        if source_status == "stale":
+            return "stale_current_sources"
+        if source_status == "matching":
+            return "matches_current_sources"
+        return "matches_artifacts_only" if self.artifact_fingerprint else "unverifiable"
 
     def modules(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         return _page(list_modules(self._index()), limit, offset)
@@ -133,6 +174,36 @@ class ReadOnlyRtl:
     def signal(self, instance_path: str, name: str) -> dict[str, Any]:
         return get_signal_info(self._index(), instance_path, name)
 
+    def find_signals(self, query: str, limit: int = 20,
+                     offset: int = 0) -> dict[str, Any]:
+        """Case-insensitive substring lookup in declared signals and ports.
+
+        A match is a name lookup, not evidence of behavioral relevance.
+        No source paths are accepted from the caller.
+        """
+        if not isinstance(query, str) or not 1 <= len(query.strip()) <= 80:
+            raise ValueError("Recherche : query doit contenir 1..80 caractères")
+        needle = query.strip().casefold()
+        idx = self._index()
+        found: dict[tuple[str, str], dict[str, Any]] = {}
+        for signal in idx["signals"]:
+            path, name = signal["instance_path"], signal["name"]
+            if needle in f"{path}.{name}".casefold():
+                found[(path, name)] = {
+                    "instance_path": path, "name": name,
+                    "kind": signal.get("kind"), "source": signal.get("source"),
+                }
+        for inst in idx["instances"]:
+            for port in inst["ports"]:
+                path, name = inst["path"], port["name"]
+                if needle in f"{path}.{name}".casefold():
+                    found.setdefault((path, name), {
+                        "instance_path": path, "name": name,
+                        "kind": "Port", "source": port.get("source"),
+                    })
+        items = [found[key] for key in sorted(found)]
+        return _page(items, limit, offset)
+
     def trace(self, signal: str, direction: str = "fanin", depth: int = 3,
               max_edges: int = 50) -> dict[str, Any]:
         if not 0 <= depth <= 6 or not 1 <= max_edges <= MAX_ITEMS:
@@ -144,6 +215,7 @@ class ReadOnlyRtl:
         warnings = result.pop("graph_warnings", [])
         result["graph_warnings_count"] = len(warnings)
         result["coverage"] = "partial" if warnings else "within_supported_scope"
+        result["source_snapshot_status"] = self._source_snapshot_status()
         result["caveat"] = "Influence possible au niveau signal, pas preuve causale."
         return result
 
@@ -153,16 +225,22 @@ class ReadOnlyRtl:
     def source(self, filename: str, line: int, radius: int = 3) -> dict[str, Any]:
         if self.design is None:
             raise ValueError("Aucun manifeste autorisé fourni au serveur")
+        status = self._source_snapshot_status()
+        if status in ("stale", "unavailable"):
+            raise ValueError("Sources RTL modifiées ou indisponibles : régénérer les rapports")
         # Un nom de base uniquement, jamais ../secret ou un chemin absolu.
         if filename != Path(filename).name or filename in (".", "..") or "\\" in filename:
             raise ValueError("Utiliser uniquement le nom d'un fichier du manifeste")
         if type(line) is not int or type(radius) is not int or not 1 <= line or not 0 <= radius <= 10:
             raise ValueError("Ligne >= 1 ; rayon limité à 0..10")
-        return get_source_context(self.design.sources, filename, line, radius)
+        excerpt = get_source_context(self.design.sources, filename, line, radius)
+        excerpt["source_snapshot_status"] = status
+        return excerpt
 
     def validations(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         items = [{
             "file": name, "data": report, "origin": "stored_report_not_reexecuted",
+            "source_relation": self._report_source_status(report),
         } for name, report in sorted(self.reports.items())]
         return _page(items, limit, offset)
 
