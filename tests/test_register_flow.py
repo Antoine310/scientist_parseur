@@ -166,8 +166,7 @@ def test_unknown_construct_never_proves_a_hold_or_priority(body, reason):
 def test_path_explosion_degrades_to_partial_not_a_fake_result():
     node = _assign(_lit("0"), 20)
     for _ in range(7):
-        node = _if(_ref("enable"), node,
-                   {"kind": "EmptyStatement"})
+        node = _if(_ref("enable"), node, node)
     graph = build_register_flow(_ast(node), expected_top="unit")
     assert graph["items"][0]["coverage"] == "partial"
     assert graph["items"][0]["hold_candidate"] == "unknown"
