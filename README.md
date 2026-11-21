@@ -277,6 +277,19 @@ local avec `codex mcp add` et des **chemins absolus**.
 [**Guide complet : configurer Codex, outils disponibles, sécurité,
 protocole MCP et limites**](docs/mcp-codex-lecture-seule.md).
 
+## Premier agent Codex sur WSL — recherche et fraîcheur MCP (PR #18)
+
+Le serveur MCP en lecture seule permet maintenant de rechercher des
+signaux/ports par nom (`rtl_find_signals`) et signale si les empreintes
+du graphe, de l'index, des rapports et des sources déclarées sont
+incohérentes ou non vérifiables. Un fichier RTL modifié depuis
+l'analyse ne peut plus être présenté comme un extrait des mêmes sources
+vérifiées lorsqu'une empreinte est disponible.
+
+**[Guide pratique Debian WSL : connecter Codex à RTLPrep](docs/codex-wsl-premier-agent.md)**.
+Cette intégration ne prouve ni une compréhension sémantique du RTL,
+ni l'efficacité d'un agent sur des problèmes tenus secrets.
+
 ## Phase G — mesurer RTLPrep avant d'ajouter d'autres agents (PR #16)
 
 Un premier **benchmark reproductible** combine le **vrai slang v12.1**,
