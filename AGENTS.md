@@ -201,9 +201,9 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - `rtlprep mcp --index ... --graph ... --manifest ... --reports-dir ...`
   démarre un serveur **stdio**, qui ne doit imprimer
   aucun texte de diagnostic sur stdout.
-- Dix outils : `rtl_capabilities`, `rtl_modules`,
+- Onze outils : `rtl_capabilities`, `rtl_modules`,
   `rtl_instances`, `rtl_module`, `rtl_instance`,
-  `rtl_signal`, `rtl_trace`, `rtl_warnings`,
+  `rtl_signal`, `rtl_find_signals`, `rtl_trace`, `rtl_warnings`,
   `rtl_source`, `rtl_validations`.
 - Aucune commande EDA, lancement shell, écriture de source,
   chemin arbitraire ni HTTP n'est autorisé dans ce MVP.
@@ -284,3 +284,12 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 ## Documentation pédagogique
 
 Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md](docs/README.md), en particulier [docs/parser-systemverilog.md](docs/parser-systemverilog.md) et [docs/outils-et-validation.md](docs/outils-et-validation.md). Les exemples doivent correspondre au code effectivement présent ; préciser lorsqu'un JSON est une fixture illustrative et quand l'outil EDA n'a pas été exécuté.
+
+## Agent MCP — recherche et preuves cohérentes (PR #18)
+
+- La recherche `rtl_find_signals` est paginée, sans regex libre et sans accès fichier arbitraire.
+- `source_snapshot_status` distingue `matching`, `stale`, `unavailable` et `unverifiable` : une empreinte absente n'est jamais une preuve de conformité.
+- `rtl_validations` indique par rapport la relation avec les sources/artéfacts : ne jamais convertir `unverifiable` en `passed` ou en fraîcheur garantie.
+- Si les sources changent, régénérer index et graphe, puis redémarrer le serveur MCP.
+- Le serveur MCP est lecture seule, **mais Codex lui-même peut utiliser des outils d'écriture** ; limiter ses permissions pour les expériences d'analyse.
+- Installation et test manuel sous Debian WSL : [guide](docs/codex-wsl-premier-agent.md).
