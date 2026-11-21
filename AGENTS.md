@@ -201,9 +201,9 @@ Les modifications fonctionnelles expérimentales doivent rester confinées à de
 - `rtlprep mcp --index ... --graph ... --manifest ... --reports-dir ...`
   démarre un serveur **stdio**, qui ne doit imprimer
   aucun texte de diagnostic sur stdout.
-- Onze outils : `rtl_capabilities`, `rtl_modules`,
+- Douze outils : `rtl_capabilities`, `rtl_modules`,
   `rtl_instances`, `rtl_module`, `rtl_instance`,
-  `rtl_signal`, `rtl_find_signals`, `rtl_trace`, `rtl_warnings`,
+  `rtl_signal`, `rtl_find_signals`, `rtl_trace`, `rtl_expressions`, `rtl_warnings`,
   `rtl_source`, `rtl_validations`.
 - Aucune commande EDA, lancement shell, écriture de source,
   chemin arbitraire ni HTTP n'est autorisé dans ce MVP.
@@ -293,3 +293,13 @@ Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md]
 - Si les sources changent, régénérer index et graphe, puis redémarrer le serveur MCP.
 - Le serveur MCP est lecture seule, **mais Codex lui-même peut utiliser des outils d'écriture** ; limiter ses permissions pour les expériences d'analyse.
 - Installation et test manuel sous Debian WSL : [guide](docs/codex-wsl-premier-agent.md).
+
+## Phase H — AST des expressions et consultation MCP (PR #19)
+
+- `rtlprep deps` enrichit le graphe JSON v1 de `expressions`, sans briser les autres champs du graphe.
+- `rtl_expressions` prend le **nom exact d'un signal hiérarchique** et retourne les parties droites des `ContinuousAssign` reconnues (pagination 1..100). Aucun parsing du texte source ni subprocess EDA dans MCP.
+- Les opérateurs `LogicalAnd`, `LogicalOr` etc. sont préservés comme **valeurs d'opérateur de slang** et ne doivent pas être présentés comme une preuve d'équivalence ou une exécution.
+- Les `always_*`, `case`, sélections de bits et expressions inconnues sont explicitement exclus ou signalés `partial` / `unsupported`. Ne pas utiliser `total=0` pour affirmer qu'un signal n'a aucune logique si l'analyse ne couvre pas les procédures.
+- Rejeter une requête sur un ancien graphe sans bloc `expressions` : demander de régénérer avec `deps`, puis de redémarrer le serveur MCP.
+- Les tests `tests/test_expressions.py` et `tests/test_integration_slang.py` comparent les opérateurs sur les deux variants CSR entraînement. Le workflow `mcp-stdio.yml` teste le nouvel outil sur le protocole stdio réel.
+- Lire [docs/expressions-mcp.md](docs/expressions-mcp.md) pour les limites et l'utilisation.
