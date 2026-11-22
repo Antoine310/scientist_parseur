@@ -3,6 +3,34 @@
 **Statut : prototype évolutif avec index structurel et graphe de dépendances MVP.** Ce projet fournit un socle Python pour analyser et valider des circuits SystemVerilog dans un environnement de test autorisé. Il ne nécessite aucun LLM ni clé API.
 
 
+## Préparer et mettre à jour les dépendances (Debian / WSL2)
+
+Un **programme d'installation et de diagnostic** est fourni dans
+[`scripts/rtlprep_env.py`](scripts/rtlprep_env.py).
+Il installe les versions approuvées de slang et d'OSS CAD Suite
+(**Verilator, Yosys, SBY, EQY, Z3**), ainsi que les dépendances Python
+(**cocotb, MCP, pytest**) dans `.venv`.
+
+```bash
+python3 scripts/rtlprep_env.py                  # vérifie sans modifier
+python3 scripts/rtlprep_env.py --install        # installe les versions épinglées
+source .venv/bin/activate
+source "$HOME/.local/share/rtlprep/toolchains/activate.sh"
+python scripts/rtlprep_env.py --check
+python scripts/rtlprep_env.py --check-updates   # cherche des versions nouvelles, sans installer
+python scripts/rtlprep_env.py --update          # synchronise les versions approuvées du projet
+```
+
+**Sécurité :** l'installation est toujours explicite, sans `sudo` par
+défaut, sans modifier `.bashrc`, avec empreintes SHA-256 verrouillées.
+Les mises à jour utilisent les **versions testées par la CI**, pas la
+dernière release publiée au hasard. L'archive OSS CAD Suite est
+volumineuse (environ 754 Mo à télécharger, plus l'espace d'extraction).
+L'installation cible Linux x86_64 / WSL2 avec Python 3.11 ou supérieur.
+
+**[Guide détaillé : installation, dépannage, mise à jour des versions et
+vérifications](docs/dependencies-bootstrap.md).**
+
 ## 📚 Documentation pédagogique détaillée
 
 Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :
