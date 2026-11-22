@@ -163,6 +163,31 @@ def test_unknown_construct_never_proves_a_hold_or_priority(body, reason):
     assert graph["counts"]["partial_processes"] == 1
 
 
+@pytest.mark.parametrize("true_branch", ("missing", "null"))
+def test_missing_mandatory_true_branch_is_partial_not_hold(true_branch):
+    # La branche else existe pour conserver une cible détectable.
+    # Un ifTrue absent ou nul ne doit jamais créer un faux chemin sans écriture.
+    body = _if(_ref("enable"), _assign(_lit("8'd2"), 11),
+               _assign(_lit("8'd1"), 12))
+    if true_branch == "missing":
+        del body["ifTrue"]
+    else:
+        body["ifTrue"] = None
+    row = _rows(_ast(body))[0]
+    assert row["coverage"] == "partial"
+    assert row["reason"] == "missing_if_true_branch"
+    assert row["hold_candidate"] == "unknown"
+    assert row["paths"] == []
+
+
+def test_optional_else_absence_remains_a_syntactic_unwritten_path():
+    row = _rows(_ast(_if(_ref("enable"), _assign(_lit("8'd1"), 10))))[0]
+    assert row["coverage"] == "syntactic_paths_supported"
+    assert row["path_count"] == 2
+    assert row["hold_candidate"] == "syntactic_unwritten_path"
+    assert sorted(p["write_count"] for p in row["paths"]) == [0, 1]
+
+
 def test_path_explosion_degrades_to_partial_not_a_fake_result():
     node = _assign(_lit("0"), 20)
     for _ in range(7):

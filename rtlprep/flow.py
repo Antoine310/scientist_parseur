@@ -214,12 +214,17 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
                     if edge not in ("PosEdge", "NegEdge") or name not in known:
                         raise _Unknown("unsupported_event_expression")
                     events.append({"edge": edge, "signal": f"{path}.{name}"})
-                return walk(node.get("stmt"), states, depth + 1, True)
+                stmt = node.get("stmt")
+                if not isinstance(stmt, dict):
+                    raise _Unknown("missing_timed_statement")
+                return walk(stmt, states, depth + 1, True)
             if kind == "Conditional":
                 conditions = node.get("conditions")
                 if not (isinstance(conditions, list) and len(conditions) == 1
                         and isinstance(conditions[0], dict)):
                     raise _Unknown("unsupported_conditional")
+                if not isinstance(node.get("ifTrue"), dict):
+                    raise _Unknown("missing_if_true_branch")
                 cond = _condition(conditions[0].get("expr"), path, known, [0])
                 fork: list[State] = []
                 for branch, field in (("then", "ifTrue"), ("else", "ifFalse")):
