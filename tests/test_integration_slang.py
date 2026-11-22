@@ -383,3 +383,30 @@ def test_real_slang_coverage_counter_and_advanced(tmp_path):
                 "partial"
             ] >= 1
             assert any("dynamic_or_unknown_index" == f["reason"] for f in coverage["findings"])
+
+
+def test_real_slang_sequential_reset_like_and_transitions(tmp_path):
+    """AST réel : reconnaître le motif reset du compteur, jamais une preuve."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/counter/design.json")
+    result = dependency_design(design, tmp_path / "sequential-candidates", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    data = graph["sequential_candidates"]
+    rows = [r for r in data["items"] if r["target"] == "counter.count"]
+    assert len(rows) == 1, data["counts"]
+    row = rows[0]
+    assert row["coverage"] == "syntactic_candidates_supported", row
+    assert len(row["paths"]) == 3, row
+    assert row["reset_like_detection"] == "candidate_found", row
+    assert any(p["transition_candidate"]["kind"] == "unwritten_in_this_process"
+               for p in row["paths"]), row
+    assert any(p["reset_like_guard_candidate"] is not None
+               and p["reset_like_guard_candidate"]["signal"] == "counter.rst_n"
+               and p["reset_like_guard_candidate"]["edge"] == "NegEdge"
+               for p in row["paths"]), row
+    assert any(p["transition_candidate"]["kind"] == "last_nba_rhs_syntax"
+               and p["transition_candidate"]["rhs"]["kind"] == "binary"
+               for p in row["paths"]), row

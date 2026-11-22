@@ -15,6 +15,7 @@ from .expressions import build_expression_index
 from .flow import build_register_flow
 from .bitaccess import build_bit_access_index
 from .coverage import build_coverage_summary
+from .sequential import build_sequential_candidates
 
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
@@ -405,6 +406,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         ],
     }
     graph["coverage"] = build_coverage_summary(graph)
+    graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     return graph
 
 

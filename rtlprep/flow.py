@@ -253,9 +253,16 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
                 marker = id(assignment)
                 if marker not in order_by_ast_id:
                     order_by_ast_id[marker] = len(order_by_ast_id) + 1
+                try:
+                    rhs = _condition(assignment.get("right"), path, known, [0])
+                except _Unknown as exc:
+                    # The flow may remain syntactically understood, but its
+                    # next-state RHS must never be reported as a known value.
+                    rhs = {"kind": "unknown", "reason": str(exc)}
                 write = {
                     "order": order_by_ast_id[marker],
                     "source": _source(assignment) or _source(node),
+                    "rhs": rhs,
                 }
                 out: list[State] = []
                 for guards, writes in states:
@@ -300,8 +307,10 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
             target = f"{path}.{name}"
             paths: list[dict[str, Any]] = []
             for guards, writes in states:
-                active = [{"order": w["order"], "source": w["source"]}
-                          for w in writes if w["target"] == target]
+                active = [
+                    {"order": w["order"], "source": w["source"], "rhs": w["rhs"]}
+                    for w in writes if w["target"] == target
+                ]
                 paths.append({
                     "guards": list(guards),
                     "write_count": len(active),

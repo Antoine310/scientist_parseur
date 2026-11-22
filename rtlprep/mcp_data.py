@@ -119,6 +119,10 @@ class ReadOnlyRtl:
             "graph_available": self.graph is not None,
             "expressions_available": isinstance(
                 self.graph.get("expressions"), dict) if self.graph else False,
+            "sequential_candidates_available": (
+                isinstance(self.graph.get("sequential_candidates"), dict)
+                and self.graph["sequential_candidates"].get("schema_version") == 1
+            ) if self.graph else False,
             "register_flow_available": (
                 isinstance(self.graph.get("register_flow"), dict)
                 and self.graph["register_flow"].get("schema_version") == 1
@@ -274,6 +278,31 @@ class ReadOnlyRtl:
         records = data.get("items")
         if not isinstance(records, list):
             raise ValueError("Register flow invalide")
+        matches = [item for item in records if item.get("target") == signal]
+        return {
+            **_page(matches, limit, offset),
+            "scope": data.get("scope"),
+            "counts": data.get("counts"),
+            "source_snapshot_status": self._source_snapshot_status(),
+            "caveat": data.get("caveat"),
+        }
+
+    def sequential_candidates(self, signal: str, limit: int = 20,
+                              offset: int = 0) -> dict[str, Any]:
+        """Lire les transitions candidates always_ff stockées, sans exécuter EDA."""
+        if not isinstance(signal, str) or not 1 <= len(signal) <= 256:
+            raise ValueError("Sequential candidates : signal complet requis")
+        graph = self._graph()
+        if signal not in graph.get("nodes", []):
+            raise KeyError(f"Signal introuvable : {signal}")
+        data = graph.get("sequential_candidates")
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError(
+                "Sequential candidates absents : régénérer avec rtlprep deps"
+            )
+        records = data.get("items")
+        if not isinstance(records, list):
+            raise ValueError("Sequential candidates invalides")
         matches = [item for item in records if item.get("target") == signal]
         return {
             **_page(matches, limit, offset),

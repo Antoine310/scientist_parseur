@@ -32,7 +32,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             "rtl_capabilities", "rtl_modules", "rtl_instances",
             "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
             "rtl_trace", "rtl_expressions", "rtl_register_flow",
-            "rtl_bit_accesses", "rtl_coverage",
+            "rtl_bit_accesses", "rtl_coverage", "rtl_sequential_candidates",
             "rtl_warnings", "rtl_source", "rtl_validations",
         }
         assert names == required, (names, required)
@@ -53,6 +53,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert caps["top"] == "hierarchy_top"
         assert caps["bit_accesses_available"] is True
         assert caps["coverage_available"] is True
+        assert caps["sequential_candidates_available"] is True
 
         modules = await call("rtl_modules", limit=10)
         assert set(modules["items"]) == {"leaf", "hierarchy_top"}, modules
@@ -98,6 +99,11 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         )
         assert filtered_coverage["finding_filter"] == "exact_target_only"
         assert filtered_coverage["design_coverage"] == "not_measured"
+        seq = await call(
+            "rtl_sequential_candidates", signal="hierarchy_top.first.status"
+        )
+        assert seq["total"] == 0, seq
+        assert seq["scope"] == "supported_always_ff_syntactic_transition_candidates"
         warnings = await call("rtl_warnings", limit=5)
         assert "total" in warnings
         source = await call("rtl_source", filename="leaf.sv", line=2, radius=1)
@@ -118,6 +124,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             ("rtl_bit_accesses", {"signal": "hierarchy_top.first.status", "limit": 9999}),
             ("rtl_coverage", {"limit": 9999}),
             ("rtl_coverage", {"signal": "../escape"}),
+            ("rtl_sequential_candidates", {"signal": "hierarchy_top.first.status", "limit": 9999}),
         ]:
             result = await client.call_tool(tool, arguments)
             assert result.is_error, (tool, result)
