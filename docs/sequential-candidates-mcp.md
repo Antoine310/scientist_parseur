@@ -51,6 +51,11 @@ ces conditions syntaxiques sont réunies :
 Exemple : `@(posedge clk or negedge rst_n)`, puis `if (!rst_n)`
 et `count <= 8'd0` produit un motif
 `reset_like_guard_candidate_not_proof`.
+Si slang enveloppe le littéral dans un nœud `Conversion` ou
+`SignedConversion`, la conversion est conservée dans
+`rhs_conversion_kinds` : le littéral source est rapporté sans
+évaluer sa valeur après conversion.
+
 Cette correspondance **ne prouve pas** que `rst_n` réalise un reset
 asynchrone, ni son comportement si d'autres processus ou X/Z
 interviennent. Les resets synchrones, comparaisons complexes et
