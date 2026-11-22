@@ -324,3 +324,27 @@ def test_real_slang_register_flow_csr_hold_candidate(tmp_path):
     assert any(p["guards"][-1]["condition"].get("path") ==
                "secure_csr.write_accepted_o" for p in row["paths"]
                if p["guards"][-1]["branch"] == "then"), row
+
+
+def test_real_slang_static_bit_accesses_in_advanced_example(tmp_path):
+    """Vrai slang : concaténation de deux tranches et index dynamique."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/advanced/design.json")
+    result = dependency_design(design, tmp_path / "bit-lanes", timeout=90)
+    assert result["status"] == "passed", result
+    graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+    data = graph["bit_accesses"]
+    merged = [x for x in data["items"] if x["target"] == "advanced_logic.merged"]
+    picked = [x for x in data["items"] if x["target"] == "advanced_logic.picked"]
+    assert len(merged) == 1, data["counts"]
+    assert merged[0]["coverage"] == "rhs_lanes_only", merged[0]
+    assert merged[0]["rhs_width"] == 8, merged[0]
+    assert [(x["source"], x["rhs_lsb"], x["rhs_msb"]) for x in merged[0]["source_segments"]] == [
+        ("advanced_logic.data_a", 4, 7),
+        ("advanced_logic.data_b", 0, 3),
+    ]
+    assert len(picked) == 1, data["counts"]
+    assert picked[0]["coverage"] == "partial", picked[0]
+    assert picked[0]["reason"] == "dynamic_or_unknown_index", picked[0]

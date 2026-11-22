@@ -32,6 +32,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             "rtl_capabilities", "rtl_modules", "rtl_instances",
             "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
             "rtl_trace", "rtl_expressions", "rtl_register_flow",
+            "rtl_bit_accesses",
             "rtl_warnings", "rtl_source", "rtl_validations",
         }
         assert names == required, (names, required)
@@ -50,6 +51,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert caps["mode"] == "read_only_snapshot"
         assert caps["runs_eda"] is False and caps["edits_files"] is False
         assert caps["top"] == "hierarchy_top"
+        assert caps["bit_accesses_available"] is True
 
         modules = await call("rtl_modules", limit=10)
         assert set(modules["items"]) == {"leaf", "hierarchy_top"}, modules
@@ -82,6 +84,9 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         flow = await call("rtl_register_flow", signal="hierarchy_top.first.status")
         assert flow["total"] == 0, flow
         assert flow["scope"] == "always_ff_syntactic_paths_only", flow
+        bits = await call("rtl_bit_accesses", signal="hierarchy_top.first.status")
+        assert bits["total"] == 0, bits
+        assert bits["scope"] == "continuous_assign_static_select_concat_only", bits
         warnings = await call("rtl_warnings", limit=5)
         assert "total" in warnings
         source = await call("rtl_source", filename="leaf.sv", line=2, radius=1)
@@ -99,6 +104,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             ("rtl_modules", {"limit": 100000}),
             ("rtl_expressions", {"signal": "hierarchy_top.first.status", "limit": 9999}),
             ("rtl_register_flow", {"signal": "hierarchy_top.first.status", "limit": 9999}),
+            ("rtl_bit_accesses", {"signal": "hierarchy_top.first.status", "limit": 9999}),
         ]:
             result = await client.call_tool(tool, arguments)
             assert result.is_error, (tool, result)

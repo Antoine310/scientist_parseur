@@ -13,6 +13,7 @@ from typing import Any
 from .index import build_index
 from .expressions import build_expression_index
 from .flow import build_register_flow
+from .bitaccess import build_bit_access_index
 
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
@@ -384,6 +385,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "warnings": warnings,
         "expressions": build_expression_index(ast, expected_top=expected_top, index=structural),
         "register_flow": build_register_flow(ast, expected_top=expected_top, index=structural),
+        "bit_accesses": build_bit_access_index(ast, expected_top=expected_top, index=structural),
         "resolved_parameter_symbols": sorted(
             constant_declarations[addr][1] for addr in constant_refs_seen
             if constant_declarations[addr][0] == "Parameter"

@@ -33,6 +33,7 @@ async def run() -> None:
                    for r in payload["items"])
         assert payload["source_snapshot_status"] == "matching", payload
         assert caps.structured_content["register_flow_available"] is True
+        assert caps.structured_content["bit_accesses_available"] is True
         flow_response = await client.call_tool(
             "rtl_register_flow", {"signal": "counter.count"}
         )
@@ -46,6 +47,14 @@ async def run() -> None:
         assert process["hold_candidate"] == "syntactic_unwritten_path"
         assert process["same_path_multiple_nba"] is False
         assert flow["source_snapshot_status"] == "matching", flow
+        bit_response = await client.call_tool(
+            "rtl_bit_accesses", {"signal": "counter.count"}
+        )
+        assert not bit_response.is_error, bit_response
+        bits = bit_response.structured_content
+        # Counter uses procedural assignments; this tool only covers continuous assigns.
+        assert bits["total"] == 0, bits
+        assert bits["source_snapshot_status"] == "matching", bits
         print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"], flow["total"])
 
 

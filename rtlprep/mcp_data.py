@@ -123,6 +123,10 @@ class ReadOnlyRtl:
                 isinstance(self.graph.get("register_flow"), dict)
                 and self.graph["register_flow"].get("schema_version") == 1
             ) if self.graph else False,
+            "bit_accesses_available": (
+                isinstance(self.graph.get("bit_accesses"), dict)
+                and self.graph["bit_accesses"].get("schema_version") == 1
+            ) if self.graph else False,
             "source_available": self.design is not None,
             "report_names": sorted(self.reports),
             "artifact_fingerprint_present": self.artifact_fingerprint is not None,
@@ -266,6 +270,29 @@ class ReadOnlyRtl:
         records = data.get("items")
         if not isinstance(records, list):
             raise ValueError("Register flow invalide")
+        matches = [item for item in records if item.get("target") == signal]
+        return {
+            **_page(matches, limit, offset),
+            "scope": data.get("scope"),
+            "counts": data.get("counts"),
+            "source_snapshot_status": self._source_snapshot_status(),
+            "caveat": data.get("caveat"),
+        }
+
+    def bit_accesses(self, signal: str, limit: int = 20,
+                     offset: int = 0) -> dict[str, Any]:
+        """Lire les sélections et segments RHS pré-calculés, sans EDA."""
+        if not isinstance(signal, str) or not 1 <= len(signal) <= 256:
+            raise ValueError("Bit accesses : signal complet requis")
+        graph = self._graph()
+        if signal not in graph.get("nodes", []):
+            raise KeyError(f"Signal introuvable : {signal}")
+        data = graph.get("bit_accesses")
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("Bit accesses absents : régénérer avec rtlprep deps")
+        records = data.get("items")
+        if not isinstance(records, list):
+            raise ValueError("Bit accesses invalides")
         matches = [item for item in records if item.get("target") == signal]
         return {
             **_page(matches, limit, offset),

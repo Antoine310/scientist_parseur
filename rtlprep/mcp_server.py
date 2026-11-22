@@ -80,6 +80,15 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.register_flow(signal, limit, offset)
 
     @server.tool(structured_output=True)
+    def rtl_bit_accesses(signal: str, limit: int = 20,
+                         offset: int = 0) -> dict[str, Any]:
+        """Lire les sélections de bits et positions de concaténations connues.
+
+        Ces correspondances syntaxiques ne prouvent pas une influence fonctionnelle.
+        """
+        return snapshot.bit_accesses(signal, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_warnings(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les limitations explicites du graphe (pagination obligatoire)."""
         return snapshot.warnings(limit, offset)
