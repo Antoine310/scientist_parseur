@@ -66,6 +66,11 @@ validation croisée slang/cocotb/SBY/EQY](laboratoire-securite-csr.md).
 Il explique pourquoi deux circuits peuvent partager le même graphe
 de dépendances et présenter pourtant des comportements différents.
 
+**Nouvelle phase J :** [chemins d'écriture dans `always_ff`, maintien
+syntaxiquement possible et priorité locale des NBA](register-flow-mcp.md).
+Le guide sépare les chemins observables depuis l'AST des preuves de
+comportement séquentiel.
+
 Compléments : [tester le vrai compilateur slang v12.1 et comprendre le cache d'instances](slang-environnement.md), [feuille de route](roadmap.md), [instructions Codex](../AGENTS.md), [README principal](../README.md).
 
 ## Vocabulaire minimal

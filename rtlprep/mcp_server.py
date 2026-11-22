@@ -67,8 +67,17 @@ def create_server(snapshot: ReadOnlyRtl):
     @server.tool(structured_output=True)
     def rtl_expressions(signal: str, limit: int = 20,
                         offset: int = 0) -> dict[str, Any]:
-        """Lire l'AST borné des affectations continues vers un signal exact."""
+        """Lire les expressions continues et procédurales d'un signal exact."""
         return snapshot.expressions(signal, limit, offset)
+
+    @server.tool(structured_output=True)
+    def rtl_register_flow(signal: str, limit: int = 20,
+                          offset: int = 0) -> dict[str, Any]:
+        """Lire les chemins syntaxiques always_ff et le dernier NBA par chemin.
+
+        Ne prouve ni la faisabilité d'un chemin ni le maintien d'un registre.
+        """
+        return snapshot.register_flow(signal, limit, offset)
 
     @server.tool(structured_output=True)
     def rtl_warnings(limit: int = 20, offset: int = 0) -> dict[str, Any]:

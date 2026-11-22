@@ -324,3 +324,22 @@ Si une fonction change, mettre à jour le chapitre concerné de [docs/README.md]
 - Tests : `tests/test_expressions.py`, vrais cas counter/CSR/advanced dans
   `tests/test_integration_slang.py`, et MCP stdio sur `counter.count`.
 - Lire [docs/conditions-procedurales-mcp.md](docs/conditions-procedurales-mcp.md).
+
+
+## Phase J — chemins d'écriture séquentiels, sans preuve (PR #21)
+
+- `rtl_register_flow(signal, limit=20, offset=0)` interroge les chemins
+  `always_ff` pré-calculés dans `rtl_dependencies.json.register_flow`.
+  Le nombre d'outils MCP passe à **13**.
+- `paths` contient les gardes `if/else`, les écritures non bloquantes
+  dans l'ordre par chemin, et `last_nonblocking_write` ; l'ordre
+  local ne démontre aucune priorité globale entre plusieurs processus.
+- `syntactic_unwritten_path` **ne prouve pas** un maintien réel de l'état ;
+  c'est une alternative syntaxique sans écriture dans ce processus.
+  `unknown` / `partial` / `truncated` doivent bloquer les conclusions.
+- Pour les conditions X/Z, les branches inatteignables, `case`, les
+  tâches/appels, écritures partielles et sélections, refuser toute
+  déduction complète. Le MCP ne fait aucune exécution EDA.
+- Tests : `tests/test_register_flow.py` et les intégrations slang et
+  MCP stdio sur `counter.count`. Régénérer le graphe et redémarrer Codex.
+- Documentation : [docs/register-flow-mcp.md](docs/register-flow-mcp.md).

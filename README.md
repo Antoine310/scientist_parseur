@@ -79,6 +79,16 @@ les nœuds AST non couverts ne sont **pas** interprétés dans cette première p
 Les arbres d'expression ne prouvent ni l'équivalence ni la sécurité d'un module.
 [Documentation et protocole de test](docs/expressions-mcp.md).
 
+## Chemins d'écriture always_ff et candidats de maintien (PR #21)
+
+Le nouveau `rtl_register_flow` (MCP en lecture seule) expose, depuis
+l'AST de slang, les alternatives syntaxiques `if/else` vers les écritures
+non bloquantes d'un même `always_ff`. Il met en évidence une branche
+sans écriture et distingue des NBA successives sur un **même chemin**
+de branches mutuellement exclusives. Les structures inconnues donnent
+`partial` / `unknown` : **aucune preuve de maintien ou de transition**
+n'est inférée. [Guide](docs/register-flow-mcp.md).
+
 ## Gardes des `always_*` et événements de déclenchement (PR #20)
 
 L'index d'expressions s'étend aux affectations procédurales des

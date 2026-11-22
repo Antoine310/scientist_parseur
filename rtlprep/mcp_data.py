@@ -119,6 +119,10 @@ class ReadOnlyRtl:
             "graph_available": self.graph is not None,
             "expressions_available": isinstance(
                 self.graph.get("expressions"), dict) if self.graph else False,
+            "register_flow_available": (
+                isinstance(self.graph.get("register_flow"), dict)
+                and self.graph["register_flow"].get("schema_version") == 1
+            ) if self.graph else False,
             "source_available": self.design is not None,
             "report_names": sorted(self.reports),
             "artifact_fingerprint_present": self.artifact_fingerprint is not None,
@@ -240,6 +244,29 @@ class ReadOnlyRtl:
         if not isinstance(records, list):
             raise ValueError("Index d'expressions invalide")
         matches = [entry for entry in records if entry.get("target") == signal]
+        return {
+            **_page(matches, limit, offset),
+            "scope": data.get("scope"),
+            "counts": data.get("counts"),
+            "source_snapshot_status": self._source_snapshot_status(),
+            "caveat": data.get("caveat"),
+        }
+
+    def register_flow(self, signal: str, limit: int = 20,
+                      offset: int = 0) -> dict[str, Any]:
+        """Lecture paginée de chemins always_ff pré-calculés et partiels."""
+        if not isinstance(signal, str) or not 1 <= len(signal) <= 256:
+            raise ValueError("Register flow : signal complet requis")
+        graph = self._graph()
+        if signal not in graph.get("nodes", []):
+            raise KeyError(f"Signal introuvable : {signal}")
+        data = graph.get("register_flow")
+        if not isinstance(data, dict) or data.get("schema_version") != 1:
+            raise ValueError("Register flow absent : régénérer avec rtlprep deps")
+        records = data.get("items")
+        if not isinstance(records, list):
+            raise ValueError("Register flow invalide")
+        matches = [item for item in records if item.get("target") == signal]
         return {
             **_page(matches, limit, offset),
             "scope": data.get("scope"),

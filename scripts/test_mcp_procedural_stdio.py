@@ -32,7 +32,21 @@ async def run() -> None:
         assert all(any(e["edge"] == "PosEdge" for e in r["events"])
                    for r in payload["items"])
         assert payload["source_snapshot_status"] == "matching", payload
-        print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"])
+        assert caps.structured_content["register_flow_available"] is True
+        flow_response = await client.call_tool(
+            "rtl_register_flow", {"signal": "counter.count"}
+        )
+        assert not flow_response.is_error, flow_response
+        flow = flow_response.structured_content
+        assert flow["total"] == 1, flow
+        process = flow["items"][0]
+        assert process["coverage"] == "syntactic_paths_supported", process
+        assert process["path_count"] == 3, process
+        assert sorted(p["write_count"] for p in process["paths"]) == [0, 1, 1]
+        assert process["hold_candidate"] == "syntactic_unwritten_path"
+        assert process["same_path_multiple_nba"] is False
+        assert flow["source_snapshot_status"] == "matching", flow
+        print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"], flow["total"])
 
 
 if __name__ == "__main__":
