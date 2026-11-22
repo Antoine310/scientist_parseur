@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "platform": "linux-x86_64",
+  "oss_cad_suite": {
+    "version": "2026-11-18",
+    "archive": "oss-cad-suite-linux-x64-20261118.tgz",
+    "url": "https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-11-18/oss-cad-suite-linux-x64-20261118.tgz",
+    "sha256": "a3b39d017268f81a76c5b2741e29f58eea8734b66af718b1f0408acfe939e060",
+    "max_bytes": 950000000
+  },
+  "slang": {
+    "version": "v12.1",
+    "archive": "slang-linux-x86_64.tar.gz",
+    "url": "https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz",
+    "sha256": "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f",
+    "max_bytes": 12000000
+  },
+  "verilator_minimum": "5.036",
+  "python_extras": "dev,simulation,mcp",
+  "python_versions": {
+    "cocotb": "2.0.1",
+    "mcp": "2.3.0"
+  }
+}
