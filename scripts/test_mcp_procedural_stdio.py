@@ -35,6 +35,7 @@ async def run() -> None:
         assert caps.structured_content["register_flow_available"] is True
         assert caps.structured_content["bit_accesses_available"] is True
         assert caps.structured_content["coverage_available"] is True
+        assert caps.structured_content["sequential_candidates_available"] is True
         flow_response = await client.call_tool(
             "rtl_register_flow", {"signal": "counter.count"}
         )
@@ -62,6 +63,23 @@ async def run() -> None:
         assert coverage["design_coverage"] == "not_measured", coverage
         assert coverage["source_snapshot_status"] == "matching", coverage
         assert coverage["analyzers"]["register_flow"]["captured"] >= 1, coverage
+        seq_response = await client.call_tool(
+            "rtl_sequential_candidates", {"signal": "counter.count"}
+        )
+        assert not seq_response.is_error, seq_response
+        seq = seq_response.structured_content
+        assert seq["total"] == 1, seq
+        row = seq["items"][0]
+        assert row["coverage"] == "syntactic_candidates_supported", row
+        assert len(row["paths"]) == 3, row
+        assert row["reset_like_detection"] == "candidate_found", row
+        assert any(
+            path["reset_like_guard_candidate"] is not None
+            and path["reset_like_guard_candidate"]["signal"] == "counter.rst_n"
+            and path["reset_like_guard_candidate"]["edge"] == "NegEdge"
+            for path in row["paths"]
+        ), row
+        assert seq["source_snapshot_status"] == "matching", seq
         print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"], flow["total"])
 
 

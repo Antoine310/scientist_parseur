@@ -80,6 +80,15 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.register_flow(signal, limit, offset)
 
     @server.tool(structured_output=True)
+    def rtl_sequential_candidates(signal: str, limit: int = 20,
+                                  offset: int = 0) -> dict[str, Any]:
+        """Candidats syntaxiques de transitions, resets et priorites NBA locales.
+
+        Ne simule pas l'etat ni les resets, et ne prouve aucune transition.
+        """
+        return snapshot.sequential_candidates(signal, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_bit_accesses(signal: str, limit: int = 20,
                          offset: int = 0) -> dict[str, Any]:
         """Lire les sélections de bits et positions de concaténations connues.
