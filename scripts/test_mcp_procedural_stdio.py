@@ -34,6 +34,7 @@ async def run() -> None:
         assert payload["source_snapshot_status"] == "matching", payload
         assert caps.structured_content["register_flow_available"] is True
         assert caps.structured_content["bit_accesses_available"] is True
+        assert caps.structured_content["coverage_available"] is True
         flow_response = await client.call_tool(
             "rtl_register_flow", {"signal": "counter.count"}
         )
@@ -55,6 +56,12 @@ async def run() -> None:
         # Counter uses procedural assignments; this tool only covers continuous assigns.
         assert bits["total"] == 0, bits
         assert bits["source_snapshot_status"] == "matching", bits
+        coverage_response = await client.call_tool("rtl_coverage", {})
+        assert not coverage_response.is_error, coverage_response
+        coverage = coverage_response.structured_content
+        assert coverage["design_coverage"] == "not_measured", coverage
+        assert coverage["source_snapshot_status"] == "matching", coverage
+        assert coverage["analyzers"]["register_flow"]["captured"] >= 1, coverage
         print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"], flow["total"])
 
 
