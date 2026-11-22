@@ -348,3 +348,38 @@ def test_real_slang_static_bit_accesses_in_advanced_example(tmp_path):
     assert len(picked) == 1, data["counts"]
     assert picked[0]["coverage"] == "partial", picked[0]
     assert picked[0]["reason"] == "dynamic_or_unknown_index", picked[0]
+
+
+def test_real_slang_coverage_counter_and_advanced(tmp_path):
+    """Une synthèse des éléments observés, pas un taux de RTL couvert."""
+    import json
+    from rtlprep.runner import dependency_design
+
+    for example in ("counter", "advanced"):
+        design = load_design(ROOT / "examples" / example / "design.json")
+        result = dependency_design(design, tmp_path / example, timeout=90)
+        assert result["status"] == "passed", result
+        graph = json.loads(Path(result["dependencies"]).read_text(encoding="utf-8"))
+        coverage = graph["coverage"]
+        assert coverage["scope"] == "observed_analyzer_records_only", coverage
+        assert coverage["design_coverage"] == "not_measured", coverage
+        assert coverage["analyzers"]["dependencies"]["edges"] == len(graph["edges"])
+        assert coverage["analyzers"]["expressions"]["captured"] == len(
+            graph["expressions"]["items"]
+        )
+        assert coverage["analyzers"]["register_flow"]["captured"] == len(
+            graph["register_flow"]["items"]
+        )
+        assert coverage["analyzers"]["bit_accesses"]["captured"] == len(
+            graph["bit_accesses"]["items"]
+        )
+        assert coverage["findings_total"] >= len(coverage["findings"])
+        if example == "counter":
+            assert coverage["analyzers"]["register_flow"]["observed_status_counts"][
+                "syntactic_paths_supported"
+            ] >= 1
+        else:
+            assert coverage["analyzers"]["bit_accesses"]["observed_status_counts"][
+                "partial"
+            ] >= 1
+            assert any("dynamic_or_unknown_index" == f["reason"] for f in coverage["findings"])

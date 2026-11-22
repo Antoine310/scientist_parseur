@@ -14,6 +14,7 @@ from .index import build_index
 from .expressions import build_expression_index
 from .flow import build_register_flow
 from .bitaccess import build_bit_access_index
+from .coverage import build_coverage_summary
 
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
@@ -378,7 +379,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         warn(missing_path, "Instance connue de l'index mais absente du graphe")
     edges.sort(key=lambda x: (x["target"], x["source"], x["kind"], x["detail"]))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
-    return {
+    graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
@@ -403,6 +404,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             "Pas de preuve fonctionnelle, timing ou CDC",
         ],
     }
+    graph["coverage"] = build_coverage_summary(graph)
+    return graph
 
 
 def trace_dependencies(graph: dict[str, Any], node: str, direction: str = "fanin",

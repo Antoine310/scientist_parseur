@@ -123,6 +123,10 @@ class ReadOnlyRtl:
                 isinstance(self.graph.get("register_flow"), dict)
                 and self.graph["register_flow"].get("schema_version") == 1
             ) if self.graph else False,
+            "coverage_available": (
+                isinstance(self.graph.get("coverage"), dict)
+                and self.graph["coverage"].get("schema_version") == 1
+            ) if self.graph else False,
             "bit_accesses_available": (
                 isinstance(self.graph.get("bit_accesses"), dict)
                 and self.graph["bit_accesses"].get("schema_version") == 1
@@ -300,6 +304,43 @@ class ReadOnlyRtl:
             "counts": data.get("counts"),
             "source_snapshot_status": self._source_snapshot_status(),
             "caveat": data.get("caveat"),
+        }
+
+    def coverage(self, signal: str | None = None, limit: int = 20,
+                 offset: int = 0) -> dict[str, Any]:
+        """Bilan conservateur, pré-calculé, avec pagination des limites.
+
+        Le bilan des analyseurs est toujours global ; signal ne filtre que les
+        constatations liées à cette cible exacte. Zéro constatation ne vaut
+        jamais une preuve de couverture exhaustive.
+        """
+        graph = self._graph()
+        if signal is not None:
+            if not isinstance(signal, str) or not 1 <= len(signal) <= 256:
+                raise ValueError("Couverture : nom de signal complet requis")
+            if signal not in graph.get("nodes", []):
+                raise KeyError(f"Signal inconnu dans le graphe : {signal}")
+        report = graph.get("coverage")
+        if not isinstance(report, dict) or report.get("schema_version") != 1:
+            raise ValueError("Couverture absente : régénérer avec rtlprep deps")
+        findings = report.get("findings")
+        if not isinstance(findings, list):
+            raise ValueError("Constatations de couverture invalides")
+        selected = (findings if signal is None
+                    else [item for item in findings
+                          if isinstance(item, dict) and item.get("target") == signal])
+        return {
+            **_page(selected, limit, offset),
+            "query": signal,
+            "finding_filter": "global" if signal is None else "exact_target_only",
+            "global_findings_total": report.get("findings_total"),
+            "global_findings_truncated": report.get("findings_truncated"),
+            "scope": report.get("scope"),
+            "assessment": report.get("assessment"),
+            "design_coverage": report.get("design_coverage"),
+            "analyzers": report.get("analyzers"),
+            "source_snapshot_status": self._source_snapshot_status(),
+            "caveat": report.get("caveat"),
         }
 
     def warnings(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
