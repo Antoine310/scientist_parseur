@@ -36,6 +36,7 @@ async def run() -> None:
         assert caps.structured_content["bit_accesses_available"] is True
         assert caps.structured_content["coverage_available"] is True
         assert caps.structured_content["sequential_candidates_available"] is True
+        assert caps.structured_content["evidence_available"] is True
         flow_response = await client.call_tool(
             "rtl_register_flow", {"signal": "counter.count"}
         )
@@ -80,6 +81,16 @@ async def run() -> None:
             for path in row["paths"]
         ), row
         assert seq["source_snapshot_status"] == "matching", seq
+        evidence_response = await client.call_tool(
+            "rtl_evidence", {"signal": "counter.count"}
+        )
+        assert not evidence_response.is_error, evidence_response
+        evidence = evidence_response.structured_content
+        assert evidence["total"] == 3, evidence
+        assert evidence["source_snapshot_status"] == "matching", evidence
+        assert len(evidence["rtl_anchors"]) >= 1, evidence
+        assert all(item["usable_for_current_snapshot"] is False
+                   for item in evidence["items"]), evidence
         print("MCP_PROCEDURAL_STDIO_PASSED", payload["total"], flow["total"])
 
 

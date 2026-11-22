@@ -410,3 +410,27 @@ def test_real_slang_sequential_reset_like_and_transitions(tmp_path):
     assert any(p["transition_candidate"]["kind"] == "last_nba_rhs_syntax"
                and p["transition_candidate"]["rhs"]["kind"] == "binary"
                for p in row["paths"]), row
+
+
+def test_real_slang_evidence_anchors_are_only_ast_provenance(tmp_path):
+    """Le vrai AST ancre le signal ; sans rapports, aucune preuve n'est inventée."""
+    import json
+    from rtlprep.mcp_data import ReadOnlyRtl
+    from rtlprep.runner import dependency_design
+
+    design = load_design(ROOT / "examples/counter/design.json")
+    out = tmp_path / "evidence-counter"
+    result = dependency_design(design, out, timeout=90)
+    assert result["status"] == "passed", result
+    api = ReadOnlyRtl(graph_file=Path(result["dependencies"]),
+                      manifest_file=ROOT / "examples/counter/design.json",
+                      reports_dir=out)
+    response = api.evidence("counter.count")
+    assert response["source_snapshot_status"] == "matching", response
+    assert response["signal"] == "counter.count"
+    assert response["rtl_anchors"], response
+    assert all(x["source_file"] == "counter.sv" for x in response["rtl_anchors"])
+    assert all(x["association"] != "signal_proof" for x in response["items"])
+    assert all(not x["usable_for_current_snapshot"] for x in response["items"])
+    assert not response["hypotheses_available"], response
+    assert response["total"] == 3

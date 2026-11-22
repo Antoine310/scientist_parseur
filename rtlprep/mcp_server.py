@@ -114,6 +114,15 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.source(filename, line, radius)
 
     @server.tool(structured_output=True)
+    def rtl_evidence(signal: str | None = None, limit: int = 20,
+                     offset: int = 0) -> dict[str, Any]:
+        """Relier provenance RTL, hypotheses et rapports sim/formal/EQY.
+
+        Aucune preuve par signal inferee d'un rapport au niveau design.
+        """
+        return snapshot.evidence(signal, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_validations(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les statuts de rapports existants, sans exécuter de validation."""
         return snapshot.validations(limit, offset)
