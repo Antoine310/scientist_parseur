@@ -42,7 +42,22 @@ def _event_guard_candidate(guards: Any, events: Any, rhs: Any) -> dict[str, Any]
     """
     if not isinstance(guards, list) or not guards or not isinstance(events, list):
         return None
-    if not isinstance(rhs, dict) or rhs.get("kind") != "literal":
+    # slang entoure parfois les littéraux par des conversions de taille
+    # ou de signe. Garder leur provenance syntaxique sans supposer la
+    # valeur (ni la largeur) du résultat après conversion.
+    literal = rhs
+    conversion_kinds: list[str] = []
+    for _ in range(8):
+        if not isinstance(literal, dict):
+            return None
+        if literal.get("kind") != "conversion":
+            break
+        ast_kind = literal.get("ast_kind")
+        if ast_kind not in ("Conversion", "SignedConversion"):
+            return None
+        conversion_kinds.append(ast_kind)
+        literal = literal.get("operand")
+    if not isinstance(literal, dict) or literal.get("kind") != "literal":
         return None
     event_signals = {
         item.get("signal") for item in events if isinstance(item, dict)
@@ -59,11 +74,14 @@ def _event_guard_candidate(guards: Any, events: Any, rhs: Any) -> dict[str, Any]
                item.get("signal") == signal and item.get("edge") == edge
                for item in events):
         return None
-    return {
+    candidate = {
         "signal": signal, "edge": edge, "asserted_level": level,
-        "literal_write": rhs.get("value"),
+        "literal_write": literal.get("value"),
         "classification": "reset_like_guard_candidate_not_proof",
     }
+    if conversion_kinds:
+        candidate["rhs_conversion_kinds"] = conversion_kinds
+    return candidate
 
 
 def build_sequential_candidates(flow: dict[str, Any]) -> dict[str, Any]:
