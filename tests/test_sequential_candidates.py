@@ -98,6 +98,18 @@ def test_reset_like_candidate_and_rhs_are_explicit_syntax_not_simulation():
     assert "proof" in result["caveat"] or "preuve" in result["caveat"]
 
 
+def test_reset_like_candidate_preserves_explicit_slang_conversion():
+    # Slang v12.1: assignment RHS may wrap an integer in Conversion.
+    wrapped = n("Conversion", operand=lit("8'd0"))
+    body = cond(neg(ref("rst_n")), assign(wrapped, 9))
+    row = seq(ast(body))["items"][0]
+    candidate = row["paths"][0]["reset_like_guard_candidate"]
+    assert candidate is not None
+    assert candidate["literal_write"] == "8'd0"
+    assert candidate["rhs_conversion_kinds"] == ["Conversion"]
+    assert row["paths"][0]["transition_candidate"]["rhs"]["kind"] == "conversion"
+
+
 def test_last_nba_only_orders_writes_in_same_path():
     body = n("List", list=[assign(lit("8'd1"), 12),
                            assign(lit("8'd2"), 13)])
