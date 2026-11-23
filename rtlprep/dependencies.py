@@ -239,6 +239,22 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         width = int(match.group(1))
         return width if 1 <= width <= 32 else None
 
+    def source_free_literal(node: Any, depth: int = 0) -> bool:
+        """Only transparent conversions of literal AST nodes are source-free.
+
+        Slang 12.1 wraps the rxuart reset value in Conversion(operand=
+        IntegerLiteral). A "constant" tag alone is not a reason to discard
+        signal reads; the operand must be proved to be a literal.
+        """
+        if not isinstance(node, dict) or depth > 4:
+            return False
+        kind = node.get("kind")
+        if kind in ("IntegerLiteral", "UnbasedUnsizedIntegerLiteral"):
+            return True
+        if kind in ("Conversion", "SignedConversion"):
+            return source_free_literal(node.get("operand"), depth + 1)
+        return False
+
     def concatenated_assignment(path: str, obj: dict[str, Any], *,
                                 controls: frozenset[str],
                                 events: tuple[tuple[str, str], ...],
@@ -270,9 +286,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         # gets N independent data edges.
         paired: list[str | None] | None = None
         rhs = obj.get("right")
-        if isinstance(rhs, dict) and rhs.get("kind") in (
-            "IntegerLiteral", "UnbasedUnsizedIntegerLiteral"
-        ):
+        if source_free_literal(rhs):
             # A literal never reads an RTL signal. Its width may be extended
             # or truncated on assignment, but data dependency edges remain
             # empty regardless of that conversion. No bit mapping is claimed.
