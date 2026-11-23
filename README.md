@@ -294,6 +294,22 @@ pas prouvée.
 
 [Mesures, limites et tests négatifs de la PR #36](docs/memberaccess-cva6-pr36.md).
 
+## Écritures de membres de structures (PR #37)
+
+L'index `expressions` accepte désormais les cibles `MemberAccess`
+(`state.low <= data`) et conserve le champ écrit dans `target_access`.
+Le graphe remonte les dépendances vers le **signal de base**, avec un
+**avertissement explicite** : les champs et les bits affectés ne sont
+pas localisés de manière prouvée. Les identités slang erronées ne sont
+pas résolues par simple nom.
+
+Une fixture de structure `packed` avec `always_ff` est testée par
+**vrai slang v12.1** ; la CI exécute aussi la régression CVA6
+épinglée. L'analyse des bits des processus n'est pas encore étendue.
+La couverture totale et l'accuracy fonctionnelle ne sont pas mesurées.
+
+[Guide, cas limites et reproduction de la PR #37](docs/member-lvalue-pr37.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
