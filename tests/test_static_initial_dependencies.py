@@ -98,7 +98,7 @@ def test_dynamic_selector_stays_reported_and_remains_data_source():
         ("top.data", "top.out"), ("top.idx", "top.out"),
     }
     assert not g["static_selections"]
-    assert any("dynamique/inconnue" in w["reason"] for w in g["warnings"])
+    assert any("signal entier" in w["reason"] for w in g["warnings"])
 
 
 def test_elaborated_constant_index_is_recorded_without_fake_constant_signal():
@@ -187,6 +187,26 @@ def test_pinned_real_rtl_static_selection_and_initial_metadata(tmp_path, top, so
     assert all(x["role"] in ("read", "write") for x in g["static_selections"])
     if top == "priority_encoder":
         assert not g["initializations"]
+        if g["warnings"]:
+            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+            selections = []
+            def walk(node):
+                if isinstance(node, list):
+                    for child in node:
+                        walk(child)
+                elif isinstance(node, dict):
+                    if node.get("kind") in ("ElementSelect", "RangeSelect"):
+                        relevant = {key: node.get(key) for key in (
+                            "kind", "selector", "left", "right"
+                        ) if key in node}
+                        selections.append(str(relevant)[:500])
+                    for child in node.values():
+                        if isinstance(child, (dict, list)):
+                            walk(child)
+            walk(ast["design"])
+            assert not g["warnings"], {
+                "warnings": g["warnings"], "selectors": selections[:24]
+            }
     if top == "rxuart":
         assert len(g["initializations"]) >= 1, g["warnings"]
         assert not any(
