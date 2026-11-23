@@ -37,7 +37,7 @@ Nous représentons donc, dans chaque segment réellement inversé :
 
 ```json
 {
-  "source": "rtlprep_cva6_compressed_decoder.instr_i",
+  "source": "rtlprep_cva6_compressed_decoder.decoder_i.instr_i",
   "selection": {"kind": "bit", "index": 15},
   "rhs_lsb": 7,
   "rhs_msb": 7,
@@ -45,9 +45,11 @@ Nous représentons donc, dans chaque segment réellement inversé :
 }
 ```
 
-**Remarque :** les offsets RHS ci-dessus sont une illustration de
-format ; seuls les tests sur l'artefact réel établissent les
-positions effectives. Le `value_transform` est la distinction
+**Remarque :** cet extrait expose le port **interne**
+`decoder_i.instr_i` (relié à l'entrée du wrapper dans le graphe),
+et non directement `rtlprep_cva6_compressed_decoder.instr_i`.
+Les offsets RHS de l'exemple sont vérifiés sur le véritable AST
+et les tests sur l'artefact épinglé. Le `value_transform` est la distinction
 essentielle : ce segment n'est **pas** une copie directe.
 
 L'opération n'est reconnue que si :
