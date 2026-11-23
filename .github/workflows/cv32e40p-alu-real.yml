@@ -64,6 +64,36 @@ jobs:
           python scripts/run_cv32e40p_alu.py \
             --source-root upstream_cv32e40p \
             --out reports/cv32e40p-alu --timeout 180
+      - name: Import pinned genuine CV32E40P ALU filelist and build real graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > upstream_cv32e40p/rtlprep_alu.f <<'EOF'
+          +incdir+rtl/include
+          rtl/include/cv32e40p_pkg.sv
+          rtl/cv32e40p_popcnt.sv
+          rtl/cv32e40p_ff_one.sv
+          rtl/cv32e40p_alu_div.sv
+          rtl/cv32e40p_alu.sv
+          EOF
+          python -m rtlprep import-filelist upstream_cv32e40p/rtlprep_alu.f \
+            --root upstream_cv32e40p --top cv32e40p_alu \
+            --out reports/imported-alu/design.json
+          python -m rtlprep deps reports/imported-alu/design.json \
+            --out reports/imported-alu --timeout 180
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("reports/imported-alu")
+          manifest = json.loads((path/"design.json").read_text())
+          graph = json.loads((path/"rtl_dependencies.json").read_text())
+          index = json.loads((path/"rtl_index.json").read_text())
+          assert len(manifest["sources"]) == 5, manifest
+          assert Path(manifest["sources"][0]).name == "cv32e40p_pkg.sv"
+          assert index["top"] == graph["top"] == "cv32e40p_alu"
+          assert graph["counts"]["edges"] >= 300, graph["counts"]
+          print("REAL_OPENHW_FILELIST_IMPORT_PASSED", graph["counts"])
+          PY
       - name: Publish diagnostic reports
         if: always()
         uses: actions/upload-artifact@v4

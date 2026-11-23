@@ -41,6 +41,25 @@ jobs:
       - name: Run REAL slang tests (must not be skipped)
         run: |
           python -m pytest -vv -rs -o addopts='' tests/test_integration_slang.py
+      - name: Import nested SystemVerilog filelist and compile real slang
+        run: |
+          python -m pytest -q -rs tests/test_integration_filelist_slang.py
+          python -m rtlprep import-filelist examples/filelist_project/compile.f \
+            --root examples/filelist_project --top imported_top \
+            --out reports/ci-filelist/design.json
+          python -m rtlprep deps reports/ci-filelist/design.json --out reports/ci-filelist
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("reports/ci-filelist")
+          data = json.loads((out / "rtl_index.json").read_text())
+          graph = json.loads((out / "rtl_dependencies.json").read_text())
+          manifest = json.loads((out / "design.json").read_text())
+          assert data["top"] == graph["top"] == manifest["top"] == "imported_top"
+          assert [Path(p).name for p in manifest["sources"]] == ["pkg.sv", "top.sv"]
+          assert graph["counts"]["edges"] > 0
+          print("FILELIST_IMPORT_REAL_SLANG_PASSED", graph["counts"])
+          PY
       - name: Show example summary
         run: |
           python -m rtlprep analyze examples/hierarchy/design.json --out reports/ci-hierarchy

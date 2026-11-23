@@ -18,6 +18,19 @@ def main() -> int:
     p = argparse.ArgumentParser(prog="rtlprep", description="Outils RTL locaux, sans cle API")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("doctor", help="afficher les outils et paquets disponibles")
+    imp = sub.add_parser(
+        "import-filelist",
+        help="importer une filelist .f en manifeste RTLPrep, sans executer d'outil EDA",
+    )
+    imp.add_argument("filelist", type=Path, help="filelist .f initiale")
+    imp.add_argument("--root", type=Path, required=True,
+                     help="racine de confiance limitant toutes les sources et includes")
+    imp.add_argument("--top", required=True, help="module top explicite")
+    imp.add_argument("--out", type=Path, required=True,
+                     help="chemin de sortie du manifeste JSON")
+    imp.add_argument("--force", action="store_true",
+                     help="autoriser le remplacement du manifeste de sortie")
+
     for name in ("analyze", "lint", "synth", "all", "index", "deps", "simulate", "formal"):
         s = sub.add_parser(name)
         s.add_argument("manifest", help="chemin vers design.json")
@@ -66,6 +79,17 @@ def main() -> int:
             return 0
         except (OSError, ValueError, RuntimeError) as exc:
             p.exit(2, f"Erreur MCP : {exc}\\n")
+    if args.cmd == "import-filelist":
+        try:
+            from .filelist import write_manifest
+            result = write_manifest(
+                args.filelist, root=args.root, top=args.top,
+                output=args.out, overwrite=args.force,
+            )
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+        except (OSError, ValueError, TypeError) as exc:
+            p.exit(2, f"Import filelist impossible : {exc}\n")
     if args.cmd == "doctor":
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0

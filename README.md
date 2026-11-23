@@ -31,6 +31,31 @@ L'installation cible Linux x86_64 / WSL2 avec Python 3.11 ou supérieur.
 **[Guide détaillé : installation, dépannage, mise à jour des versions et
 vérifications](docs/dependencies-bootstrap.md).**
 
+## Import de projets SystemVerilog et filelists (PR #27)
+
+RTLPrep sait préparer un manifeste `design.json` depuis une **filelist .f**
+avec listes imbriquées, chemins RTL, packages ordonnés, `+incdir+`,
+`+define+`, `-I` et `-D`. Aucune compilation ni commande externe n'est
+lancée pendant l'import ; les chemins restent limités à `--root`.
+
+```bash
+python -m rtlprep import-filelist examples/filelist_project/compile.f \
+  --root examples/filelist_project \
+  --top imported_top \
+  --out reports/filelist-demo/design.json
+
+python -m rtlprep deps reports/filelist-demo/design.json \
+  --out reports/filelist-demo
+```
+
+L'import **refuse les options non comprises**, les globs, les substitutions
+shell, les fichiers manquants et les chemins qui sortent de la racine.
+Il ne prétend pas détecter automatiquement les packages manquants ou
+résoudre toutes les conventions de filelists utilisées par les EDA.
+Une intégration CI exécute **slang réel**, y compris sur l'ALU CV32E40P.
+
+[**Guide et limites de l'importeur SystemVerilog**](docs/filelists-systemverilog.md).
+
 ## 📚 Documentation pédagogique détaillée
 
 Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :
