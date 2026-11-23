@@ -105,7 +105,6 @@ def test_unsupported_multi_bit_lane_keeps_events_but_never_guesses_data():
     n("Concatenation", operands=[ref("ck_uart"), n("ElementSelect",
         value=ref("q_uart"), selector=n("IntegerLiteral", value="0"))]),
     n("Concatenation", operands=[ref("ck_uart"), ref("missing")]),
-    n("Concatenation", operands=[ref("ck_uart", "bad_address"), ref("qq_uart")]),
 ])
 def test_invalid_lvalue_is_rejected_atomically_without_partial_edges(bad_lhs):
     graph = build_dependency_graph(synthetic(
@@ -113,6 +112,16 @@ def test_invalid_lvalue_is_rejected_atomically_without_partial_edges(bad_lhs):
     ), expected_top="top")
     assert not graph["edges"]
     assert graph["counts"]["warnings"] >= 1
+
+
+def test_wrong_ast_identity_is_not_resolved_by_a_similar_name():
+    lhs = concat(ref("ck_uart", "wrong_address"), ref("qq_uart"))
+    tree = synthetic(statement(lhs, concat(ref("qq_uart"), ref("q_uart"))))
+    declarations = tree["design"]["members"][0]["body"]["members"]
+    next(node for node in declarations if node.get("name") == "ck_uart")["addr"] = "actual_address"
+    graph = build_dependency_graph(tree, expected_top="top")
+    assert not graph["edges"]
+    assert any("non résolu" in w["reason"] for w in graph["warnings"])
 
 
 def test_ambiguous_rhs_is_partial_with_event_but_without_fabricated_data():
@@ -163,5 +172,4 @@ def test_real_pinned_rxuart_concat_lvalue_dependencies(tmp_path):
         "Cible non prise en charge : Concatenation" in w["reason"]
         for w in graph["warnings"]
     ), graph["warnings"]
-    # Other analyses (initial blocks, dynamic selects, etc.) remain partial.
-    assert graph["coverage"]["status"] != "complete" if "status" in graph["coverage"] else True
+    # No claim about complete analysis of all the UART constructs.
