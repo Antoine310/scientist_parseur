@@ -189,7 +189,7 @@ def _packed_width(type_string: Any) -> int | None:
         return None
     if type_string in ("logic", "bit"):
         return 1
-    match = re.fullmatch(r"(?:logic|bit)\\[(\\d+):(\\d+)\\]", type_string)
+    match = re.fullmatch(r"(?:logic|bit)\[(\d+):(\d+)\]", type_string)
     if match is None:
         return None
     upper, lower = (int(x) for x in match.groups())
