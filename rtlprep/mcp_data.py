@@ -17,6 +17,7 @@ from .index import (
 )
 from .manifest import load_design
 from .runner import fingerprint
+from .evidence import build_evidence_view
 
 MAX_INDEX_BYTES = 12 * 1024 * 1024
 MAX_GRAPH_BYTES = 32 * 1024 * 1024
@@ -32,6 +33,8 @@ REPORT_FIELDS = frozenset({
     "skipped", "returncode", "elapsed_seconds", "proof", "cover",
     "equivalent", "eqy_verdict", "partition_count", "graph_warnings",
     "edges", "index", "dependencies", "cell_count", "source_fingerprint",
+    "assumptions", "gold_fingerprint", "gate_fingerprint",
+    "top_gold", "top_gate",
 })
 
 
@@ -117,6 +120,7 @@ class ReadOnlyRtl:
             "runs_eda": False, "edits_files": False, "uses_paid_llm_api": False,
             "index_available": self.index is not None,
             "graph_available": self.graph is not None,
+            "evidence_available": self.graph is not None,
             "expressions_available": isinstance(
                 self.graph.get("expressions"), dict) if self.graph else False,
             "sequential_candidates_available": (
@@ -389,6 +393,32 @@ class ReadOnlyRtl:
         excerpt = get_source_context(self.design.sources, filename, line, radius)
         excerpt["source_snapshot_status"] = status
         return excerpt
+
+    def evidence(self, signal: str | None = None, limit: int = 20,
+                 offset: int = 0) -> dict[str, Any]:
+        """Relier cible RTL, hypotheses et rapports stockes par empreintes.
+
+        Le champ signal ancre seulement des observations AST ; il ne
+        transforme jamais une validation globale en preuve par signal.
+        """
+        if signal is not None and (
+            not isinstance(signal, str) or not 1 <= len(signal) <= 256
+        ):
+            raise ValueError("Evidence : nom de signal complet requis")
+        approved = ({p.name for p in self.design.sources}
+                    if self.design is not None else None)
+        view = build_evidence_view(
+            self._graph(), self.reports, signal=signal,
+            artifact_fingerprint=self.artifact_fingerprint,
+            source_snapshot_status=self._source_snapshot_status(),
+            approved_sources=approved,
+        )
+        records = view.pop("records")
+        return {
+            **_page(records, limit, offset),
+            **view,
+            "origin": "stored_reports_not_reexecuted",
+        }
 
     def validations(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         items = [{

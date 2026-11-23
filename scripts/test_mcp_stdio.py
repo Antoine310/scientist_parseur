@@ -33,7 +33,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
             "rtl_trace", "rtl_expressions", "rtl_register_flow",
             "rtl_bit_accesses", "rtl_coverage", "rtl_sequential_candidates",
-            "rtl_warnings", "rtl_source", "rtl_validations",
+            "rtl_warnings", "rtl_source", "rtl_validations", "rtl_evidence",
         }
         assert names == required, (names, required)
         assert not any(
@@ -54,6 +54,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert caps["bit_accesses_available"] is True
         assert caps["coverage_available"] is True
         assert caps["sequential_candidates_available"] is True
+        assert caps["evidence_available"] is True
 
         modules = await call("rtl_modules", limit=10)
         assert set(modules["items"]) == {"leaf", "hierarchy_top"}, modules
@@ -108,6 +109,16 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert "total" in warnings
         source = await call("rtl_source", filename="leaf.sv", line=2, radius=1)
         assert source["selected_line"] == 2 and len(source["lines"]) == 3
+        evidence = await call("rtl_evidence", signal="hierarchy_top.first.status", limit=2)
+        assert evidence["scope"] == "design_snapshot_report_association_only", evidence
+        assert evidence["source_snapshot_status"] == "matching", evidence
+        assert evidence["total"] == 3 and evidence["next_offset"] == 2, evidence
+        assert evidence["signal"] == "hierarchy_top.first.status", evidence
+        assert evidence["origin"] == "stored_reports_not_reexecuted", evidence
+        assert all(x["association"] != "signal_proof" for x in evidence["items"])
+        rest = await call("rtl_evidence", limit=2, offset=2)
+        assert len(rest["items"]) == 1, rest
+        assert rest["signal"] is None, rest
         reports_list = await call("rtl_validations")
         assert any(x["file"] == "deps.result.json" for x in reports_list["items"])
         assert all(x["origin"] == "stored_report_not_reexecuted"
@@ -125,6 +136,9 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             ("rtl_coverage", {"limit": 9999}),
             ("rtl_coverage", {"signal": "../escape"}),
             ("rtl_sequential_candidates", {"signal": "hierarchy_top.first.status", "limit": 9999}),
+            ("rtl_evidence", {"limit": 9999}),
+            ("rtl_evidence", {"signal": "../arbitrary/file"}),
+
         ]:
             result = await client.call_tool(tool, arguments)
             assert result.is_error, (tool, result)
