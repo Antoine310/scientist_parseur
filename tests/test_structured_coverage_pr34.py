@@ -128,6 +128,19 @@ def test_expression_unsupported_call_and_malformed_repetition_stay_partial():
         assert row(result)["expression"]["kind"] == "unsupported"
 
 
+def test_expression_depth_budget_still_reports_partial_for_deeper_ast():
+    deep = lit("1")
+    for _ in range(24):
+        deep = n("UnaryOp", op="LogicalNot", operand=deep)
+    result = graph(assign(ref("out"), deep))
+    item = row(result)
+    assert item["coverage"] == "partial"
+    current = item["expression"]
+    while current.get("kind") == "unary":
+        current = current["operand"]
+    assert current == {"kind": "unsupported", "ast_kind": "limit_exceeded"}
+
+
 def test_bit_access_nested_target_is_not_given_invented_flat_target_lanes():
     target = n("ElementSelect",
                value=n("ElementSelect", value=ref("arr"), selector=lit("1")),
@@ -213,6 +226,7 @@ def test_real_pinned_rtl_expression_and_bit_coverage(tmp_path, top, source, pin)
         assert expr["partial_expressions"] < 17
     if top == "priority_encoder":
         assert expr["unsupported_targets"] == 0, expr
+        assert expr["partial_expressions"] < 2, expr
         assert bits["partial"] < 7
     if top == "rxuart":
         assert expr["partial_expressions"] < 18
