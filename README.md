@@ -310,6 +310,25 @@ La couverture totale et l'accuracy fonctionnelle ne sont pas mesurées.
 
 [Guide, cas limites et reproduction de la PR #37](docs/member-lvalue-pr37.md).
 
+## Sélections de bits dans les blocs procéduraux (PR #38)
+
+L'index `bit_accesses` inspecte désormais les affectations des
+`always_ff`, `always_comb`, `always_latch` et `always`,
+en conservant le contexte syntaxique des branches `if/case`, le
+blocking/nonblocking et les événements explicites connus par slang.
+Il **n'infère pas** de latence, priorité d'affectation, sensibilité
+implicite, valeur de registre ni correction fonctionnelle.
+
+Le vrai décodeur compressé CVA6 épinglé fournit désormais **52
+enregistrements de bits, tous `partial`** (42 largeurs sources non
+démontrées, 9 réplications, 1 conversion), contre **aucun
+enregistrement** avant cette PR parce que l'analyseur ignorait
+les processus. Les 12 nœuds / 13 arêtes du graphe restent identiques.
+Une fixture procédurale distincte, élaborée avec **slang v12.1**,
+exerce des correspondances de bits statiques réellement vérifiables.
+
+[Tests, mesures et limites : PR #38](docs/procedural-bit-access-pr38.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
