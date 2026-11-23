@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "method": "pinned_external_rtl_observation_without_functional_oracle",
+  "cases": [
+    {
+      "id": "axis_register",
+      "upstream": {
+        "repository": "alexforencich/verilog-axis",
+        "commit": "48ff7a7e2ef782cf778d47910cf85835c64b1bce",
+        "checkout": "verilog-axis"
+      },
+      "top": "axis_register",
+      "sources": [
+        {
+          "path": "rtl/axis_register.v",
+          "git_blob_sha1": "93fe0bee6ff1f50d1e2236f5babc283bada2f1a2"
+        }
+      ],
+      "include_dirs": [],
+      "defines": [],
+      "probes": [
+        {
+          "id": "axi_payload",
+          "signal": "axis_register.m_axis_tdata",
+          "direction": "fanin"
+        },
+        {
+          "id": "axi_valid",
+          "signal": "axis_register.m_axis_tvalid",
+          "direction": "fanin"
+        }
+      ]
+    },
+    {
+      "id": "priority_encoder",
+      "upstream": {
+        "repository": "alexforencich/verilog-axis",
+        "commit": "48ff7a7e2ef782cf778d47910cf85835c64b1bce",
+        "checkout": "verilog-axis"
+      },
+      "top": "priority_encoder",
+      "sources": [
+        {
+          "path": "rtl/priority_encoder.v",
+          "git_blob_sha1": "cf82512ba84c43cfddc7728782493241b563b8f3"
+        }
+      ],
+      "include_dirs": [],
+      "defines": [],
+      "probes": [
+        {
+          "id": "valid",
+          "signal": "priority_encoder.output_valid",
+          "direction": "fanin"
+        },
+        {
+          "id": "encoded",
+          "signal": "priority_encoder.output_encoded",
+          "direction": "fanin"
+        }
+      ]
+    },
+    {
+      "id": "rxuart",
+      "upstream": {
+        "repository": "ZipCPU/wbuart32",
+        "commit": "f43a6b83c3a70fb2ac0696a45c5545b233fb860b",
+        "checkout": "wbuart32"
+      },
+      "top": "rxuart",
+      "sources": [
+        {
+          "path": "rtl/rxuart.v",
+          "git_blob_sha1": "1506e563944a2da1c1b01be6c1a953ad92fdff7d"
+        }
+      ],
+      "include_dirs": [],
+      "defines": [],
+      "probes": [
+        {
+          "id": "received_data",
+          "signal": "rxuart.o_data",
+          "direction": "fanin"
+        },
+        {
+          "id": "write_strobe",
+          "signal": "rxuart.o_wr",
+          "direction": "fanin"
+        }
+      ]
+    }
+  ]
+}

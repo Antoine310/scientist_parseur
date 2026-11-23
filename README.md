@@ -56,6 +56,31 @@ Une intégration CI exécute **slang réel**, y compris sur l'ALU CV32E40P.
 
 [**Guide et limites de l'importeur SystemVerilog**](docs/filelists-systemverilog.md).
 
+## Validation sur des RTL externes (PR #28)
+
+Une campagne reproductible utilise **3 blocs de 2 projets open source tiers**
+(registre AXI-Stream, encodeur de priorité et récepteur UART), à des
+révisions Git et empreintes blob **épinglées**. Elle génère des rapports de
+vraie élaboration slang, index, graphe, avertissements, couverture
+**des enregistrements observés uniquement** et troncatures de fan-in
+avec trois budgets de requêtes.
+
+La campagne distingue un échec réel, une analyse partielle et une
+observation sans limitation signalée, **sans prétendre mesurer la
+correction fonctionnelle, la couverture totale du design ou la
+précision de Codex**.
+
+```bash
+python scripts/validate_unknown_rtl.py \
+  --sources-root upstream_unknown \
+  --out reports/unknown-validation
+```
+
+La préparation et les revisions Git précises des deux dépôts sont dans
+le [guide de validation des RTL externes](docs/unknown-designs-validation.md).
+Les sources externes ne sont pas recopiées dans le dépôt et sont ignorées
+par Git dans le dossier `upstream_unknown/`.
+
 ## 📚 Documentation pédagogique détaillée
 
 Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :
