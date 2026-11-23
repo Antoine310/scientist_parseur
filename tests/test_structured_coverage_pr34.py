@@ -141,6 +141,28 @@ def test_expression_depth_budget_still_reports_partial_for_deeper_ast():
     assert current == {"kind": "unsupported", "ast_kind": "limit_exceeded"}
 
 
+def test_expression_node_budget_reports_partial_for_wide_ast():
+    # Fewer than 16 levels but exponentially many AST nodes.
+    wide = lit("1")
+    for _ in range(8):
+        wide = n("BinaryOp", op="BitwiseXor", left=wide, right=wide)
+    result = graph(assign(ref("out"), wide))
+    item = row(result)
+    assert item["coverage"] == "partial"
+    kinds = []
+    def walk(part):
+        if isinstance(part, dict):
+            if part.get("kind") == "unsupported":
+                kinds.append(part.get("ast_kind"))
+            for child in part.values():
+                walk(child)
+        elif isinstance(part, list):
+            for child in part:
+                walk(child)
+    walk(item["expression"])
+    assert "limit_exceeded" in kinds
+
+
 def test_bit_access_nested_target_is_not_given_invented_flat_target_lanes():
     target = n("ElementSelect",
                value=n("ElementSelect", value=ref("arr"), selector=lit("1")),
