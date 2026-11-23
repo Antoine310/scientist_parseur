@@ -42,8 +42,13 @@ def stmt(lhs, rhs):
 
 
 def synthetic(*items):
-    names = ("data", "out", "idx", "init")
-    declarations = [n("Variable", name=name, type="logic") for name in names]
+    names = ("data", "out", "idx", "init", "matrix")
+    declarations = [
+        n("Variable", name=name,
+          type=("logic[1:0][7:0]" if name == "matrix"
+                else "logic[7:0]" if name in ("data", "out") else "logic"))
+        for name in names
+    ]
     return {"design": n("Root", members=[
         n("Instance", name="top", body=n(
             "InstanceBody", name="top", members=declarations + list(items),
@@ -119,11 +124,11 @@ def test_slang_folded_multiply_index_and_nested_selection():
                   right=literal("2"), constant="4")
     nested = n("ElementSelect",
                value=n("ElementSelect",
-                       value=ref("data"), selector=literal("0")),
+                       value=ref("matrix"), selector=literal("0")),
                selector=generated)
     g = graph(n("ContinuousAssign", assignment=assignment(ref("out"), nested)))
     assert g["counts"]["warnings"] == 0, g["warnings"]
-    assert links(g, "data") == {("top.data", "top.out")}
+    assert links(g, "data") == {("top.matrix", "top.out")}
     assert any(
         entry["selection"] == {
             "kind": "nested", "parts": [
