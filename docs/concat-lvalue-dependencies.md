@@ -29,9 +29,10 @@ Pour une cible `Concatenation` :
   `logic`, `reg` ou `bit`) et si la RHS est :
   - une concaténation de même longueur, composée uniquement de signaux
     scalaires identifiés ou de littéraux **1 bit** de largeur explicite ;
-  - un littéral entier ou de remplissage, sans dépendance à un signal,
-    indépendamment de la taille de la constante (aucune carte des bits
-    de cette constante n'est inférée).
+  - un littéral entier ou de remplissage, éventuellement enveloppé
+    dans des `Conversion` / `SignedConversion` simples et bornées dont
+    l'opérande est entièrement littéral. Cela ne crée aucune dépendance
+    de données, sans inférer la correspondance des bits constants.
 - Une RHS arithmétique, une concaténation hétérogène, une sélection,
   des largeurs inconnues ou des membres LHS sélectionnés ne produisent
   **aucune correspondance data extrapolée**. Un avertissement documente
