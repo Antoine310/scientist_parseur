@@ -248,7 +248,14 @@ def test_real_slang_fixture_uses_true_enum_and_repeated_bit_segments(tmp_path):
     graph = json.loads((out / "rtl_dependencies.json").read_text())
     rows = {item["target"]: item for item in graph["bit_accesses"]["items"]}
     assert len(rows) == 3, graph["bit_accesses"]
-    assert graph["bit_accesses"]["counts"]["precise"] == 3, graph["bit_accesses"]
+    fixture_status = {
+        item["target"]: {
+            "coverage": item["coverage"],
+            "reason": item.get("reason"),
+            "rhs_width": item.get("rhs_width"),
+        } for item in graph["bit_accesses"]["items"]
+    }
+    assert graph["bit_accesses"]["counts"]["precise"] == 3, fixture_status
     packed = rows["typed_segments_pr39.packed_o"]
     assert packed["rhs_width"] == 16 and packed["coverage"] == "rhs_lanes_only"
     assert {"source": None, "selection": {
