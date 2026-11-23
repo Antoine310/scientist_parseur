@@ -27,10 +27,35 @@ def test_real_axis_register_generate_scope_and_edges(tmp_path, variant):
     assert git_blob_sha1(UPSTREAM.read_bytes()) == PIN
     top = f"axis_variant_{variant}"
     wrapper = tmp_path / "wrapper.sv"
+    # Slang treats unconnected output ports as diagnostics with nonzero
+    # status. Connect the real module ports explicitly instead of stubbing
+    # or suppressing compiler diagnostics.
+    inputs = {
+        "clk": 1, "rst": 1,
+        "s_axis_tdata": 8, "s_axis_tkeep": 1,
+        "s_axis_tvalid": 1, "s_axis_tlast": 1,
+        "s_axis_tid": 8, "s_axis_tdest": 8, "s_axis_tuser": 1,
+        "m_axis_tready": 1,
+    }
+    outputs = {
+        "s_axis_tready": 1,
+        "m_axis_tdata": 8, "m_axis_tkeep": 1,
+        "m_axis_tvalid": 1, "m_axis_tlast": 1,
+        "m_axis_tid": 8, "m_axis_tdest": 8, "m_axis_tuser": 1,
+    }
+    declarations = [
+        f"  logic [{width-1}:0] {name};" if width > 1
+        else f"  logic {name};"
+        for name, width in (inputs | outputs).items()
+    ]
+    connections = ",\n".join(
+        f"    .{name}({name})" for name in (inputs | outputs)
+    )
     wrapper.write_text(
-        f"module {top};\n"
-        f"  axis_register #(.REG_TYPE({variant})) dut();\n"
-        "endmodule\n", encoding="utf-8",
+        f"module {top};\n" + "\n".join(declarations) + "\n" +
+        f"  axis_register #(.REG_TYPE({variant})) dut (\n" +
+        connections + "\n  );\nendmodule\n",
+        encoding="utf-8",
     )
     manifest = tmp_path / "design.json"
     manifest.write_text(json.dumps({
