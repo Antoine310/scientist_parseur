@@ -115,25 +115,28 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
     assert result["observed_analyzers"]["expressions"]["counts"]["captured"] == 93
     assert result["observed_analyzers"]["expressions"]["counts"]["partial_expressions"] == 0
     assert result["observed_analyzers"]["register_flow"]["counts"]["captured"] == 0
-    # PR38 now observes selected expressions inside CVA6's always_comb.
-    # Every one is PARTIAL: no positional source mapping has been proved.
+    # PR39 measured on official pinned CVA6 with real slang v12.1.
+    # Positional *syntax* only, not an exhaustive functional correctness oracle.
     bits = result["observed_analyzers"]["bit_accesses"]["counts"]
     assert bits["assignments_seen"] == 93
     assert bits["captured"] == 52
-    assert bits["partial"] == 52
-    assert bits["precise"] == 0
+    assert bits["precise"] == 51
+    assert bits["partial"] == 1
     assert bits["unsupported_targets"] == 0
     assert bits["unsupported_statements"] == 0
     assert bits["procedural_blocks_visited"] == 1
     assert bits["truncated"] is False
     snapshot = json.loads((tmp_path / "cva6/rtl_dependencies.json").read_text())
     from collections import Counter
-    assert Counter(item["reason"] for item in snapshot["bit_accesses"]["items"]) == {
-        "source_width_unknown": 42,
-        "unsupported_rhs_Replication": 9,
-        "unsupported_rhs_Conversion": 1,
-    }
-    assert result["coverage_assessment"] == "reported_limits"
+    reasons = dict(sorted(Counter(item["reason"] for item in
+                                  snapshot["bit_accesses"]["items"]
+                                  if item["coverage"] == "partial").items()))
+    assert reasons == {"unsupported_rhs_UnaryOp": 1}
+    print("PR39_CVA6_SPLIT", {
+        "precise": bits["precise"], "partial": bits["partial"],
+        "partial_reasons": reasons,
+    })
+    assert result["design_coverage"] == "not_measured"
     assert result["warnings_sample"] == []
     assert all(row["observed_input_reachable"] and not row["truncated"]
                for row in result["fanin_outputs"].values())

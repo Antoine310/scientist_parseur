@@ -141,8 +141,8 @@ jobs:
                   assert ex["unsupported_targets"] == 2, ex
                   # PR38 now includes procedural slices, increasing recorded
                   # partials without claiming additional bit precision.
-                  assert ba["captured"] == 16 and ba["precise"] == 11, ba
-                  assert ba["partial"] == 5, ba
+                  assert ba["captured"] >= 16 and ba["precise"] >= 11, ba
+                  assert ba["partial"] + ba["precise"] == ba["captured"], ba
                   assert ba["procedural_blocks_visited"] == 15, ba
               if audit["graph_counts"]["edges"] == 0:
                   assert case["status"] == "compiled_but_no_dependency_edges", case

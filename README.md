@@ -329,6 +329,25 @@ exerce des correspondances de bits statiques réellement vérifiables.
 
 [Tests, mesures et limites : PR #38](docs/procedural-bit-access-pr38.md).
 
+## Segments typés, paramètres et réplications sur le CVA6 (PR #39)
+
+RTLPrep peut désormais positionner les segments de concaténations
+lorsque le **type elaboré** donne une largeur `logic[N:M]` explicite
+et que l'**identité du symbole** est vérifiée, y compris pour les
+constantes de packages. Les réplications de nombre littéral sont
+dépliées sous des budgets stricts ; seules les conversions dont la
+largeur est inchangée et démontrée sont admises.
+
+Sur le décodeur compressé du vrai CVA6, le nombre de segments
+`bit_accesses` positionnés **syntaxiquement** passe de
+**0 à 51 sur 52** ; le dernier reste `partial` (`UnaryOp`).
+Le graphe signal entier reste à **12 nœuds, 13 arêtes et zéro
+avertissement**. Cela ne constitue **ni une preuve fonctionnelle,
+ni une mesure de couverture globale**. Les alias d'énumération
+sans largeur prouvée restent `partial`.
+
+[Mesures CVA6, cas négatifs et reproduction de la PR #39](docs/typed-segments-cva6-pr39.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
