@@ -103,6 +103,24 @@ correspondance bit-à-bit.
 L'absence d'avertissements au niveau du graphe signal entier ne
 contredit pas les limites du nouvel index de bits.
 
+## Seconde observation externe : récepteur UART ZipCPU
+
+Sur le véritable `rxuart.v` de `ZipCPU/wbuart32`, au blob Git
+`1506e563944a2da1c1b01be6c1a953ad92fdff7d` déjà épinglé
+par la validation RTL externe, la CI de non-régression observe :
+
+- **72 affectations inspectées** par `bit_accesses` ;
+- **16 enregistrements de bits**, dont **11 positionnements
+  syntaxiques pris en charge** et **5 partiels**, contre 8 enregistrements
+  et 1 partiel avec l'ancien périmètre ;
+- **15 blocs procéduraux analysés**, **15 autres exclus**
+  et **2 cibles non résolues**.
+
+Ces statistiques reflètent seulement les formes que l'analyseur
+rencontre et classe, et ne constituent **ni un taux de rappel,
+ni un taux de précision, ni une preuve que 11 affectations
+produisent les bonnes valeurs en simulation**.
+
 ## Reproduire sur Debian / WSL2
 
 ```bash
