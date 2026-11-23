@@ -210,17 +210,20 @@ class ReadOnlyRtl:
         found: dict[tuple[str, str], dict[str, Any]] = {}
         for signal in idx["signals"]:
             path, name = signal["instance_path"], signal["name"]
-            if needle in f"{path}.{name}".casefold():
-                found[(path, name)] = {
+            qualified = signal.get("path") or f"{path}.{name}"
+            if needle in qualified.casefold():
+                found[(path, qualified)] = {
                     "instance_path": path, "name": name,
-                    "kind": signal.get("kind"), "source": signal.get("source"),
+                    "path": qualified, "kind": signal.get("kind"),
+                    "source": signal.get("source"),
                 }
         for inst in idx["instances"]:
             for port in inst["ports"]:
                 path, name = inst["path"], port["name"]
                 if needle in f"{path}.{name}".casefold():
-                    found.setdefault((path, name), {
+                    found.setdefault((path, f"{path}.{name}"), {
                         "instance_path": path, "name": name,
+                        "path": f"{path}.{name}",
                         "kind": "Port", "source": port.get("source"),
                     })
         items = [found[key] for key in sorted(found)]
