@@ -270,7 +270,14 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         # gets N independent data edges.
         paired: list[str | None] | None = None
         rhs = obj.get("right")
-        if all(single_bit(dest) for dest in destinations) and isinstance(rhs, dict):
+        if isinstance(rhs, dict) and rhs.get("kind") in (
+            "IntegerLiteral", "UnbasedUnsizedIntegerLiteral"
+        ):
+            # A literal never reads an RTL signal. Its width may be extended
+            # or truncated on assignment, but data dependency edges remain
+            # empty regardless of that conversion. No bit mapping is claimed.
+            paired = [None] * len(destinations)
+        elif all(single_bit(dest) for dest in destinations) and isinstance(rhs, dict):
             rhs_kind = rhs.get("kind")
             if rhs_kind == "Concatenation":
                 values = rhs.get("operands")
@@ -292,13 +299,6 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                             break
                     if len(mapped) == len(destinations):
                         paired = mapped
-            elif rhs_kind == "IntegerLiteral" and (
-                _explicit_literal_width(rhs) == len(destinations)
-            ):
-                paired = [None] * len(destinations)
-            elif rhs_kind == "UnbasedUnsizedIntegerLiteral":
-                # '0 / '1 / 'x / 'z fill all LHS bits, with no data signal.
-                paired = [None] * len(destinations)
         if paired is None:
             warn(path, "Concaténation cible : positions RHS non démontrées (données omises)")
         for i, dest in enumerate(destinations):
