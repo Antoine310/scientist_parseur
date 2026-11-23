@@ -263,6 +263,20 @@ par [GitHub Actions](.github/workflows/cv32e40p-real.yml).
 **[Lire le rapport et le cours pédagogique du test CV32E40P](docs/test-cv32e40p-reel.md).**
 Les sources du CPU ne sont pas recopiées dans ce dépôt.
 
+## Premier module CVA6 officiel analysé (PR #35)
+
+RTLPrep dispose maintenant d'une première expérience reproductible sur
+le **vrai compressed decoder du CVA6**, avec le checkout Git officiel
+`742dc82`, la configuration `cv32a6_imac_sv32` et slang 12.1.
+
+La première exécution a élaboré **2 instances, 12 nœuds et 13 arêtes** ;
+les cinq sorties sont reliées à `instr_i` par des traces `fanin`.
+Mais le graphe présente encore **1 avertissement `MemberAccess`** et
+l'index d'expressions compte **57 enregistrements partiels sur 93**.
+**La couverture et l'exactitude fonctionnelle ne sont pas mesurées**.
+
+[Voir les sources épinglées, la reproduction et les limites](docs/cva6-first-compressed-decoder.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
