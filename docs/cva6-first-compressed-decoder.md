@@ -62,6 +62,35 @@ Si `upstream_cva6` existe déjà, ne pas refaire le clone : vérifier
 l'origine, la révision et les fichiers avant de lancer l'analyse.
 Ne jamais modifier les données non suivies de `docs/agent-reports/`.
 
+## Résultat réel de la première CI (slang 12.1)
+
+Le Git checkout officiel à `742dc82` et les cinq blobs ont été
+vérifiés. L'élaboration a produit **2 instances**, **12 signaux / nœuds**,
+**13 arêtes**, dont **6 de contrôle**, **1 de données**, **1 liaison d'entrée**
+et **5 liaisons de sortie**. Le graphe contient **1 avertissement :
+`Expression non prise en charge : MemberAccess`**.
+
+Les cinq sorties ont un chemin `fanin` observable jusqu'au port d'entrée
+`instr_i`, sans troncature avec le budget de cette expérience. En revanche,
+**93 affectations** ont été répertoriées par l'index d'expressions, dont
+**57 partielles**. `register_flow` ne capture aucun enregistrement car
+son périmètre est l'analyse des `always_ff`, et `bit_accesses` ne capture
+aucun enregistrement parce qu'il ne couvre actuellement que les assignations
+continues. **Ces zéros ne sont pas des résultats complets !**
+
+Cette disproportion (**13 arêtes pour 93 affectations syntaxiques**) est
+un excellent signal de recherche, mais pas un ratio fiable de couverture :
+les arêtes sont dédupliquées par signal et une seule arête peut résumer de
+multiples affectations. Il n'y a pas d'oracle indépendant exhaustif.
+`coverage_assessment=reported_limits` reste donc la seule conclusion
+raisonnable.
+
+La prochaine amélioration devrait examiner les membres statiques de
+`CVA6Cfg` dans l'AST slang et les 57 expressions partielles pour
+augmenter la précision **sans transformer des constantes en signaux
+de runtime**, puis élargir le contexte d'analyse des sélections dans
+des processus combinatoires.
+
 ## Sorties et limitations
 
 Le rapport `cva6_compressed_decoder_report.json` inclut
