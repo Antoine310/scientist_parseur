@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from .index import build_index
-from .symbols import SignalResolver
+from .symbols import SignalResolver, member_name
 
 EXPRESSION_SCHEMA_VERSION = 1
 MAX_EXPRESSIONS = 2000
@@ -171,6 +171,19 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
                 "kind": "range_select", "value": base,
                 "left": expression(path, node.get("left"), state, depth + 1),
                 "right": expression(path, node.get("right"), state, depth + 1),
+            }
+        if kind == "MemberAccess":
+            # slang's 'member' has an unstable semantic declaration address;
+            # keep only the bounded field name and structured base expression.
+            # No packed-layout offset or runtime dependency is invented here.
+            name = member_name(node)
+            if name is None or not isinstance(node.get("value"), dict):
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_member_access"}
+            return {
+                "kind": "member_access",
+                "member": name,
+                "value": expression(path, node["value"], state, depth + 1),
             }
         if kind == "Concatenation":
             operands = node.get("operands")
