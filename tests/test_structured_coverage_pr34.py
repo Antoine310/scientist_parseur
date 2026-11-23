@@ -144,6 +144,13 @@ def test_bit_access_nested_target_is_not_given_invented_flat_target_lanes():
     assert item["rhs_width"] == 1
     assert item["source_segments"][0]["selection"] == {"kind": "bit", "index": 5}
     assert "target_lsb" not in item["source_segments"][0]
+    # The independent expressions index also retains the selected LHS
+    # without claiming that arr[1][2] is a flat bit of arr.
+    ex = row(result, "top.arr")
+    assert ex["coverage"] == "syntax_supported"
+    assert ex["target_access"]["kind"] == "element_select"
+    assert ex["target_access"]["value"]["kind"] == "element_select"
+    assert ex["target_access"]["value"]["value"]["path"] == "top.arr"
 
 
 def test_bit_access_generate_arithmetic_index_is_bounded():
@@ -205,7 +212,7 @@ def test_real_pinned_rtl_expression_and_bit_coverage(tmp_path, top, source, pin)
     if top == "axis_register":
         assert expr["partial_expressions"] < 17
     if top == "priority_encoder":
-        assert expr["partial_expressions"] < 2
+        assert expr["unsupported_targets"] == 0, expr
         assert bits["partial"] < 7
     if top == "rxuart":
         assert expr["partial_expressions"] < 18
