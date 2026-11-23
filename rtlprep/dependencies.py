@@ -94,7 +94,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     warning_keys: set[tuple[str, str]] = set()
     initializations: list[dict[str, Any]] = []
     static_selections: list[dict[str, Any]] = []
-    selection_keys: set[tuple[str, str, str, str, int, int]] = set()
+    selection_keys: set[tuple[str, str, str, str]] = set()
 
     # slang encodes references as "symbol-address symbol-name". The address
     # refers to the *exact* semantic declaration in the same exported AST.
@@ -186,51 +186,75 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                     and constant_initializer_expression(path, expr.get("concat"), depth + 1))
         return False
 
-    def record_selection(path: str, expr: dict[str, Any], role: str) -> None:
-        """Keep independently inspectable static positions, without bit edges.
+    def static_index(path: str, expr: Any) -> int | None:
+        """Use slang's elaborated constant only after proving no signal reads.
 
-        The dependency graph stays at signal granularity, so an observed
-        static select is evidence about access, not a bit-level dependency.
-        Dynamic/unknown positions continue to raise a warning.
+        Real generated indices contain Multiply/Add and compiler-reduced
+        'constant' values. Re-parsing the source formula is not necessary.
         """
-        kind = expr.get("kind")
-        if kind == "ElementSelect":
-            selector = expr.get("selector")
-            index = (_static_integer(selector)
-                     if constant_initializer_expression(path, selector) else None)
-            if index is None:
-                warn(path, "Sélection de bits/plage : dépendance au signal entier" if role == "read" else "Sélection de bits : dépendance au signal entier (approximation)")
-                return
-            shape = {"kind": "bit", "index": index}
-            a, b = index, index
-        elif kind == "RangeSelect":
-            lhs, rhs = expr.get("left"), expr.get("right")
-            left = (_static_integer(lhs)
-                    if constant_initializer_expression(path, lhs) else None)
-            right = (_static_integer(rhs)
-                     if constant_initializer_expression(path, rhs) else None)
-            if left is None or right is None or left < right:
-                warn(path, "Sélection de bits/plage : dépendance au signal entier" if role == "read" else "Sélection de bits : dépendance au signal entier (approximation)")
-                return
-            shape = {"kind": "range", "msb": left, "lsb": right}
-            a, b = left, right
-        else:
+        if not constant_initializer_expression(path, expr):
+            return None
+        number = _static_integer(expr)
+        if number is not None:
+            return number
+        if not isinstance(expr, dict):
+            return None
+        folded = expr.get("constant")
+        if not isinstance(folded, (int, str)):
+            return None
+        return _static_integer({"kind": "IntegerLiteral", "value": folded})
+
+    def record_selection(path: str, expr: dict[str, Any], role: str) -> None:
+        """Trace static selections including nested array/part selections.
+
+        No bit-level graph edges are inferred: metadata lists selectors from
+        the base signal outward. Unknown or dynamic selectors still warn.
+        """
+        parts: list[dict[str, Any]] = []
+        current: Any = expr
+        for _ in range(6):
+            if not isinstance(current, dict):
+                break
+            kind = current.get("kind")
+            if kind == "ElementSelect":
+                index = static_index(path, current.get("selector"))
+                if index is None:
+                    warn(path, "Sélection de bits/plage : dépendance au signal entier"
+                         if role == "read" else
+                         "Sélection de bits : dépendance au signal entier (approximation)")
+                    return
+                parts.append({"kind": "bit", "index": index})
+            elif kind == "RangeSelect":
+                left = static_index(path, current.get("left"))
+                right = static_index(path, current.get("right"))
+                if left is None or right is None or left < right:
+                    warn(path, "Sélection de bits/plage : dépendance au signal entier"
+                         if role == "read" else
+                         "Sélection de bits : dépendance au signal entier (approximation)")
+                    return
+                parts.append({"kind": "range", "msb": left, "lsb": right})
+            else:
+                break
+            current = current.get("value")
+        if not parts:
             return
-        base = expr.get("value")
-        if not isinstance(base, dict) or base.get("kind") != "NamedValue":
+        if not isinstance(current, dict) or current.get("kind") != "NamedValue":
             warn(path, "Sélection imbriquée : dépendance au signal entier")
             return
-        symbol = base.get("symbol")
+        symbol = current.get("symbol")
         address = symbol.split(maxsplit=1)[0] if isinstance(symbol, str) else None
         if address in constant_declarations or (
-            "constant" in base and _symbol_name(base) not in known.get(path, set())
+            "constant" in current
+            and _symbol_name(current) not in known.get(path, set())
         ):
-            # Compile-time constant operands are not runtime graph sources.
             return
-        signal = resolve(path, base)
+        signal = resolve(path, current)
         if signal is None:
-            return  # resolve() has already warned
-        key = (path, role, signal, kind, a, b)
+            return  # resolve() already warned
+        selection = (parts[0] if len(parts) == 1 else {
+            "kind": "nested", "parts": list(reversed(parts))
+        })
+        key = (path, role, signal, str(selection))
         if key not in selection_keys:
             if len(static_selections) >= 2000:
                 warn(path, "Preuves de sélections statiques tronquées (limite 2000)")
@@ -238,7 +262,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             selection_keys.add(key)
             static_selections.append({
                 "context": path, "role": role, "signal": signal,
-                "selection": shape, "source": _location(expr),
+                "selection": selection, "source": _location(expr),
             })
 
     def target(path: str, expr: Any) -> str | None:
