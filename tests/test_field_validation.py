@@ -133,11 +133,36 @@ def test_valid_snapshot_has_bounded_probes_and_does_not_claim_full_coverage(tmp_
     )
     assert report["status"] == "observed_within_reported_scope"
     assert report["all_probes_present"] is True
+    assert report["has_observed_dependency_context"] is True
+    assert report["zero_edge_graph"] is False
     assert report["design_coverage"] == "not_measured"
     assert report["probes"][0]["budgets"] == [
         {"max_edges": b, "returned_edges": 1, "visited_nodes": 2, "truncated": False}
         for b in validation.QUERY_BUDGETS
     ]
+
+
+def test_zero_edge_graph_never_counts_as_dependency_context(tmp_path):
+    root, _, case = _source(tmp_path)
+    out = tmp_path / "report"
+    out.mkdir()
+    manifest = out / "design.json"
+    manifest.write_text(json.dumps({
+        "top": "other_top", "sources": [str(root / "project/rtl/new.v")],
+    }))
+    index, graph = _artifacts(out, manifest)
+    graph["edges"] = []
+    graph["counts"]["edges"] = 0
+    graph["warnings"] = [{"context": "other_top", "reason": "unresolved internal symbols"}]
+    assessment = validation.audit_snapshot(
+        index, graph, top="other_top", expected_fingerprint=index["source_fingerprint"],
+        probes=case["probes"],
+    )
+    assert assessment["status"] == "compiled_but_no_dependency_edges"
+    assert assessment["zero_edge_graph"] is True
+    assert assessment["has_observed_dependency_context"] is False
+    assert assessment["probes_without_observed_edges"] == ["output"]
+    assert assessment["probes"][0]["status"] == "target_found"
 
 
 def test_warnings_and_small_trace_budget_mark_limited_observation(tmp_path):
@@ -222,6 +247,9 @@ def test_real_case_runner_interface_with_mocked_eda(tmp_path, monkeypatch):
     assert report["all_elaborated"] is True
     assert report["all_probes_present"] is True
     assert report["failed_cases"] == 0
+    assert report["zero_edge_graph_cases"] == 0
+    assert report["probes_without_observed_edges"] == 0
+    assert report["all_probes_have_dependency_context"] is True
     assert report["cases"][0]["audit"]["design_coverage"] == "not_measured"
     assert report["benchmarked_llm"] is False
     assert report["accuracy"] == "not_measured_without_independent_exhaustive_oracle"

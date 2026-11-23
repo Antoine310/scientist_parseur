@@ -85,11 +85,28 @@ jobs:
           assert r["functional_correctness"] == "not_tested"
           assert r["benchmarked_llm"] is False
           assert r["reported_limit_cases"] >= 0
+          assert r["zero_edge_graph_cases"] == sum(
+              c["audit"]["zero_edge_graph"] for c in r["cases"]
+          )
+          assert r["probes_without_observed_edges"] == sum(
+              len(c["audit"]["probes_without_observed_edges"]) for c in r["cases"]
+          )
+          assert r["all_probes_have_dependency_context"] == all(
+              c["audit"]["has_observed_dependency_context"] for c in r["cases"]
+          )
           for case in r["cases"]:
               assert case["source_integrity"] == "verified_pinned_git_blobs", case
               assert case["execution"] == "passed", case
-              assert case["status"].startswith("observed_"), case
+              assert case["status"] in (
+                  "observed_with_reported_limits",
+                  "observed_within_reported_scope",
+                  "compiled_but_no_dependency_edges",
+              ), case
               audit = case["audit"]
+              if audit["graph_counts"]["edges"] == 0:
+                  assert case["status"] == "compiled_but_no_dependency_edges", case
+                  assert audit["zero_edge_graph"]
+                  assert not audit["has_observed_dependency_context"]
               assert audit["design_coverage"] == "not_measured", audit
               assert audit["graph_counts"]["nodes"] > 0, audit
               assert audit["probes"] and audit["all_probes_present"], audit
@@ -97,6 +114,11 @@ jobs:
                   assert [x["max_edges"] for x in p["budgets"]] == [5, 100, 1000]
                   assert all(x["returned_edges"] <= x["max_edges"] for x in p["budgets"])
                   assert all(type(x["truncated"]) is bool for x in p["budgets"])
+          print("EXTERNAL_RTL_COMPILED_WITH_REPORTED_LIMITS", {
+              "zero_edge_graph_cases": r["zero_edge_graph_cases"],
+              "probes_without_observed_edges": r["probes_without_observed_edges"],
+              "all_probes_have_dependency_context": r["all_probes_have_dependency_context"],
+          })
           print("EXTERNAL_RTL_VALIDATION_PASSED", {
               c["id"]: {
                   "status": c["status"],

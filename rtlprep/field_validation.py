@@ -194,8 +194,27 @@ def audit_snapshot(index: dict[str, Any], graph: dict[str, Any],
         partial = True
     if not index.get("instances"):
         partial = True
+    # Successful slang elaboration is not the same as usable dependency context.
+    # Even a present target can have no graph information (e.g. unrecognized
+    # declarations in a generate scope). This must not look like a useful result.
+    empty_probes = [
+        p["id"] for p in output
+        if p["status"] == "target_found"
+        and not p["budgets"][-1]["returned_edges"]
+    ]
+    status = (
+        "compiled_but_no_dependency_edges" if not edges
+        else "observed_with_reported_limits" if partial
+        else "observed_within_reported_scope"
+    )
     return {
-        "status": "observed_with_reported_limits" if partial else "observed_within_reported_scope",
+        "status": status,
+        "has_observed_dependency_context": (
+            bool(edges) and all(p["status"] == "target_found" for p in output)
+            and not empty_probes
+        ),
+        "zero_edge_graph": not bool(edges),
+        "probes_without_observed_edges": empty_probes,
         "index_counts": index.get("counts"), "graph_counts": graph.get("counts"),
         "warning_count": len(warnings),
         "warnings_sample": [
@@ -298,18 +317,36 @@ def run_suite(suite: dict[str, Any], *, sources_root: Path,
         evaluate_case(case, sources_root=root, output=out, timeout=timeout)
         for case in cases if selected is None or case["id"] in selected
     ]
-    successful = [x for x in evaluated if x["status"].startswith("observed_")]
+    # A compiled RTL with zero graph edges still counts as *elaborated*,
+    # but NOT as evidence that RTLPrep successfully traced its dependencies.
+    successful = [
+        x for x in evaluated
+        if x["execution"] == "passed" and "audit" in x
+        and x["source_integrity"] == "verified_pinned_git_blobs"
+    ]
     report = {
         "schema_version": 1,
         "method": "pinned_external_rtl_observation_without_functional_oracle",
         "external_cases": len(evaluated),
         "elaborated_cases": len(successful),
         "failed_cases": len(evaluated) - len(successful),
-        "reported_limit_cases": sum(x["status"] == "observed_with_reported_limits"
-                                    for x in evaluated),
+        "reported_limit_cases": sum(
+            x["status"] == "observed_with_reported_limits" for x in evaluated
+        ),
+        "zero_edge_graph_cases": sum(
+            x.get("audit", {}).get("zero_edge_graph") is True for x in evaluated
+        ),
+        "probes_without_observed_edges": sum(
+            len(x.get("audit", {}).get("probes_without_observed_edges", []))
+            for x in evaluated
+        ),
         "all_elaborated": len(successful) == len(evaluated),
         "all_probes_present": all(x.get("audit", {}).get("all_probes_present", False)
                                   for x in evaluated),
+        "all_probes_have_dependency_context": all(
+            x.get("audit", {}).get("has_observed_dependency_context", False)
+            for x in evaluated
+        ),
         "cases": evaluated,
         "accuracy": "not_measured_without_independent_exhaustive_oracle",
         "functional_correctness": "not_tested",
@@ -318,6 +355,7 @@ def run_suite(suite: dict[str, Any], *, sources_root: Path,
         "caveats": [
             "Corpus externe mais sélectionné par les développeurs : pas un échantillon aléatoire.",
             "Élaboration réussie ne prouve ni complétude ni correction fonctionnelle.",
+            "Un graphe à zéro arête ou un probe sans arête est explicitement signalé : cible indexée ne signifie pas dépendances utilisables.",
             "Les compteurs d'analyse portent seulement sur les enregistrements observés.",
             "Les arêtes non étiquetées ne sont pas évaluées en précision/rappel.",
             "Les budgets de trace limitent la réponse ; truncated est conservé.",

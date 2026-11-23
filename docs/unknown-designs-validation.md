@@ -95,6 +95,10 @@ ses fichiers `<cas>/validation.case.json` contiennent :
   et `source_fingerprint` (vérifié également après exécution).
 - `status=observed_within_reported_scope` : aucune limitation rapportée
   pour les analyseurs *observés* ; ne veut pas dire design couvert.
+- `status=compiled_but_no_dependency_edges` : **slang a compilé**, mais
+  RTLPrep ne fournit aucune arête de dépendance. Ce n'est **pas une
+  réponse structurelle exploitable** ; le succès de compilation ne
+  masque pas cette lacune.
 - `status=observed_with_reported_limits` : avertissements, exclusions,
   analyse partielle ou traces tronquées et/ou cibles manquantes. Ce statut
   **n'est pas un échec de compilation**, mais il limite l'interprétation.
@@ -108,14 +112,28 @@ ses fichiers `<cas>/validation.case.json` contiennent :
   `design_coverage=not_measured`, les comptes par analyseur, leurs
   exclusions, avertissements et statuts partiels.
 - Les compteurs `all_elaborated`, `all_probes_present`,
-  `failed_cases`, `reported_limit_cases` résument **uniquement les
-  trois cas de cette campagne**.
+  `failed_cases`, `reported_limit_cases`, `zero_edge_graph_cases`,
+  `probes_without_observed_edges` et
+  `all_probes_have_dependency_context` résument **uniquement les
+  trois cas de cette campagne**. Un signal reconnu par l'index n'implique
+  pas qu'une seule arête de son fan-in soit accessible.
+  
+**Première exécution réelle CI (23 novembre 2026) :** les trois sources
+ont été élaborées ; `axis_register` donne **0 arête et 22 avertissements**
+(notamment des registres internes non reconnus), `priority_encoder`
+**8 arêtes et 2 avertissements**, `rxuart` **83 arêtes et 4 avertissements**.
+Les trois cas sont **partiels**, et l'encodeur comme l'UART ont des parcours
+tronqués sous le petit budget de 5 arêtes. Cette mesure est un constat
+de limitation du graphe actuel, **pas trois validations structurelles
+complètes**.
 
 **Critère CI :** les 3 designs compilent et s'indexent réellement,
 les empreintes correspondent, les 6 cibles de recherche existent et
-les drapeaux de limites sont présents. Les avertissements et troncatures
-ne sont pas artificiellement ignorés ni fixés à zéro : la CI exige qu'ils
-soient **rapportés** et pas que l'analyse prétende être parfaite.
+les drapeaux de limites sont présents. Les avertissements, graphes vides
+et troncatures ne sont pas artificiellement ignorés ni fixés à zéro :
+la CI exige qu'ils soient **rapportés**, pas que l'analyse prétende
+être parfaite. Elle ne valide **pas** l'utilité du graphe AXI-Stream
+tant que ce dernier est vide.
 
 Un statut `passed` ici ne signifie pas une simulation correcte, une
 preuve formelle ou une compréhension exhaustive du RTL. Nous ne

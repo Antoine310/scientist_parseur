@@ -57,6 +57,9 @@ def main(argv: list[str] | None = None) -> int:
         ],
         "all_elaborated": report["all_elaborated"],
         "all_probes_present": report["all_probes_present"],
+        "zero_edge_graph_cases": report["zero_edge_graph_cases"],
+        "probes_without_observed_edges": report["probes_without_observed_edges"],
+        "all_probes_have_dependency_context": report["all_probes_have_dependency_context"],
         "accuracy": report["accuracy"],
         "benchmarked_llm": report["benchmarked_llm"],
     }, ensure_ascii=False, indent=2))
