@@ -73,7 +73,7 @@ jobs:
 
       - name: Simulate ACTUAL pinned CVA6 compressed decoder (must PASS)
         run: |
-          python scripts/run_cva6_cj_oracle.py \
+          python -m scripts.run_cva6_cj_oracle \
             --source-root upstream_cva6 \
             --out reports/pr42-cva6-cj-gold \
             --variant gold
@@ -96,7 +96,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python scripts/run_cva6_cj_oracle.py \
+          python -m scripts.run_cva6_cj_oracle \
             --source-root upstream_cva6 \
             --out reports/pr42-cva6-cj-mutant \
             --variant mutant
