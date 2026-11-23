@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .analysis import summarize_ast
+from .symbols import declared_path, generate_scope
 
 SCHEMA_VERSION = 1
 SYMBOL_KINDS = frozenset({"Variable", "Net"})
@@ -33,7 +34,9 @@ def build_index(ast: dict[str, Any], *, expected_top: str) -> dict[str, Any]:
     """Construire l'index à partir des membres élaborés de chaque instance.
 
     Valide l'AST via summarize_ast et n'utilise jamais des recherches regex sur RTL.
-    Les signaux recensés sont les déclarations directes de type Variable/Net.
+    Les signaux recensés sont les Variable/Net du module et des blocs
+    generate actifs dotés d'un nom de portée non ambigu. Les chemins générés
+    sont qualifiés sans changer les chemins historiques des signaux directs.
     """
     validated = summarize_ast(ast, expected_top=expected_top)
     by_path = {item["hierarchy_path"]: item for item in validated["instances"]}
@@ -41,7 +44,9 @@ def build_index(ast: dict[str, Any], *, expected_top: str) -> dict[str, Any]:
     signals: list[dict[str, Any]] = []
     modules: dict[str, dict[str, Any]] = {}
 
-    def traverse(members: list[Any], parents: tuple[str, ...] = ()) -> None:
+    def traverse(members: list[Any], parents: tuple[str, ...] = (),
+                 scopes: tuple[str, ...] = (),
+                 scoped_safe: bool = True) -> None:
         for node in members:
             if not isinstance(node, dict):
                 continue
@@ -78,9 +83,33 @@ def build_index(ast: dict[str, Any], *, expected_top: str) -> dict[str, Any]:
                     })
                 traverse(body_members, path_parts)
             elif node.get("kind") in ("GenerateBlock", "GenerateBlockArray", "Scope"):
+                if node.get("isUninstantiated") is True:
+                    continue
                 nested = node.get("members")
-                if isinstance(nested, list):
-                    traverse(nested, parents)
+                if not isinstance(nested, list):
+                    continue
+                if node["kind"] == "GenerateBlock":
+                    label = generate_scope(node)
+                    if label is not None and scoped_safe:
+                        traverse(nested, parents, (*scopes, label), True)
+                    else:
+                        traverse(nested, parents, scopes, False)
+                else:
+                    traverse(nested, parents, scopes, scoped_safe)
+            elif (node.get("kind") in SYMBOL_KINDS and parents and
+                  scopes and scoped_safe and
+                  isinstance(node.get("name"), str) and node["name"]):
+                # Une déclaration de generate appartient à l'instance
+                # englobante, sans prétendre qu'il existe une instance
+                # RTL "genblk". Les chemins qualifiés évitent les collisions.
+                owner = ".".join(parents)
+                signals.append({
+                    "instance_path": owner, "name": node["name"],
+                    "path": declared_path(owner, scopes, node["name"]),
+                    "scope": ".".join(scopes),
+                    "kind": node["kind"], "type": node.get("type"),
+                    "source": source_location(node),
+                })
 
     traverse(ast["design"]["members"])
     if len(instances) != validated["instance_count"]:
@@ -95,7 +124,8 @@ def build_index(ast: dict[str, Any], *, expected_top: str) -> dict[str, Any]:
         "counts": {"modules": len(modules), "instances": len(instances), "signals": len(signals)},
         "limitations": [
             "Aucune dépendance fan-in/fan-out calculée",
-            "Déclarations directes Variable/Net seulement ; scopes complexes non garantis",
+            "Variable/Net directs et blocs generate actifs nommés seulement ; "
+            "les scopes non nommés et arrays complexes restent non garantis",
             "Sources renseignées uniquement si slang fournit source_file/line/column",
             "Les spécialisations paramétrées d'un même module sont regroupées par nom",
         ],
@@ -127,8 +157,16 @@ def get_instance(index: dict[str, Any], path: str) -> dict[str, Any]:
 
 def get_signal_info(index: dict[str, Any], instance_path: str, name: str) -> dict[str, Any]:
     instance = get_instance(index, instance_path)
-    declarations = [x for x in index["signals"]
-                    if x["instance_path"] == instance_path and x["name"] == name]
+    # Les clients peuvent interroger "genblk1.reg" sur le même chemin
+    # d'instance. Un nom non qualifié ne doit jamais faire croire qu'un
+    # registre généré existe directement au niveau du module.
+    declarations = [
+        x for x in index["signals"]
+        if x["instance_path"] == instance_path and (
+            (x.get("path") or f"{instance_path}.{x['name']}") ==
+            f"{instance_path}.{name}"
+        )
+    ]
     ports = [x for x in instance["ports"] if x["name"] == name]
     if not declarations and not ports:
         raise KeyError(f"Signal introuvable : {instance_path}.{name}")

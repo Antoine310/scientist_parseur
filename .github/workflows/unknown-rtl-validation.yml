@@ -68,6 +68,9 @@ jobs:
           test -n "$BIN"
           sudo install -m 0755 "$BIN" /usr/local/bin/slang
           slang --version
+      - name: Regress real AXI-Stream generate branches REG_TYPE 0, 1 and 2
+        run: |
+          python -m pytest -q -rs -o addopts='' tests/test_generate_scope_real.py
       - name: Evaluate genuine third-party RTL and retain limits
         run: |
           python scripts/validate_unknown_rtl.py \

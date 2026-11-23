@@ -205,8 +205,11 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
     instances = {x["path"]: x for x in structural["instances"]}
     known = {path: {port["name"] for port in inst["ports"]}
              for path, inst in instances.items()}
+    # Les accès bit-à-bit de scopes generate restent hors du périmètre :
+    # ne pas les fusionner silencieusement avec les signaux directs.
     for signal in structural["signals"]:
-        known[signal["instance_path"]].add(signal["name"])
+        if not signal.get("scope"):
+            known[signal["instance_path"]].add(signal["name"])
 
     rows: list[dict[str, Any]] = []
     counts = {"assignments_seen": 0, "precise": 0, "partial": 0,
