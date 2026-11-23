@@ -178,8 +178,47 @@ def _literal_width(node: dict[str, Any]) -> int | None:
     return None
 
 
+
+def _packed_width(type_string: Any) -> int | None:
+    """Width only from slang's explicit one-dimensional scalar/packed type.
+
+    Typedef aliases, arrays and multidimensional types are not flattened.
+    No bit-offset is inferred from width alone.
+    """
+    if not isinstance(type_string, str) or len(type_string) > 96:
+        return None
+    if type_string in ("logic", "bit"):
+        return 1
+    match = re.fullmatch(r"(?:logic|bit)\\[(\\d+):(\\d+)\\]", type_string)
+    if match is None:
+        return None
+    upper, lower = (int(x) for x in match.groups())
+    width = abs(upper - lower) + 1
+    return width if 1 <= width <= MAX_WIDTH else None
+
+
+def _semantic_constant_ids(ast: dict[str, Any]) -> set[str]:
+    """Only Parameter/EnumValue declaration IDs justify constant reads."""
+    result: set[str] = set()
+
+    def visit(obj: Any) -> None:
+        if isinstance(obj, list):
+            for child in obj:
+                visit(child)
+        elif isinstance(obj, dict):
+            if obj.get("kind") in ("Parameter", "EnumValue") and obj.get("addr") is not None:
+                result.add(str(obj["addr"]))
+            for key, value in obj.items():
+                if key not in ("definition", "internalSymbol", "type") and isinstance(value, (list, dict)):
+                    visit(value)
+
+    visit(ast.get("design", {}))
+    return result
+
+
 def _segments(node: Any, known: set[str], path: str, depth: int = 0,
-              resolver: SignalResolver | None = None
+              resolver: SignalResolver | None = None,
+              constant_ids: frozenset[str] = frozenset()
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
@@ -194,7 +233,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             raise _Partial("malformed_or_large_concatenation")
         output: list[tuple[str | None, dict[str, Any], int]] = []
         for operand in operands:
-            output.extend(_segments(operand, known, path, depth + 1, resolver))
+            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids))
             if len(output) > MAX_SEGMENTS:
                 raise _Partial("too_many_segments")
         return output
@@ -203,10 +242,53 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if width is None:
             raise _Partial("literal_width_unknown")
         return [(None, {"kind": "literal", "width": width}, width)]
-    # Un signal entier ou une conversion peut changer la largeur : ne pas
-    # inventer de position dans la concaténation sans largeur élaborée.
     if kind == "NamedValue":
-        raise _Partial("source_width_unknown")
+        # A runtime source's 'constant' field does not prove it is a
+        # compile-time value. Require an exact semantic declaration.
+        width = _packed_width(node.get("type"))
+        if width is None:
+            raise _Partial("source_width_unknown")
+        raw = node.get("symbol")
+        parts = raw.split(maxsplit=1) if isinstance(raw, str) else []
+        if len(parts) != 2:
+            raise _Partial("unresolved_symbol_identity")
+        if parts[0] in constant_ids:
+            return [(None, {"kind": "constant_reference", "width": width}, width)]
+        source = _base(node, known, path, resolver)
+        # This is deliberately opaque: no source sub-lane offsets inferred.
+        return [(source, {"kind": "whole"}, width)]
+    if kind == "Replication":
+        count_node, concat = node.get("count"), node.get("concat")
+        if (not isinstance(count_node, dict)
+                or count_node.get("kind") != "IntegerLiteral"
+                or not isinstance(concat, dict)
+                or concat.get("kind") != "Concatenation"):
+            raise _Partial("replication_count_or_concat_unproven")
+        count = _number(count_node.get("value"))
+        if count is None or count < 1 or count > MAX_SEGMENTS:
+            raise _Partial("replication_count_out_of_bounds")
+        unit = _segments(concat, known, path, depth + 1,
+                         resolver, constant_ids)
+        if not unit or len(unit) * count > MAX_SEGMENTS:
+            raise _Partial("replication_segments_exceed_limit")
+        if sum(part[2] for part in unit) * count > MAX_WIDTH:
+            raise _Partial("replication_width_exceed_limit")
+        return [(source, dict(selection), width)
+                for _ in range(count)
+                for source, selection, width in unit]
+    if kind in ("Conversion", "SignedConversion"):
+        operand = node.get("operand")
+        if not isinstance(operand, dict):
+            raise _Partial("conversion_operand_missing")
+        dest_width = _packed_width(node.get("type"))
+        source_width = _packed_width(operand.get("type"))
+        if dest_width is None or dest_width != source_width:
+            raise _Partial("conversion_width_unproven_or_changed")
+        segments = _segments(operand, known, path, depth + 1,
+                             resolver, constant_ids)
+        if sum(part[2] for part in segments) != dest_width:
+            raise _Partial("conversion_width_mismatch")
+        return segments
     raise _Partial("unsupported_rhs_" + str(kind)[:48])
 
 
@@ -218,7 +300,8 @@ def _contains_selection(node: Any, budget: list[int], depth: int = 0) -> bool:
         return False
     if node.get("kind") in ("ElementSelect", "RangeSelect", "Concatenation"):
         return True
-    for field in ("left", "right", "operand", "value", "operands", "expr"):
+    for field in ("left", "right", "operand", "value", "operands", "expr",
+                  "concat", "count", "selector"):
         child = node.get(field)
         if isinstance(child, list):
             for item in child:
@@ -262,6 +345,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             known[signal["instance_path"]].add(signal["name"])
 
     resolver = SignalResolver(ast, structural)
+    constant_ids = frozenset(_semantic_constant_ids(ast))
 
     rows: list[dict[str, Any]] = []
     counts = {"assignments_seen": 0, "precise": 0, "partial": 0,
@@ -309,7 +393,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
             item["target_selection"] = select
-            parts = _segments(rhs, known[path], path, resolver=resolver)
+            parts = _segments(rhs, known[path], path, resolver=resolver,
+                              constant_ids=constant_ids)
             width = sum(part[2] for part in parts)
             if width > MAX_WIDTH:
                 raise _Partial("rhs_too_wide")
