@@ -40,7 +40,11 @@ def test_real_axis_register_generate_scope_and_edges(tmp_path, variant):
     }), encoding="utf-8")
     out = tmp_path / "reports"
     result = dependency_design(load_design(manifest), out, 90)
-    assert result["status"] == "passed", result
+    assert result["status"] == "passed", (
+        result,
+        (out / "analyze.stderr.log").read_text(encoding="utf-8")
+        if (out / "analyze.stderr.log").exists() else "no stderr log",
+    )
     idx = json.loads((out / "rtl_index.json").read_text())
     graph = json.loads((out / "rtl_dependencies.json").read_text())
     assert idx["source_fingerprint"] == graph["source_fingerprint"]
