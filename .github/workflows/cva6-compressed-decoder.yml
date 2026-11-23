@@ -74,6 +74,37 @@ jobs:
             exit 1
           fi
           python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py
+      - name: Inspect bounded elaborated MemberAccess AST shapes
+        run: |
+          python - <<'PY'
+          import json, collections
+          from pathlib import Path
+          ast=json.loads(Path("reports/cva6-compressed-decoder/elaborated_ast.json").read_text())
+          counts=collections.Counter()
+          samples={}
+          def walk(x):
+              if isinstance(x,list):
+                  for v in x: walk(v)
+              elif isinstance(x,dict):
+                  if x.get("kind")=="MemberAccess":
+                      signature=tuple(sorted(x))
+                      counts[signature]+=1
+                      if signature not in samples:
+                          def cleaned(z,depth=0):
+                              if depth>3:return "nested"
+                              if isinstance(z,list):return [cleaned(v,depth+1) for v in z[:3]]
+                              if isinstance(z,dict):
+                                  return {k:cleaned(v,depth+1) for k,v in z.items()
+                                          if k in ("kind","value","member","name","symbol","selector","constant","left","right","type")}
+                              return str(z)[:100]
+                          samples[signature]=cleaned(x)
+                  for k,v in x.items():
+                      if k not in ("definition","internalSymbol","type"):walk(v)
+          walk(ast.get("design",{}))
+          print("PR36_MEMBERACCESS_SHAPES",json.dumps([
+              {"fields":sig,"count":n,"sample":samples[sig]}
+              for sig,n in counts.most_common(8)],sort_keys=True))
+          PY
       - name: Verify no claims of exhaustive correctness
         run: |
           python - <<'PY'
