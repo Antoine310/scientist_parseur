@@ -199,7 +199,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             index = (_static_integer(selector)
                      if constant_initializer_expression(path, selector) else None)
             if index is None:
-                warn(path, "Sélection de bits dynamique/inconnue : dépendance au signal entier")
+                warn(path, "Sélection de bits/plage : dépendance au signal entier" if role == "read" else "Sélection de bits : dépendance au signal entier (approximation)")
                 return
             shape = {"kind": "bit", "index": index}
             a, b = index, index
@@ -210,7 +210,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             right = (_static_integer(rhs)
                      if constant_initializer_expression(path, rhs) else None)
             if left is None or right is None or left < right:
-                warn(path, "Sélection de plage dynamique/inconnue : dépendance au signal entier")
+                warn(path, "Sélection de bits/plage : dépendance au signal entier" if role == "read" else "Sélection de bits : dépendance au signal entier (approximation)")
                 return
             shape = {"kind": "range", "msb": left, "lsb": right}
             a, b = left, right
