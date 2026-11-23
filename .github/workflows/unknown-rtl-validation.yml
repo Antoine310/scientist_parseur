@@ -126,6 +126,20 @@ jobs:
                   assert graph["initializations"], case
               if case["id"] == "axis_register":
                   assert audit["graph_counts"]["edges"] >= 69, case
+              # Separate indexer scope: zero warnings in the dependency graph
+              # do NOT imply no partial/excluded records in these analyzers.
+              ex = graph["expressions"]["counts"]
+              ba = graph["bit_accesses"]["counts"]
+              if case["id"] == "axis_register":
+                  assert ex["partial_expressions"] <= 12, ex
+              if case["id"] == "priority_encoder":
+                  assert ex["captured"] >= 9 and ex["unsupported_targets"] == 0, ex
+                  assert ex["partial_expressions"] == 0, ex
+                  assert ba["precise"] >= 3 and ba["partial"] <= 5, ba
+              if case["id"] == "rxuart":
+                  assert ex["partial_expressions"] == 0, ex
+                  assert ex["unsupported_targets"] == 2, ex
+                  assert ba["partial"] == 1, ba
               if audit["graph_counts"]["edges"] == 0:
                   assert case["status"] == "compiled_but_no_dependency_edges", case
                   assert audit["zero_edge_graph"]
