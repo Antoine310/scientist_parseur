@@ -277,6 +277,23 @@ l'index d'expressions compte **57 enregistrements partiels sur 93**.
 
 [Voir les sources épinglées, la reproduction et les limites](docs/cva6-first-compressed-decoder.md).
 
+## Accès aux champs dans le vrai CVA6 (PR #36)
+
+Sur le même `compressed_decoder` CVA6 épinglé que la #35, RTLPrep
+représente désormais les nœuds d'AST slang `MemberAccess` issus de
+`CVA6Cfg` et les champs de signaux RTL **sans créer de fausses
+dépendances runtime pour les constantes**. Une lecture d'un champ RTL
+reste une dépendance au signal entier, sans mapping bit-à-bit.
+
+Le vrai test slang v12.1 passe de **57 à 0 expressions partielles** sur
+93 enregistrées, et de **1 à 0 avertissement** dans le graphe, sans
+perdre les 12 nœuds ni les 13 arêtes observées. Les cinq fan-in jusqu'à
+`instr_i` sont toujours présents et non tronqués. La couverture
+totale reste `not_measured`, et la correction fonctionnelle n'est
+pas prouvée.
+
+[Mesures, limites et tests négatifs de la PR #36](docs/memberaccess-cva6-pr36.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
