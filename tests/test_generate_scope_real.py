@@ -76,6 +76,11 @@ def test_real_axis_register_generate_scope_and_edges(tmp_path, variant):
     assert idx["source_fingerprint"] == graph["source_fingerprint"]
     assert idx["top"] == graph["top"] == top
     assert graph["counts"]["edges"] > 0, graph["warnings"]
+    assert not any(
+        "Timing non pris en charge : ImplicitEvent" in w["reason"]
+        or "Timing non pris en charge : SignalEvent" in w["reason"]
+        for w in graph["warnings"]
+    ), graph["warnings"]
     instance = f"{top}.dut"
     links = {(e["source"], e["target"], e["kind"]) for e in graph["edges"]}
     scope_nodes = {s["path"] for s in idx["signals"] if s.get("scope")}
@@ -86,6 +91,19 @@ def test_real_axis_register_generate_scope_and_edges(tmp_path, variant):
         local = f"{instance}.genblk1.m_axis_tdata_reg"
         assert local in scope_nodes
         assert (local, f"{instance}.m_axis_tdata", "data") in links
+        assert (
+            f"{instance}.clk",
+            local,
+            "event",
+        ) in links, graph["warnings"]
+        assert any(
+            e["source"] == f"{instance}.clk"
+            and e["target"] == local
+            and e["kind"] == "event"
+            and e["detail"] == "PosEdge"
+            and e["sequential"] is True
+            for e in graph["edges"]
+        ), graph["warnings"]
         assert not any(
             "NamedValue inconnue/ambiguë" in w["reason"] and "m_axis_tdata_reg" in w["reason"]
             for w in graph["warnings"]

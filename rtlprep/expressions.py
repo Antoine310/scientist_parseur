@@ -267,22 +267,33 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             timing = node.get("timing")
             local_events = list(events)
             local_partial = partial
-            if isinstance(timing, dict) and timing.get("kind") == "EventList":
-                sequence = timing.get("events")
-                if not isinstance(sequence, list):
+            # The real slang AST may use a single SignalEvent directly,
+            # without an EventList wrapper (always @(posedge clk)).
+            if isinstance(timing, dict) and timing.get("kind") in (
+                "EventList", "SignalEvent"
+            ):
+                sequence = (
+                    timing.get("events") if timing["kind"] == "EventList"
+                    else [timing]
+                )
+                if not isinstance(sequence, list) or not sequence:
                     local_partial = True
                 else:
                     for event in sequence:
-                        if isinstance(event, dict) and event.get("kind") == "SignalEvent":
+                        if isinstance(event, dict) and event.get("kind") == "SignalEvent" and (
+                            event.get("edge") in ("PosEdge", "NegEdge")
+                        ) and isinstance(event.get("expr"), dict):
                             local_events.append({
-                                "expr": event.get("expr"),
-                                "edge": _atom(event.get("edge", "Unknown")),
+                                "expr": event["expr"],
+                                "edge": event["edge"],
                             })
                         else:
                             local_partial = True
+            elif isinstance(timing, dict) and timing.get("kind") == "ImplicitEvent":
+                # No explicit event edges: don't invent sensitivity dependencies.
+                # This expression view remains partial about implicit triggers.
+                local_partial = True
             else:
-                # Implicit timing, event expressions and other constructs must
-                # never be presented as known edges.
                 local_partial = True
             statements(path, node.get("stmt"), procedure_kind=procedure_kind,
                        guards=guards, events=tuple(local_events), partial=local_partial,
