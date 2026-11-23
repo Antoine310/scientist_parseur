@@ -178,6 +178,18 @@ def test_bad_timing_keeps_explicit_context_limit_not_fake_event_edges():
     assert item["events"] == []
     assert item["timing_scope"] == "unsupported_timing"
     assert item["reason"] == "unsupported_procedural_context"
+    assert report["counts"]["unsupported_statements"] == 1
+
+
+def test_missing_if_true_branch_is_reported_not_silently_accepted():
+    invalid = n("Conditional", conditions=[{"expr": ref("en")}],
+                ifTrue=None,
+                ifFalse=ass(sl(ref("q"), 3, 0), sl(ref("a"), 7, 4)))
+    report = rows(design(proc(invalid)))
+    assert report["counts"]["unsupported_statements"] == 1
+    assert report["counts"]["partial"] == 1
+    assert report["items"][0]["reason"] == "unsupported_procedural_context"
+    assert report["items"][0]["guards"][0]["kind"] == "unsupported_guard"
 
 
 def test_wrong_identity_lhs_rejected_in_procedural_scope():
