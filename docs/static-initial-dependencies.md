@@ -7,7 +7,7 @@ La validation épinglée de la PR #32 restait à 2 avertissements pour `priority
 ## Interprétation bornée
 
 - Le graphe reste au **niveau signal entier**, sans prétendre fournir des arêtes bit-à-bit.
-- Les indices et bornes statiques sont enregistrés dans `static_selections`, avec rôle `read` ou `write`, identité du signal, sélection `bit`/`range` et source éventuelle.
+- Les indices et bornes statiques, y compris les expressions arithmétiques repliées par slang et les chaînes de sélections imbriquées, sont enregistrés dans `static_selections`, avec rôle `read` ou `write`, identité du signal, sélection `bit`/`range`/`nested` (ordre des segments depuis le signal de base) et source éventuelle.
 - Les indices statiques sont reconnus seulement si les sous-expressions sont indépendantes des signaux à l'exécution, et si leur valeur numérique est explicitement décodable. Les indices dynamiques, imbriqués ou non démontrés conservent un avertissement et les dépendances conservatrices au niveau signal.
 - Les blocs `Initial` ne sont reconnus que lorsqu'ils contiennent exclusivement des affectations directes de signaux à des expressions indépendantes des signaux à l'exécution (littéraux, paramètres/valeurs d'énumération reconnus par identité de déclaration slang, petites expressions constantes, sélections de paramètres).
 - Ces affectations sont consignées dans `initializations` avec `scope: initial_only_not_runtime`. Elles **ne génèrent aucune arête** `data`, `control` ou `event`.
@@ -23,3 +23,15 @@ python scripts/validate_unknown_rtl.py --sources-root upstream_unknown --out rep
 ```
 
 La CI utilise slang 12.1 épinglé, les SHA des blobs Git amont et conserve les rapports des trois designs de terrain.
+
+## Résultats observés le 23 novembre 2026
+
+Sur un runner GitHub Actions, slang 12.1 épinglé et les trois blobs Git amont vérifiés :
+
+| RTL | Avertissements avant #33 | Avertissements avec #33 |
+| --- | ---: | ---: |
+| `axis_register` | 0 | **0** |
+| `priority_encoder` | 2 | **0** |
+| `rxuart` | 2 | **0** |
+
+Les 14 tests ciblés de `tests/test_static_initial_dependencies.py` ont réussi avec slang réel, dont les deux tests intégrés au corpus externe. Le bilan reste `observed_with_reported_limits` : **zéro avertissement du graphe ne signifie ni couverture exhaustive ni précision démontrée**, et d'autres analyseurs produisent toujours des enregistrements partiels. Il ne s'agit pas non plus d'une preuve d'implémentation matérielle des blocs `initial`.
