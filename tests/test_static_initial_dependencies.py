@@ -218,9 +218,9 @@ def test_pinned_real_rtl_static_selection_and_initial_metadata(tmp_path, top, so
                         if isinstance(child, (dict, list)):
                             walk(child)
             walk(ast["design"])
-            assert not g["warnings"], {
-                "warnings": g["warnings"], "selectors": selections[:24]
-            }
+            for i, row in enumerate(selections[:24]):
+                print("PR33_STATIC_SELECT", i, json.dumps(row, ensure_ascii=False))
+            assert not g["warnings"], g["warnings"]
     if top == "rxuart":
         assert len(g["initializations"]) >= 1, g["warnings"]
         assert not any(
