@@ -48,7 +48,7 @@ jobs:
       - name: Install RTLPrep and verify integrity gates
         run: |
           python -m pip install -e '.[dev]'
-          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py tests/test_unary_bit_pr40.py
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py tests/test_unary_bit_pr40.py tests/test_unary_oracle_pr41.py
       - name: Install pinned real slang v12.1
         shell: bash
         run: |
@@ -73,7 +73,7 @@ jobs:
             cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
             exit 1
           fi
-          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py tests/test_unary_bit_pr40.py
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py tests/test_unary_bit_pr40.py tests/test_unary_oracle_pr41.py
       - name: Verify no claims of exhaustive correctness
         run: |
           python - <<'PY'

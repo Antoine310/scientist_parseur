@@ -1,0 +1,8 @@
+{
+  "top": "unary_bit_pr40",
+  "sources": [
+    "unary_bit_pr41_mutant.sv"
+  ],
+  "include_dirs": [],
+  "defines": []
+}
