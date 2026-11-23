@@ -278,6 +278,30 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         return [(source, dict(selection), width)
                 for _ in range(count)
                 for source, selection, width in unit]
+    if kind == "UnaryOp":
+        # Slang v12.1: ~x has op=BitwiseNot. It preserves each input
+        # position but inverts its value. This is NOT a direct copy.
+        # !x, reductions, +/- and any future unary operators do not
+        # establish one-to-one bit positions, even when widths agree.
+        if node.get("op") != "BitwiseNot":
+            raise _Partial("unsupported_rhs_UnaryOp")
+        operand = node.get("operand")
+        if not isinstance(operand, dict):
+            raise _Partial("bitwise_not_operand_missing")
+        output_width = _packed_width(node.get("type"))
+        input_width = _packed_width(operand.get("type"))
+        if output_width is None or input_width is None or output_width != input_width:
+            raise _Partial("bitwise_not_width_unproven_or_changed")
+        parts = _segments(operand, known, path, depth + 1,
+                          resolver, constant_ids)
+        if sum(part[2] for part in parts) != output_width:
+            raise _Partial("bitwise_not_segment_width_mismatch")
+        # Do not guess how nested transforms compose or simplify.
+        if any("_value_transform" in selection
+               for _, selection, _ in parts):
+            raise _Partial("nested_value_transforms_unmodeled")
+        return [(source, {**selection, "_value_transform": "bitwise_not"}, width)
+                for source, selection, width in parts]
     if kind in ("Conversion", "SignedConversion"):
         operand = node.get("operand")
         if not isinstance(operand, dict):
@@ -405,10 +429,20 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             rhs_lsb = 0
             positioned: list[dict[str, Any]] = []
             for source, selection, span in reversed(parts):
+                # Keep value-changing transforms separate from the bit
+                # selector. The latter locates the input bit but does NOT
+                # claim output equals that bit.
+                value_transform = selection.get("_value_transform")
+                public_selection = {
+                    key: value for key, value in selection.items()
+                    if key != "_value_transform"
+                }
                 seg: dict[str, Any] = {
-                    "source": source, "selection": selection,
+                    "source": source, "selection": public_selection,
                     "rhs_lsb": rhs_lsb, "rhs_msb": rhs_lsb + span - 1,
                 }
+                if value_transform is not None:
+                    seg["value_transform"] = value_transform
                 if dest_width is not None and select["kind"] in ("bit", "range"):
                     start = select["lsb"] if select["kind"] == "range" else select["index"]
                     seg["target_lsb"] = start + rhs_lsb
@@ -649,7 +683,12 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "explicitement prouvée. Alias de types, indices dynamiques, "
             "opérations arithmétiques/non positionnelles restent partiels ; "
             "sélections imbriquées sans indices cibles aplatis. "
-            "Aucune preuve fonctionnelle. "
+            "Une négation unaire BitwiseNot de largeur prouvée reste "
+            "positionnelle mais chaque segment transformé est explicitement "
+            "étiqueté value_transform=bitwise_not : il ne s'agit pas "
+            "d'une simple copie de bit. Les autres opérateurs unaires, "
+            "les combinaisons de transformations inconnues ou les largeurs "
+            "non démontrées restent partiels. Aucune preuve fonctionnelle. "
             "Les affectations procédurales enregistrent le type de processus, "
             "les gardes de branches syntaxiques et les événements explicites "
             "sans inférer la priorité, la latence ou la sémantique des NBA. "
