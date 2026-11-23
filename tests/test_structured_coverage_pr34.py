@@ -294,4 +294,10 @@ def test_real_pinned_rtl_expression_and_bit_coverage(tmp_path, top, source, pin)
         assert expr["partial_expressions"] == 0, expr
         # Two concatenated lvalues remain outside this expressions index.
         assert expr["unsupported_targets"] == 2, expr
-        assert bits["partial"] == 1  # arithmetic transformation not positional
+        # PR38 visits previously excluded procedural assignments. Its 16
+        # observed rxuart records include 11 syntactic lane matches and five
+        # explicitly partial forms; not a functional accuracy measurement.
+        assert bits["captured"] == 16, bits
+        assert bits["precise"] == 11 and bits["partial"] == 5, bits
+        assert bits["procedural_blocks_visited"] == 15, bits
+        assert bits["procedural_blocks_skipped"] == 15, bits
