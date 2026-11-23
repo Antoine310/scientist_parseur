@@ -48,7 +48,7 @@ jobs:
       - name: Install RTLPrep and verify integrity gates
         run: |
           python -m pip install -e '.[dev]'
-          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py
       - name: Install pinned real slang v12.1
         shell: bash
         run: |
@@ -73,7 +73,7 @@ jobs:
             cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
             exit 1
           fi
-          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py
       - name: Verify no claims of exhaustive correctness
         run: |
           python - <<'PY'
@@ -89,6 +89,10 @@ jobs:
           assert report["accuracy"] == "not_measured_without_independent_exhaustive_oracle", report
           assert report["benchmarked_llm"] is False, report
           assert report["graph_counts"]["nodes"] > 0 and report["graph_counts"]["edges"] > 0, report
+          assert report["graph_counts"]["warnings"] == 0, report
+          assert report["observed_analyzers"]["expressions"]["counts"]["captured"] == 93, report
+          assert report["observed_analyzers"]["expressions"]["counts"]["partial_expressions"] == 0, report
+          assert report["design_coverage"] == "not_measured", report
           print("CVA6_PINNED_REAL_SLANG_PASSED", {
               "configuration": report["configuration"],
               "graph_counts": report["graph_counts"],
