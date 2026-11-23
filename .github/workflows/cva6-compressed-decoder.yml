@@ -73,35 +73,6 @@ jobs:
             cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
             exit 1
           fi
-          python - <<'PY'
-          import collections, json
-          from pathlib import Path
-          ast=json.loads(Path("reports/cva6-compressed-decoder/elaborated_ast.json").read_text())
-          samples={118,133,336,352,443,426}
-          def short(x, depth=0):
-              if depth>6:return {"cut":"depth"}
-              if isinstance(x,list):return [short(v,depth+1) for v in x[:15]]
-              if isinstance(x,dict):
-                  keys=("kind","type","constant","value","symbol","member","op","count","concat",
-                        "operands","left","right","selector","source_line_start")
-                  return {k:short(x[k],depth+1) for k in keys if k in x}
-              v=str(x)
-              return v[:160]
-          seen=set()
-          def walk(node):
-              if isinstance(node,list):
-                  for v in node:walk(v)
-              elif isinstance(node,dict):
-                  if node.get("kind")=="Assignment":
-                      line=node.get("source_line_start")
-                      if line in samples and line not in seen:
-                          seen.add(line)
-                          print("PR39_AST_SAMPLE",line,json.dumps(short(node.get("right")),sort_keys=True)[:8000])
-                  for k,v in node.items():
-                      if k not in ("definition","internalSymbol","type"):walk(v)
-          walk(ast.get("design",{}))
-          print("PR39_AST_LINES_SEEN",sorted(seen))
-          PY
           python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py
       - name: Verify no claims of exhaustive correctness
         run: |
@@ -124,7 +95,7 @@ jobs:
           bit_counts = report["observed_analyzers"]["bit_accesses"]["counts"]
           assert bit_counts["assignments_seen"] == 93, bit_counts
           assert bit_counts["captured"] == 52, bit_counts
-          assert bit_counts["precise"] + bit_counts["partial"] == 52, bit_counts
+          assert bit_counts["precise"] == 51 and bit_counts["partial"] == 1, bit_counts
           assert bit_counts["unsupported_statements"] == 0, bit_counts
           assert report["coverage_assessment"] == "reported_limits", report
           assert report["design_coverage"] == "not_measured", report
