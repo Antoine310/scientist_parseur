@@ -197,17 +197,19 @@ def _packed_width(type_string: Any) -> int | None:
     return width if 1 <= width <= MAX_WIDTH else None
 
 
-def _semantic_constant_ids(ast: dict[str, Any]) -> set[str]:
-    """Only Parameter/EnumValue declaration IDs justify constant reads."""
-    result: set[str] = set()
+def _semantic_constant_ids(ast: dict[str, Any]) -> set[tuple[str, str]]:
+    """Require exact address + name for Parameter/EnumValue declarations."""
+    result: set[tuple[str, str]] = set()
 
     def visit(obj: Any) -> None:
         if isinstance(obj, list):
             for child in obj:
                 visit(child)
         elif isinstance(obj, dict):
-            if obj.get("kind") in ("Parameter", "EnumValue") and obj.get("addr") is not None:
-                result.add(str(obj["addr"]))
+            if (obj.get("kind") in ("Parameter", "EnumValue")
+                    and obj.get("addr") is not None
+                    and isinstance(obj.get("name"), str)):
+                result.add((str(obj["addr"]), obj["name"]))
             for key, value in obj.items():
                 if key not in ("definition", "internalSymbol", "type") and isinstance(value, (list, dict)):
                     visit(value)
@@ -218,7 +220,7 @@ def _semantic_constant_ids(ast: dict[str, Any]) -> set[str]:
 
 def _segments(node: Any, known: set[str], path: str, depth: int = 0,
               resolver: SignalResolver | None = None,
-              constant_ids: frozenset[str] = frozenset()
+              constant_ids: frozenset[tuple[str, str]] = frozenset()
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
@@ -252,7 +254,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         parts = raw.split(maxsplit=1) if isinstance(raw, str) else []
         if len(parts) != 2:
             raise _Partial("unresolved_symbol_identity")
-        if parts[0] in constant_ids:
+        if (parts[0], parts[1]) in constant_ids:
             return [(None, {"kind": "constant_reference", "width": width}, width)]
         source = _base(node, known, path, resolver)
         # This is deliberately opaque: no source sub-lane offsets inferred.
