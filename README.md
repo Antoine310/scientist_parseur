@@ -348,6 +348,25 @@ sans largeur prouvée restent `partial`.
 
 [Mesures CVA6, cas négatifs et reproduction de la PR #39](docs/typed-segments-cva6-pr39.md).
 
+## Opérateur unaire bit-à-bit et valeur inversée dans CVA6 (PR #40)
+
+`bit_accesses` reconnaît désormais `~expr` **uniquement** si
+l'AST slang identifie exactement `BitwiseNot` et prouve la même
+largeur packed sur l'opérande et le résultat. La provenance et la
+position de chaque segment restent conservées, avec un marqueur
+explicite `value_transform=bitwise_not` : **le résultat n'est pas
+une copie de la valeur d'entrée**.
+
+Sur le `compressed_decoder` CVA6 épinglé, l'unique `~instr_i[15]`
+auparavant `partial` est ainsi représenté sans fausse équivalence :
+**52/52 segments positionnés syntaxiquement**, sans changement
+du graphe global de **12 nœuds / 13 arêtes**. Les opérations de
+réduction, `!`, `-`, les compositions inconnues et les types non
+prouvés restent `partial`. Cette couverture d'index ne prouve
+ni la correction fonctionnelle ni l'exhaustivité du circuit.
+
+[Preuve AST, tests négatifs, limites et reproduction PR #40](docs/cva6-unary-bitwise-not-pr40.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
