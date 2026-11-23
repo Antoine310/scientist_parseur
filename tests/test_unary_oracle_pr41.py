@@ -44,6 +44,15 @@ def test_mutant_removes_only_the_inversion_of_bit_15():
     assert "mix_o = {instr_i[7:5], ~instr_i[4], instr_i[3:0]};" in mutated
     assert "wide_o = ~instr_i[3:0];" in mutated
     assert "!instr_i[3]" in mutated and "&instr_i[7:4]" in mutated
+    # Strict negative control: after stripping comments and blank lines,
+    # the only RTL difference must be the deliberate missing inversion.
+    def statements(source):
+        return [line.split("//", 1)[0].strip() for line in source.splitlines()
+                if line.split("//", 1)[0].strip()]
+    assert statements(mutated) == [
+        line.replace(needle, "bit_o = instr_i[15];")
+        for line in statements(original)
+    ]
 
 
 def test_refuse_faked_xunit_pass_with_no_cases(tmp_path):
