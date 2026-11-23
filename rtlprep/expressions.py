@@ -14,7 +14,9 @@ from .symbols import SignalResolver
 EXPRESSION_SCHEMA_VERSION = 1
 MAX_EXPRESSIONS = 2000
 MAX_TREE_NODES = 96
-MAX_DEPTH = 12
+# Generated-index arithmetic can be deeply nested in slang's elaborated AST.
+# Still bounded by MAX_TREE_NODES and MAX_STATEMENT_DEPTH.
+MAX_DEPTH = 16
 MAX_ATOM_LENGTH = 96
 MAX_STATEMENT_DEPTH = 32
 MAX_GUARDS = 16
