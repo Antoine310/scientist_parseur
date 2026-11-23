@@ -13,8 +13,12 @@ from .symbols import SignalResolver
 
 EXPRESSION_SCHEMA_VERSION = 1
 MAX_EXPRESSIONS = 2000
-MAX_TREE_NODES = 96
-MAX_DEPTH = 12
+# Elaborated generate-index formulas can contain several dozen nested AST
+# operations; 160 remains a hard per-expression budget.
+MAX_TREE_NODES = 160
+# Generated-index arithmetic can be deeply nested in slang's elaborated AST.
+# Still bounded by MAX_TREE_NODES and MAX_STATEMENT_DEPTH.
+MAX_DEPTH = 16
 MAX_ATOM_LENGTH = 96
 MAX_STATEMENT_DEPTH = 32
 MAX_GUARDS = 16
@@ -123,6 +127,11 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             resolved = symbols.resolve(path, node)
             if resolved is not None:
                 return {"kind": "signal", "name": name, "path": resolved}
+            if "constant" in node and name not in known.get(path, set()):
+                # Generate-loop genvars are already elaborated by slang. Do
+                # not reclassify a resolvable (possibly shadowed) runtime
+                # signal merely because the AST exposes a 'constant' field.
+                return {"kind": "constant_reference", "name": _atom(name)}
             state["partial"] = True
             return {"kind": "unsupported", "ast_kind": "unknown_symbol"}
         if kind in LITERAL_KINDS:
@@ -149,10 +158,90 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         if kind in ("Conversion", "SignedConversion"):
             return {"kind": "conversion", "ast_kind": kind,
                     "operand": expression(path, node.get("operand"), state, depth + 1)}
-        # Do not silently flatten ternaries, selectors, calls, or concatenations:
-        # their exact behavior and bit mapping is outside this first increment.
+        if kind in ("ElementSelect", "RangeSelect"):
+            # Retain the syntactic base and selector(s), without asserting
+            # bit-lane correspondence or evaluating a dynamic index.
+            base = expression(path, node.get("value"), state, depth + 1)
+            if kind == "ElementSelect":
+                return {
+                    "kind": "element_select", "value": base,
+                    "selector": expression(path, node.get("selector"), state, depth + 1),
+                }
+            return {
+                "kind": "range_select", "value": base,
+                "left": expression(path, node.get("left"), state, depth + 1),
+                "right": expression(path, node.get("right"), state, depth + 1),
+            }
+        if kind == "Concatenation":
+            operands = node.get("operands")
+            if not isinstance(operands, list) or not 1 <= len(operands) <= 32:
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_concatenation"}
+            return {
+                "kind": "concatenation",
+                "operands": [
+                    expression(path, part, state, depth + 1) for part in operands
+                ],
+            }
+        if kind == "Replication":
+            # slang 12.1 stores {N{expression}} as count + concat.
+            if not isinstance(node.get("count"), dict) or not isinstance(
+                node.get("concat"), dict
+            ):
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_replication"}
+            return {
+                "kind": "replication",
+                "count": expression(path, node["count"], state, depth + 1),
+                "concat": expression(path, node["concat"], state, depth + 1),
+            }
+        if kind == "ConditionalOp":
+            # Preserve the complete condition syntax; never collapse multiple
+            # conditions or pattern matches into a guessed Boolean predicate.
+            conds = node.get("conditions")
+            if not isinstance(conds, list) or not 1 <= len(conds) <= 16:
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_conditional"}
+            rendered: list[dict[str, Any]] = []
+            for condition in conds:
+                if not isinstance(condition, dict) or not isinstance(
+                    condition.get("expr"), dict
+                ):
+                    state["partial"] = True
+                    return {"kind": "unsupported", "ast_kind": "conditional_condition"}
+                if set(condition) - {"expr"}:
+                    state["partial"] = True
+                    return {"kind": "unsupported", "ast_kind": "conditional_pattern"}
+                rendered.append(expression(path, condition["expr"], state, depth + 1))
+            return {
+                "kind": "conditional", "conditions": rendered,
+                "left": expression(path, node.get("left"), state, depth + 1),
+                "right": expression(path, node.get("right"), state, depth + 1),
+            }
+        # Calls, casts with unrecognized semantics and future AST nodes are
+        # deliberately left partial; unsupported never masquerades as a value.
         state["partial"] = True
         return {"kind": "unsupported", "ast_kind": _atom(kind)}
+
+    def selected_target(path: str, lhs: Any) -> tuple[str | None, bool]:
+        """Resolve a selected lvalue by the exact semantic base declaration.
+
+        The returned boolean only marks selection syntax, not a flattened
+        destination lane or functional information.
+        """
+        selected = False
+        current = lhs
+        for _ in range(MAX_DEPTH):
+            if not isinstance(current, dict):
+                return None, selected
+            kind = current.get("kind")
+            if kind == "NamedValue":
+                return symbols.resolve(path, current), selected
+            if kind not in ("ElementSelect", "RangeSelect"):
+                return None, selected
+            selected = True
+            current = current.get("value")
+        return None, selected
 
     def add_assignment(path: str, node: Any, *, procedure_kind: str | None = None,
                        guards: tuple[dict[str, Any], ...] = (),
@@ -166,7 +255,7 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             stats["unsupported_statements"] += 1
             return
         lhs = node.get("left")
-        resolved_target = symbols.resolve(path, lhs)
+        resolved_target, is_selected = selected_target(path, lhs)
         if resolved_target is None:
             stats["unsupported_targets"] += 1
             return
@@ -177,6 +266,10 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             "expression": tree,
             "source": _source(node) or _source(source_fallback or {}),
         }
+        if is_selected:
+            # Preserve the exact AST lvalue shape and identity. A selection
+            # does not imply an inferred packed bit offset or a full write.
+            row["target_access"] = expression(path, lhs, state)
         if procedure_kind is not None:
             rendered_guards: list[dict[str, Any]] = []
             for g in guards[:MAX_GUARDS]:
