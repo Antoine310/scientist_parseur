@@ -161,6 +161,29 @@ def test_real_pinned_rxuart_concat_lvalue_dependencies(tmp_path):
     result = dependency_design(load_design(design_path), out, 90)
     assert result["status"] == "passed", result
     graph = json.loads((out / "rtl_dependencies.json").read_text(encoding="utf-8"))
+    ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+    def inspect_concats(item):
+        if isinstance(item, list):
+            for child in item:
+                yield from inspect_concats(child)
+        elif isinstance(item, dict):
+            if (item.get("kind") == "Assignment"
+                    and isinstance(item.get("left"), dict)
+                    and item["left"].get("kind") == "Concatenation"):
+                right = item.get("right")
+                if isinstance(right, dict):
+                    operand = right.get("operand")
+                    yield {
+                        "rhs_kind": right.get("kind"),
+                        "rhs_keys": sorted(right.keys()),
+                        "rhs_value": right.get("value"),
+                        "operand_kind": operand.get("kind") if isinstance(operand, dict) else None,
+                        "operand_value": operand.get("value") if isinstance(operand, dict) else None,
+                    }
+            for child in item.values():
+                if isinstance(child, (dict, list)):
+                    yield from inspect_concats(child)
+    print("PR32_REAL_CONCAT_RHS_SHAPES", list(inspect_concats(ast)))
     assert {
         ("rxuart.qq_uart", "rxuart.ck_uart"),
         ("rxuart.q_uart", "rxuart.qq_uart"),
