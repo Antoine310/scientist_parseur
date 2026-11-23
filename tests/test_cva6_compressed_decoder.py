@@ -109,3 +109,14 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
                          .read_text(encoding="utf-8"))
     assert on_disk["upstream_commit"] == probe.UPSTREAM_COMMIT
     assert on_disk["warnings_total"] == result["graph_counts"]["warnings"]
+    # Observations from this exact pinned Git snapshot with slang v12.1.
+    # This baseline must not silently lose assignments or dependencies.
+    assert result["graph_counts"] == {"nodes": 12, "edges": 13, "warnings": 1}
+    assert result["observed_analyzers"]["expressions"]["counts"]["captured"] == 93
+    assert result["observed_analyzers"]["expressions"]["counts"]["partial_expressions"] == 57
+    assert result["observed_analyzers"]["register_flow"]["counts"]["captured"] == 0
+    assert result["observed_analyzers"]["bit_accesses"]["counts"]["captured"] == 0
+    assert any("MemberAccess" in x["reason"] for x in result["warnings_sample"])
+    assert all(row["observed_input_reachable"] and not row["truncated"]
+               for row in result["fanin_outputs"].values())
+    assert result["coverage_assessment"] == "reported_limits"
