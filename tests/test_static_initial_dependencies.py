@@ -64,7 +64,8 @@ def initial(body):
 
 
 def test_static_rhs_and_lhs_positions_are_recorded_not_conflated_with_bit_edges():
-    lhs = n("ElementSelect", value=ref("out"), selector=literal("2"))
+    lhs = n("RangeSelect", value=ref("out"),
+            left=literal("5"), right=literal("2"))
     rhs = n("RangeSelect", value=ref("data"),
             left=literal("7"), right=literal("4"))
     g = graph(n("ContinuousAssign", assignment=assignment(lhs, rhs)))
@@ -72,13 +73,22 @@ def test_static_rhs_and_lhs_positions_are_recorded_not_conflated_with_bit_edges(
     assert links(g, "data") == {("top.data", "top.out")}
     assert {(x["role"], x["signal"], x["selection"]["kind"])
             for x in g["static_selections"]} == {
-                ("read", "top.data", "range"), ("write", "top.out", "bit"),
+                ("read", "top.data", "range"), ("write", "top.out", "range"),
             }
     assert g["static_selections"][0]["selection"] in (
         {"kind": "range", "msb": 7, "lsb": 4},
-        {"kind": "bit", "index": 2},
+        {"kind": "range", "msb": 5, "lsb": 2},
     )
     assert "sans granularité bit" in g["limitations"][0]
+
+
+def test_static_bit_to_bit_selection_is_explicit_evidence():
+    lhs = n("ElementSelect", value=ref("out"), selector=literal("2"))
+    rhs = n("ElementSelect", value=ref("data"), selector=literal("5"))
+    g = graph(n("ContinuousAssign", assignment=assignment(lhs, rhs)))
+    assert g["counts"]["warnings"] == 0, g["warnings"]
+    assert {x["selection"]["index"] for x in g["static_selections"]} == {2, 5}
+    assert links(g, "data") == {("top.data", "top.out")}
 
 
 def test_dynamic_selector_stays_reported_and_remains_data_source():
