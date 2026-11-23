@@ -255,6 +255,27 @@ def test_real_slang_fixture_uses_true_enum_and_repeated_bit_segments(tmp_path):
             "rhs_width": item.get("rhs_width"),
         } for item in graph["bit_accesses"]["items"]
     }
+    if graph["bit_accesses"]["counts"]["precise"] != 3:
+        ast = json.loads((out / "elaborated_ast.json").read_text())
+        sample = []
+        def walk(node):
+            if isinstance(node, list):
+                for item in node:
+                    walk(item)
+            elif isinstance(node, dict):
+                if ((node.get("kind") == "NamedValue"
+                     and str(node.get("symbol", "")).endswith(" OP_A"))
+                    or (node.get("kind") in ("Parameter", "EnumValue")
+                        and node.get("name") == "OP_A")):
+                    sample.append({key: str(node.get(key, ""))[:160]
+                                   for key in ("kind", "name", "symbol",
+                                               "type", "constant", "value",
+                                               "addr")})
+                for key, value in node.items():
+                    if key not in ("definition", "internalSymbol", "type"):
+                        walk(value)
+        walk(ast.get("design", {}))
+        print("PR39_LOCAL_ENUM_AST", sample[:12])
     assert graph["bit_accesses"]["counts"]["precise"] == 3, fixture_status
     packed = rows["typed_segments_pr39.packed_o"]
     assert packed["rhs_width"] == 16 and packed["coverage"] == "rhs_lanes_only"
