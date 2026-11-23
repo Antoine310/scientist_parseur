@@ -12,34 +12,7 @@ import random
 import cocotb
 from cocotb.triggers import Timer
 
-
-def encode_cj(payload: int, upper: int = 0) -> int:
-    """Force quadrant C1, funct3=101; all 11 payload bits [12:2] may vary."""
-    assert 0 <= payload < 2048 and 0 <= upper <= 0xFFFF
-    return (upper << 16) | 0xA001 | (payload << 2)
-
-
-def expected_cj_jal(value: int) -> int:
-    """Independent RV32 JAL word construction for c.j (no RTL/AST imports).
-
-    Dest register x0, opcode JAL=0x6f. The remaining bits correspond to
-    the decompressed jump immediate, with bit7 inverted from input bit15.
-    """
-    assert 0 <= value <= 0xFFFF_FFFF
-    low = value & 0xFFFF
-    assert (low & 0xE003) == 0xA001, f"not c.j: {low:04x}"
-    out = 0x6F
-    out |= ((low >> 12) & 1) << 31
-    out |= ((low >> 8) & 1) << 30
-    out |= ((low >> 9) & 3) << 28
-    out |= ((low >> 6) & 1) << 27
-    out |= ((low >> 7) & 1) << 26
-    out |= ((low >> 2) & 1) << 25
-    out |= ((low >> 11) & 1) << 24
-    out |= ((low >> 3) & 7) << 21
-    out |= (0x1FF if low & 0x1000 else 0) << 12
-    out |= (1 ^ ((low >> 15) & 1)) << 7
-    return out
+from rtlprep.cva6_cj_reference import encode_cj, expected_cj_jal
 
 
 async def check(dut, instruction: int) -> None:
