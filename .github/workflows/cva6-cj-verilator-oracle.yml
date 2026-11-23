@@ -1,0 +1,138 @@
+name: Real OpenHW CVA6 c.j behavioral oracle (Verilator + cocotb)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-cva6-cj-oracle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+
+      - name: Checkout exact OpenHW CVA6 sources (never vendored)
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cva6
+          ref: 742dc82a0c706e0a3bfb98b709fd3ee06d50d12a
+          path: upstream_cva6
+          sparse-checkout: |
+            core/include/config_pkg.sv
+            core/include/cv32a6_imac_sv32_config_pkg.sv
+            core/include/riscv_pkg.sv
+            core/include/build_config_pkg.sv
+            core/compressed_decoder.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Verify pinned Git commit and five actual blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_cva6 rev-parse HEAD)" = "742dc82a0c706e0a3bfb98b709fd3ee06d50d12a"
+          test "$(git -C upstream_cva6 hash-object core/include/config_pkg.sv)" = "a68b2c14ea758bc820a35cc3ac27035359763d0a"
+          test "$(git -C upstream_cva6 hash-object core/include/cv32a6_imac_sv32_config_pkg.sv)" = "d0824c0b8202b1f2b048864f502ba2c7b2375e8f"
+          test "$(git -C upstream_cva6 hash-object core/include/riscv_pkg.sv)" = "146bcc2c307ec236c3c0ca3854ca69ce6fdcecb9"
+          test "$(git -C upstream_cva6 hash-object core/include/build_config_pkg.sv)" = "429080949a6626f4f42cdb1c717383bb3b7f3843"
+          test "$(git -C upstream_cva6 hash-object core/compressed_decoder.sv)" = "76385e5ea0b9eb0cc2d0e96fe978a90d4e122c19"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned compatible Verilator
+        uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089 # v2
+        with:
+          version: '5.040'
+
+      - name: Install reviewed cocotb runner and verify versions
+        run: |
+          python -m pip install -e '.[dev,simulation]'
+          python - <<'PY'
+          import re
+          import subprocess
+          import cocotb
+          assert cocotb.__version__ == "2.0.1", cocotb.__version__
+          version = subprocess.check_output(["verilator", "--version"], text=True)
+          match = re.search(r"Verilator (\d+)\.(\d+)", version)
+          assert match and tuple(map(int, match.groups())) >= (5, 36), version
+          print("PR42_EDA_VERSIONS", cocotb.__version__, version.strip())
+          PY
+
+      - name: Prove hermetic oracle and mutation guards first
+        run: python -m pytest -q -rs -o addopts='' tests/test_cva6_cj_pr42.py
+
+      - name: Simulate ACTUAL pinned CVA6 compressed decoder (must PASS)
+        run: |
+          python -m scripts.run_cva6_cj_oracle \
+            --source-root upstream_cva6 \
+            --out reports/pr42-cva6-cj-gold \
+            --variant gold
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("reports/pr42-cva6-cj-gold/cva6_cj_simulation.result.json")
+          data=json.loads(p.read_text(encoding="utf-8"))
+          assert data["status"] == "passed", data
+          assert (data["tests"], data["passed"], data["failed"], data["skipped"]) == (3,3,0,0), data
+          assert data["checkout_revision_status"] == "verified_exact_commit", data
+          assert data["source_integrity"] == "verified_pinned_git_blobs", data
+          assert data["design_coverage"] == "not_measured", data
+          assert data["functional_correctness_of_entire_cva6"] == "not_tested", data
+          assert Path("reports/pr42-cva6-cj-gold/simulation_results.xml").is_file()
+          print("PR42_REAL_CVA6_CJ_GOOD_PASSED", data["testcases"])
+          PY
+
+      - name: Mutate only ~instr_i[15] in isolated copy (must FAIL for bit7)
+        shell: bash
+        run: |
+          set +e
+          python -m scripts.run_cva6_cj_oracle \
+            --source-root upstream_cva6 \
+            --out reports/pr42-cva6-cj-mutant \
+            --variant mutant
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Mutation exited unexpectedly: $code"; exit 1; }
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          good=json.loads(Path("reports/pr42-cva6-cj-gold/cva6_cj_simulation.result.json").read_text())
+          bad=json.loads(Path("reports/pr42-cva6-cj-mutant/cva6_cj_simulation.result.json").read_text())
+          assert good["status"] == "passed", good
+          assert bad["status"] == "expected_mutation_failure", bad
+          assert bad["tests"] == 3 and bad["failed"] >= 1, bad
+          assert bad["mutation_failure_evidence"] is True, bad
+          assert bad["gold_source_sha256"] == good["gold_source_sha256"], (good,bad)
+          assert bad["mutant_sha256"] != bad["gold_source_sha256"], bad
+          assert Path("reports/pr42-cva6-cj-mutant/simulation_results.xml").is_file()
+          print("PR42_REAL_CVA6_CJ_MUTATION_DETECTED", bad["testcases"])
+          PY
+
+      - name: Verify the original checked-out official RTL is untouched
+        shell: bash
+        run: |
+          test "$(git -C upstream_cva6 hash-object core/compressed_decoder.sv)" = "76385e5ea0b9eb0cc2d0e96fe978a90d4e122c19"
+          test -z "$(git -C upstream_cva6 status --porcelain)"
+
+      - name: Preserve both positive and negative actual simulation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr42-real-cva6-cj-behavior-and-negative-mutant
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/pr42-cva6-cj-gold/cva6_cj_simulation.result.json
+            reports/pr42-cva6-cj-gold/simulation_results.xml
+            reports/pr42-cva6-cj-mutant/cva6_cj_simulation.result.json
+            reports/pr42-cva6-cj-mutant/simulation_results.xml

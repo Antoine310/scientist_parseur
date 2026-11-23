@@ -391,6 +391,33 @@ n'est affirmée.
 
 [Procédure, contrôles négatifs et limites PR #41](docs/independent-unary-oracle-pr41.md).
 
+## Premier oracle comportemental sur le **vrai** CVA6 (PR #42)
+
+Après la validation sur une fixture RTLPrep en #41, la PR #42
+utilise **directement les sources officielles OpenHW CVA6**
+(`core/compressed_decoder.sv` et packages épinglés) pour simuler
+la branche `c.j` avec **Verilator 5.040 + cocotb 2.0.1**.
+
+Un oracle Python indépendant de `bitaccess.py`, de slang et
+du graphe vérifie **2 336 stimuli** de décompression `c.j`,
+dont **les 2 048 encodages possibles des 11 bits variables** lorsque
+le mot haut vaut zéro. **3/3 tests cocotb passent** sur le RTL
+officiel. Une **unique mutation** réalisée sur une copie générée
+hors du dépôt — enlever `~` devant `instr_i[15]` — provoque
+**3/3 échecs d'assertion sur le bit de sortie 7** avec ce même
+oracle ; les logs et XML sont conservés.
+
+Ce résultat confirme un comportement réel sur **ce chemin
+combinatoire et dans les conditions testées**. Il ne valide
+ni le reste du décodeur, ni le cœur CVA6, ni la couverture
+complète : `design_coverage=not_measured`. Des avertissements
+de largeur émis par Verilator sur des packages officiels
+restent visibles et ne sont pas confondus avec la réussite
+des assertions `c.j`.
+
+[Sources épinglées, vérification indépendante, mutations et
+reproduction PR #42](docs/cva6-real-cj-behavioral-pr42.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
