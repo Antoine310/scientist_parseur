@@ -196,10 +196,24 @@ def test_pinned_real_rtl_static_selection_and_initial_metadata(tmp_path, top, so
                         walk(child)
                 elif isinstance(node, dict):
                     if node.get("kind") in ("ElementSelect", "RangeSelect"):
-                        relevant = {key: node.get(key) for key in (
-                            "kind", "selector", "left", "right"
-                        ) if key in node}
-                        selections.append(str(relevant)[:500])
+                        def short_expr(expr, depth=0):
+                            if not isinstance(expr, dict) or depth > 3:
+                                return str(expr)[:36]
+                            return {
+                                k: short_expr(v, depth + 1) if isinstance(v, dict) else str(v)[:48]
+                                for k, v in expr.items()
+                                if k in ("kind", "op", "symbol", "constant", "value",
+                                         "selector", "left", "right", "operand")
+                            }
+                        relevant = {
+                            "kind": node.get("kind"),
+                            "base_kind": node.get("value", {}).get("kind"),
+                            "index": short_expr(node.get("selector")),
+                            "left": short_expr(node.get("left")),
+                            "right": short_expr(node.get("right")),
+                        }
+                        if relevant not in selections:
+                            selections.append(relevant)
                     for child in node.values():
                         if isinstance(child, (dict, list)):
                             walk(child)
