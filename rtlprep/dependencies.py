@@ -301,19 +301,51 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         elif kind == "Timed":
             extracted: list[tuple[str, str]] = list(events)
             timing = obj.get("timing")
-            if isinstance(timing, dict) and timing.get("kind") == "EventList":
-                for event in timing.get("events", []):
-                    if isinstance(event, dict) and event.get("kind") == "SignalEvent":
-                        expr = event.get("expr")
-                        ref = resolve(path, expr)
-                        if ref:
-                            extracted.append((ref, str(event.get("edge", "Unknown"))))
+            if not isinstance(timing, dict):
+                warn(path, "Timing absent ou non structuré")
+            elif timing.get("kind") == "ImplicitEvent":
+                # slang: always @* / implicit combinational sensitivity.
+                # Its signal-level influences are already carried by reads()
+                # and conditional guards. Do NOT invent clock/event edges.
+                if sequential:
+                    warn(path, "Sensibilité implicite inattendue dans always_ff")
+            else:
+                event_nodes: list[Any] = []
+                if timing.get("kind") == "SignalEvent":
+                    # slang 12.1 also emits a *direct* single SignalEvent,
+                    # not necessarily an EventList wrapper.
+                    event_nodes = [timing]
+                elif timing.get("kind") == "EventList":
+                    sequence = timing.get("events")
+                    if isinstance(sequence, list) and sequence:
+                        event_nodes = sequence
                     else:
+                        warn(path, "EventList vide ou malformée")
+                else:
+                    warn(path, f"Timing non pris en charge : {timing.get('kind')}")
+                for event in event_nodes:
+                    if not isinstance(event, dict) or event.get("kind") != "SignalEvent":
                         warn(path, "Événement temporel non pris en charge")
-            elif timing is not None:
-                warn(path, f"Timing non pris en charge : {timing.get('kind') if isinstance(timing, dict) else type(timing).__name__}")
+                        continue
+                    edge = event.get("edge")
+                    # A generic @signal is not equivalent to posedge/negedge.
+                    # Keep unsupported timing explicit rather than guessing.
+                    if edge not in ("PosEdge", "NegEdge"):
+                        warn(path, f"Front SignalEvent non pris en charge : {edge!r}")
+                        continue
+                    reference = resolve(path, event.get("expr"))
+                    if reference is None:
+                        warn(path, "SignalEvent sans référence de signal résolue")
+                        continue
+                    extracted.append((reference, edge))
+            # always @(posedge clk) is sequential even if slang labels its
+            # ProcedureKind as Always rather than AlwaysFF.
+            edge_triggered = any(
+                edge in ("PosEdge", "NegEdge") for _, edge in extracted
+            )
             statements(path, obj.get("stmt"), controls=controls,
-                       events=tuple(extracted), sequential=sequential)
+                       events=tuple(extracted),
+                       sequential=sequential or edge_triggered)
         elif kind in ("Empty", "EmptyStatement"):
             pass
         else:

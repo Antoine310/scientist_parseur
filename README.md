@@ -94,6 +94,17 @@ Régression sur la véritable IP AXI-Stream `axis_register` et ses variantes
 et ne couvre pas tous les scopes/événements de SystemVerilog.
 
 [Guide PR #29 : résolution des signaux sous generate](docs/generate-scope-symbols.md).
+## Événements SystemVerilog explicites et implicites
+
+Le graphe de dépendances différencie désormais `always @*` (sensibilité
+implicite, **sans arête `event` inventée**) et `always @(posedge clk)`
+ou `@(negedge rst)` (front explicite, arête d'événement uniquement
+sur une identité de signal réellement résolue par slang).
+
+Les autres déclenchements temporels non pris en charge restent signalés.
+La couverture de certains analyseurs demeure partielle.
+
+[Guide de validation des événements temporels](docs/timing-events.md).
 ## 📚 Documentation pédagogique détaillée
 
 Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :
