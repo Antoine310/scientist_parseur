@@ -219,42 +219,9 @@ def test_pinned_real_rtl_static_selection_and_initial_metadata(tmp_path, top, so
     g = json.loads((out / "rtl_dependencies.json").read_text(encoding="utf-8"))
     assert g["static_selections"], (top, g["warnings"])
     assert all(x["role"] in ("read", "write") for x in g["static_selections"])
+    assert g["counts"]["warnings"] == 0, g["warnings"]
     if top == "priority_encoder":
         assert not g["initializations"]
-        if g["warnings"]:
-            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
-            selections = []
-            def walk(node):
-                if isinstance(node, list):
-                    for child in node:
-                        walk(child)
-                elif isinstance(node, dict):
-                    if node.get("kind") in ("ElementSelect", "RangeSelect"):
-                        def short_expr(expr, depth=0):
-                            if not isinstance(expr, dict) or depth > 3:
-                                return str(expr)[:36]
-                            return {
-                                k: short_expr(v, depth + 1) if isinstance(v, dict) else str(v)[:48]
-                                for k, v in expr.items()
-                                if k in ("kind", "op", "symbol", "constant", "value",
-                                         "selector", "left", "right", "operand")
-                            }
-                        relevant = {
-                            "kind": node.get("kind"),
-                            "base_kind": node.get("value", {}).get("kind"),
-                            "index": short_expr(node.get("selector")),
-                            "left": short_expr(node.get("left")),
-                            "right": short_expr(node.get("right")),
-                        }
-                        if relevant not in selections:
-                            selections.append(relevant)
-                    for child in node.values():
-                        if isinstance(child, (dict, list)):
-                            walk(child)
-            walk(ast["design"])
-            for i, row in enumerate(selections[:24]):
-                print("PR33_STATIC_SELECT", i, json.dumps(row, ensure_ascii=False))
-            assert not g["warnings"], g["warnings"]
     if top == "rxuart":
         assert len(g["initializations"]) >= 1, g["warnings"]
         assert not any(
