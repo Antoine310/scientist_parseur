@@ -124,7 +124,7 @@ def test_constant_initial_is_metadata_only_not_runtime_dependency():
 def test_semantic_parameter_slice_is_a_safe_initializer_not_a_runtime_read():
     tree = synthetic(initial(stmt(ref("init"), n("RangeSelect",
         value=ref("RESET_VALUE", "777"),
-        left=literal("7"), right=literal("0"))))
+        left=literal("7"), right=literal("0")))))
     tree["design"]["members"].insert(0, n("CompilationUnit", members=[
         n("Package", name="pkg", members=[
             n("Parameter", name="RESET_VALUE", addr="777", value="8'h00")
