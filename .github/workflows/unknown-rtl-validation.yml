@@ -54,7 +54,7 @@ jobs:
       - name: Install RTLPrep and run hermetic field validation tests
         run: |
           python -m pip install -e '.[dev]'
-          python -m pytest -q tests/test_field_validation.py tests/test_timing_controls.py
+          python -m pytest -q tests/test_field_validation.py tests/test_timing_controls.py tests/test_concat_lvalue.py
       - name: Install pinned real slang v12.1
         shell: bash
         run: |
@@ -71,6 +71,9 @@ jobs:
       - name: Regress real AXI-Stream generate branches REG_TYPE 0, 1 and 2
         run: |
           python -m pytest -q -rs -o addopts='' tests/test_generate_scope_real.py
+      - name: Regress real pinned ZipCPU rxuart concatenated lvalues
+        run: |
+          python -m pytest -q -rs -o addopts='' tests/test_concat_lvalue.py
       - name: Evaluate genuine third-party RTL and retain limits
         run: |
           python scripts/validate_unknown_rtl.py \
