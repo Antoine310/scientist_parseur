@@ -92,6 +92,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     seen_edges: set[tuple[str, str, str, bool, str]] = set()
     warnings: list[dict[str, Any]] = []
     warning_keys: set[tuple[str, str]] = set()
+    initializations: list[dict[str, Any]] = []
 
     # slang encodes references as "symbol-address symbol-name". The address
     # refers to the *exact* semantic declaration in the same exported AST.
@@ -136,6 +137,52 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         if resolved is None:
             warn(path, f"Référence NamedValue inconnue/ambiguë : {name!r}")
         return resolved
+
+    def constant_initializer_expression(path: str, expr: Any,
+                                        depth: int = 0) -> bool:
+        """Prove an initializer contains no runtime-signal reads.
+
+        A 'constant' property on a live signal is not sufficient proof:
+        only semantic Parameter/EnumValue IDs or non-signal constants count.
+        """
+        if not isinstance(expr, dict) or depth > 16:
+            return False
+        kind = expr.get("kind")
+        if kind in ("IntegerLiteral", "UnbasedUnsizedIntegerLiteral",
+                    "RealLiteral", "StringLiteral"):
+            return True
+        if kind == "NamedValue":
+            symbol = expr.get("symbol")
+            if not isinstance(symbol, str):
+                return False
+            address = symbol.split(maxsplit=1)[0]
+            if address in constant_declarations:
+                return True
+            name = _symbol_name(expr)
+            return "constant" in expr and name not in known.get(path, set())
+        if kind in ("Conversion", "SignedConversion", "UnaryOp"):
+            return constant_initializer_expression(
+                path, expr.get("operand"), depth + 1
+            )
+        if kind == "BinaryOp":
+            return (constant_initializer_expression(path, expr.get("left"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("right"), depth + 1))
+        if kind == "ElementSelect":
+            return (constant_initializer_expression(path, expr.get("value"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("selector"), depth + 1))
+        if kind == "RangeSelect":
+            return (constant_initializer_expression(path, expr.get("value"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("left"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("right"), depth + 1))
+        if kind == "Concatenation":
+            parts = expr.get("operands")
+            return (isinstance(parts, list) and 1 <= len(parts) <= 32
+                    and all(constant_initializer_expression(path, part, depth + 1)
+                            for part in parts))
+        if kind == "Replication":
+            return (constant_initializer_expression(path, expr.get("count"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("concat"), depth + 1))
+        return False
 
     def target(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict):
@@ -474,6 +521,50 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         else:
             warn(path, f"Instruction non prise en charge : {kind}")
 
+    def initial_statements(path: str, body: Any, depth: int = 0
+                           ) -> list[dict[str, Any]] | None:
+        """Accept only constant, direct-lvalue initial assignments.
+
+        Initial values are metadata, NEVER data, clock or reset graph edges.
+        A partially unsupported initial block is rejected atomically.
+        """
+        if not isinstance(body, dict) or depth > 16:
+            return None
+        kind = body.get("kind")
+        if kind in ("Block", "List", "StatementList"):
+            field = ("body" if kind == "Block"
+                     else "list" if kind == "List" else "statements")
+            children = body.get(field)
+            if isinstance(children, dict):
+                children = [children]
+            if not isinstance(children, list) or len(children) > 256:
+                return None
+            found: list[dict[str, Any]] = []
+            for child in children:
+                child_rows = initial_statements(path, child, depth + 1)
+                if child_rows is None:
+                    return None
+                found.extend(child_rows)
+            return found
+        if kind != "ExpressionStatement":
+            return None
+        assign = body.get("expr")
+        if not isinstance(assign, dict) or assign.get("kind") != "Assignment":
+            return None
+        lhs, rhs = assign.get("left"), assign.get("right")
+        if not isinstance(lhs, dict) or lhs.get("kind") != "NamedValue":
+            return None
+        if not constant_initializer_expression(path, rhs):
+            return None
+        destination = resolve(path, lhs)
+        if destination is None:
+            return None
+        return [{
+            "target": destination, "source": _location(assign),
+            "expression_kind": rhs.get("kind"),
+            "scope": "initial_only_not_runtime",
+        }]
+
     def connections(node: dict[str, Any], path: str, parent: str | None) -> None:
         if parent is None:
             return
@@ -521,11 +612,19 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                 continue
             if node.get("kind") == "ProceduralBlock" and parent is not None:
                 procedure_kind = node.get("procedureKind")
-                if procedure_kind not in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
-                    warn(parent, f"Procédure non prise en charge : {procedure_kind}")
-                else:
+                if procedure_kind == "Initial":
+                    records = initial_statements(parent, node.get("body"))
+                    if records is None:
+                        warn(parent, "Procédure non prise en charge : Initial")
+                    elif len(initializations) + len(records) > 2000:
+                        warn(parent, "Initialisations constantes tronquées (limite 2000)")
+                    else:
+                        initializations.extend(records)
+                elif procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
                     statements(parent, node.get("body"),
                                sequential=(procedure_kind == "AlwaysFF"))
+                else:
+                    warn(parent, f"Procédure non prise en charge : {procedure_kind}")
                 continue
             if node.get("kind") != "Instance":
                 continue
@@ -541,10 +640,14 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     for missing_path in sorted(set(instances) - visited_instances):
         warn(missing_path, "Instance connue de l'index mais absente du graphe")
     edges.sort(key=lambda x: (x["target"], x["source"], x["kind"], x["detail"]))
+    initializations.sort(key=lambda x: (
+        x["target"], str(x["source"]), x["expression_kind"]
+    ))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
     graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
+        "initializations": initializations,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
         "expressions": build_expression_index(ast, expected_top=expected_top, index=structural),
@@ -560,6 +663,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         ),
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
+            "Initialisations constantes recensées séparément, sans arêtes d'exécution",
             "Case normal, concaténations, sélections et generate if simples seulement",
             "Pas de résolution des fonctions, tâches, casez/casex, generate complexes",
             "Événements toujours classés event : horloge versus reset non inférés",
