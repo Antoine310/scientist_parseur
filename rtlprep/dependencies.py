@@ -67,6 +67,27 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     )
     symbols = SignalResolver(ast, structural)
     node_set = set(nodes)
+    # Only scalar declarations justify positional mapping of concatenated
+    # lvalues. A vector named in a concatenation is NOT a one-bit operand.
+    # The evidence comes from the elaborated index, not the source spelling.
+    declared_types: dict[str, set[str]] = {}
+    for owner, instance in instances.items():
+        for port in instance["ports"]:
+            declared_types.setdefault(f"{owner}.{port['name']}", set()).add(
+                port.get("type") if isinstance(port.get("type"), str) else ""
+            )
+    for signal in structural["signals"]:
+        name = signal.get("path") or f"{signal['instance_path']}.{signal['name']}"
+        declared_types.setdefault(name, set()).add(
+            signal.get("type") if isinstance(signal.get("type"), str) else ""
+        )
+
+    def single_bit(signal: str) -> bool:
+        types = declared_types.get(signal, set())
+        return bool(types) and all(
+            value.strip() in ("logic", "bit", "reg") for value in types
+        )
+
     edges: list[dict[str, Any]] = []
     seen_edges: set[tuple[str, str, str, bool, str]] = set()
     warnings: list[dict[str, Any]] = []
@@ -205,12 +226,100 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                           "sequential": sequential, "detail": detail,
                           "location": _location(context)})
 
+    def _explicit_literal_width(node: dict[str, Any]) -> int | None:
+        # Slang's literal value (for example 3'h0) carries an explicit size.
+        # Unsized constants cannot establish a one-bit lane mapping.
+        value = node.get("value")
+        if not isinstance(value, str):
+            return None
+        import re
+        match = re.fullmatch(r"([0-9]{1,3})'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]+", value)
+        if match is None:
+            return None
+        width = int(match.group(1))
+        return width if 1 <= width <= 32 else None
+
+    def concatenated_assignment(path: str, obj: dict[str, Any], *,
+                                controls: frozenset[str],
+                                events: tuple[tuple[str, str], ...],
+                                sequential: bool) -> None:
+        """Conservative, one-bit positional mapping for a concatenated lvalue.
+
+        Every resolved lvalue receives control/event edges. Data edges are
+        emitted only for a provably one-bit positional match, never as an
+        all-to-all approximation across RHS operands of unknown widths.
+        """
+        lhs = obj["left"]
+        operands = lhs.get("operands")
+        if not isinstance(operands, list) or not 1 <= len(operands) <= 32:
+            warn(path, "Concaténation cible vide, malformée ou trop grande")
+            return
+        destinations: list[str] = []
+        for operand in operands:
+            if not isinstance(operand, dict) or operand.get("kind") != "NamedValue":
+                warn(path, "Concaténation cible : opérande non pris en charge")
+                return
+            dest = resolve(path, operand)
+            if dest is None:
+                warn(path, "Concaténation cible : signal non résolu")
+                return
+            destinations.append(dest)
+
+        # A whole-signal reference has no inferable lane unless its elaborated
+        # declared type is explicitly scalar. Only a fully aligned N-bit RHS
+        # gets N independent data edges.
+        paired: list[str | None] | None = None
+        rhs = obj.get("right")
+        if all(single_bit(dest) for dest in destinations) and isinstance(rhs, dict):
+            rhs_kind = rhs.get("kind")
+            if rhs_kind == "Concatenation":
+                values = rhs.get("operands")
+                if isinstance(values, list) and len(values) == len(destinations):
+                    mapped: list[str | None] = []
+                    for operand in values:
+                        if not isinstance(operand, dict):
+                            break
+                        if operand.get("kind") == "NamedValue":
+                            source = resolve(path, operand)
+                            if source is None or not single_bit(source):
+                                break
+                            mapped.append(source)
+                        elif operand.get("kind") == "IntegerLiteral" and (
+                            _explicit_literal_width(operand) == 1
+                        ):
+                            mapped.append(None)
+                        else:
+                            break
+                    if len(mapped) == len(destinations):
+                        paired = mapped
+            elif rhs_kind == "IntegerLiteral" and (
+                _explicit_literal_width(rhs) == len(destinations)
+            ):
+                paired = [None] * len(destinations)
+            elif rhs_kind == "UnbasedUnsizedIntegerLiteral":
+                # '0 / '1 / 'x / 'z fill all LHS bits, with no data signal.
+                paired = [None] * len(destinations)
+        if paired is None:
+            warn(path, "Concaténation cible : positions RHS non démontrées (données omises)")
+        for i, dest in enumerate(destinations):
+            if paired is not None and paired[i] is not None:
+                add(paired[i], dest, "data", obj, sequential=sequential)
+            for source in sorted(controls):
+                add(source, dest, "control", obj, sequential=sequential)
+            for source, edge in events:
+                add(source, dest, "event", obj, sequential=sequential, detail=edge)
+
     def assignment(path: str, obj: Any, *, controls: frozenset[str] = frozenset(),
                    events: tuple[tuple[str, str], ...] = (), sequential: bool = False) -> None:
         if not isinstance(obj, dict) or obj.get("kind") != "Assignment":
             warn(path, "Affectation non reconnue")
             return
-        dst = target(path, obj.get("left"))
+        lhs = obj.get("left")
+        if isinstance(lhs, dict) and lhs.get("kind") == "Concatenation":
+            concatenated_assignment(path, obj, controls=controls,
+                                    events=events, sequential=sequential)
+            return
+        dst = target(path, lhs)
         if dst is None:
             return
         values, expression_controls = reads(path, obj.get("right"))
