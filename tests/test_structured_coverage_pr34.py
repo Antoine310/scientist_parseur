@@ -283,11 +283,15 @@ def test_real_pinned_rtl_expression_and_bit_coverage(tmp_path, top, source, pin)
     assert result["coverage"]["design_coverage"] == "not_measured"
     assert expr["captured"] > 0
     if top == "axis_register":
-        assert expr["partial_expressions"] < 17
-    if top == "priority_encoder":
+        assert expr["partial_expressions"] <= 12, expr
         assert expr["unsupported_targets"] == 0, expr
-        assert expr["partial_expressions"] < 2, expr
-        assert bits["partial"] < 7
+    if top == "priority_encoder":
+        # Previously six selected destinations were excluded altogether.
+        assert expr["captured"] >= 9 and expr["unsupported_targets"] == 0, expr
+        assert expr["partial_expressions"] == 0, expr
+        assert bits["precise"] >= 3 and bits["partial"] <= 5, bits
     if top == "rxuart":
-        assert expr["partial_expressions"] < 18
-        assert bits["partial"] >= 1  # arithmetic transformation not positional
+        assert expr["partial_expressions"] == 0, expr
+        # Two concatenated lvalues remain outside this expressions index.
+        assert expr["unsupported_targets"] == 2, expr
+        assert bits["partial"] == 1  # arithmetic transformation not positional
