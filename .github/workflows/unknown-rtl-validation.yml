@@ -73,7 +73,7 @@ jobs:
           python -m pytest -q -rs -o addopts='' tests/test_generate_scope_real.py
       - name: Regress real pinned ZipCPU rxuart concatenated lvalues
         run: |
-          python -m pytest -q -s -rs -o addopts='' tests/test_concat_lvalue.py
+          python -m pytest -q -rs -o addopts='' tests/test_concat_lvalue.py
       - name: Evaluate genuine third-party RTL and retain limits
         run: |
           python scripts/validate_unknown_rtl.py \
