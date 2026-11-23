@@ -26,6 +26,25 @@ def generate_scope(node: dict[str, Any]) -> str | None:
     return value if isinstance(value, str) and SCOPED_NAME.fullmatch(value) else None
 
 
+def member_name(node: Any) -> str | None:
+    """Return a bounded member identifier from slang's semantic member token.
+
+    The JSON representation is 'declaration-address member-name'.  The
+    address must not be persisted and a name alone is never a proof that
+    the base is a constant or a signal.  Unexpected shapes fail closed.
+    """
+    if not isinstance(node, dict) or node.get("kind") != "MemberAccess":
+        return None
+    raw = node.get("member")
+    if not isinstance(raw, str) or len(raw) > 192:
+        return None
+    parts = raw.split(maxsplit=1)
+    if (len(parts) != 2 or not parts[0].isdecimal()
+            or not SCOPED_NAME.fullmatch(parts[1])):
+        return None
+    return parts[1]
+
+
 class SignalResolver:
     """Retrouve le signal indexé par l'adresse sémantique *et* son instance."""
 
