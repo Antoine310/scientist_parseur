@@ -1,0 +1,112 @@
+name: Real OpenHW CVA6 compressed decoder (pinned slang and RTL)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cva6-compressed-decoder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - name: Checkout pinned official OpenHW CVA6 sources
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cva6
+          ref: 742dc82a0c706e0a3bfb98b709fd3ee06d50d12a
+          path: upstream_cva6
+          sparse-checkout: |
+            core/include/config_pkg.sv
+            core/include/cv32a6_imac_sv32_config_pkg.sv
+            core/include/riscv_pkg.sv
+            core/include/build_config_pkg.sv
+            core/compressed_decoder.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Verify real checkout commit and source Git blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_cva6 rev-parse HEAD)" = "742dc82a0c706e0a3bfb98b709fd3ee06d50d12a"
+          test "$(git -C upstream_cva6 hash-object core/include/config_pkg.sv)" = "a68b2c14ea758bc820a35cc3ac27035359763d0a"
+          test "$(git -C upstream_cva6 hash-object core/include/cv32a6_imac_sv32_config_pkg.sv)" = "d0824c0b8202b1f2b048864f502ba2c7b2375e8f"
+          test "$(git -C upstream_cva6 hash-object core/include/riscv_pkg.sv)" = "146bcc2c307ec236c3c0ca3854ca69ce6fdcecb9"
+          test "$(git -C upstream_cva6 hash-object core/include/build_config_pkg.sv)" = "429080949a6626f4f42cdb1c717383bb3b7f3843"
+          test "$(git -C upstream_cva6 hash-object core/compressed_decoder.sv)" = "76385e5ea0b9eb0cc2d0e96fe978a90d4e122c19"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install RTLPrep and verify integrity gates
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py
+      - name: Install pinned real slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Elaborate and analyze real CVA6 compressed decoder
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python scripts/run_cva6_compressed_decoder.py \
+            --source-root upstream_cva6 --out reports/cva6-compressed-decoder \
+            --timeout 240; then
+            cat reports/cva6-compressed-decoder/analyze.stderr.log 2>/dev/null || true
+            cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
+            exit 1
+          fi
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py
+      - name: Verify no claims of exhaustive correctness
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path(
+              "reports/cva6-compressed-decoder/cva6_compressed_decoder_report.json"
+          ).read_text(encoding="utf-8"))
+          assert report["checkout_revision_status"] == "verified_exact_commit", report
+          assert report["source_integrity"] == "verified_pinned_git_blobs", report
+          assert report["design_coverage"] == "not_measured", report
+          assert report["functional_correctness"] == "not_tested", report
+          assert report["accuracy"] == "not_measured_without_independent_exhaustive_oracle", report
+          assert report["benchmarked_llm"] is False, report
+          assert report["graph_counts"]["nodes"] > 0 and report["graph_counts"]["edges"] > 0, report
+          print("CVA6_PINNED_REAL_SLANG_PASSED", {
+              "configuration": report["configuration"],
+              "graph_counts": report["graph_counts"],
+              "fanin_outputs": report["fanin_outputs"],
+              "coverage_assessment": report["coverage_assessment"],
+          })
+          PY
+      - name: Upload exact CVA6 analysis and limitations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-cva6-compressed-decoder
+          if-no-files-found: warn
+          path: |
+            reports/cva6-compressed-decoder/cva6_compressed_decoder_report.json
+            reports/cva6-compressed-decoder/rtl_index.json
+            reports/cva6-compressed-decoder/rtl_dependencies.json
+            reports/cva6-compressed-decoder/design.json
+            reports/cva6-compressed-decoder/*.result.json
+            reports/cva6-compressed-decoder/*.stderr.log
+          retention-days: 14
