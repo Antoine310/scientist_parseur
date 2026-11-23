@@ -1,8 +1,10 @@
 """Accès RTL aux bits : segments syntaxiques de RHS issus de l'AST slang.
 
-Périmètre volontairement restreint : assign continus, sélections statiques et
-concaténations de segments de largeur connue. Aucune équivalence, simulation,
-propagation de constantes ou preuve de dépendance fonctionnelle.
+Périmètre : assign continus et instructions d'affectation dans les procédures
+always_ff / always_comb / always_latch / always, uniquement pour des sélections
+et concaténations de segments de largeur connue. Les gardes et événements
+sont des métadonnées syntaxiques, jamais des preuves temporelles.
+Aucune équivalence, simulation ou preuve de dépendance fonctionnelle.
 """
 from __future__ import annotations
 
@@ -18,6 +20,10 @@ MAX_SEGMENTS = 32
 MAX_DEPTH = 12
 MAX_WIDTH = 1024
 MAX_NODES = 256
+MAX_PROC_DEPTH = 40
+MAX_PROC_STATEMENTS = 8192
+MAX_PROC_GUARDS = 16
+MAX_PROC_EVENTS = 16
 
 
 class _Partial(Exception):
@@ -259,9 +265,17 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
 
     rows: list[dict[str, Any]] = []
     counts = {"assignments_seen": 0, "precise": 0, "partial": 0,
-              "unsupported_targets": 0, "truncated": False}
+              "unsupported_targets": 0, "truncated": False,
+              "procedural_blocks_visited": 0, "procedural_blocks_skipped": 0,
+              "unsupported_statements": 0}
+    statement_budget = [0]
 
-    def extract(path: str, node: Any) -> None:
+    def extract(path: str, node: Any, *,
+                procedure_kind: str | None = None,
+                guards: tuple[dict[str, Any], ...] = (),
+                events: tuple[dict[str, str], ...] = (),
+                timing_scope: str = "not_procedural",
+                context_partial: bool = False) -> None:
         counts["assignments_seen"] += 1
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
             return
@@ -280,6 +294,17 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "coverage": "partial", "target_selection": None,
             "rhs_width": None, "source_segments": [],
         }
+        if procedure_kind is not None:
+            nonblocking = node.get("isNonBlocking")
+            if type(nonblocking) is not bool:
+                context_partial = True
+            item.update({
+                "assignment_kind": "procedural",
+                "procedure_kind": procedure_kind,
+                "nonblocking": nonblocking if type(nonblocking) is bool else None,
+                "guards": list(guards), "events": list(events),
+                "timing_scope": timing_scope,
+            })
         try:
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
@@ -310,11 +335,179 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 if dest_width is not None and select["kind"] in ("bit", "range")
                 else "rhs_lanes_only"
             )
-            counts["precise"] += 1
+            if context_partial:
+                # Position metadata may be syntactically useful, but a
+                # malformed/unsupported guard or event cannot be complete.
+                item["coverage"] = "partial"
+                item["reason"] = "unsupported_procedural_context"
+                counts["partial"] += 1
+            else:
+                counts["precise"] += 1
         except _Partial as exc:
             item["reason"] = str(exc)
             counts["partial"] += 1
         rows.append(item)
+
+    def _timing(path: str, node: Any
+                ) -> tuple[tuple[dict[str, str], ...], str, bool]:
+        """Capture explicit event identities without inventing sensitivity."""
+        if not isinstance(node, dict):
+            return (), "unknown_timing", True
+        if node.get("kind") == "ImplicitEvent":
+            return (), "implicit_not_expanded", False
+        if node.get("kind") == "SignalEvent":
+            raw = [node]
+        elif node.get("kind") == "EventList":
+            raw = node.get("events")
+        else:
+            return (), "unsupported_timing", True
+        if not isinstance(raw, list) or not 1 <= len(raw) <= MAX_PROC_EVENTS:
+            return (), "unsupported_timing", True
+        events: list[dict[str, str]] = []
+        for event in raw:
+            if not isinstance(event, dict) or event.get("kind") != "SignalEvent":
+                return (), "unsupported_timing", True
+            edge = event.get("edge")
+            signal = resolver.resolve(path, event.get("expr"))
+            if edge not in ("PosEdge", "NegEdge") or signal is None:
+                return (), "unsupported_timing", True
+            events.append({"edge": edge, "signal": signal})
+        return tuple(events), "explicit_event_syntax", False
+
+    def statements(path: str, node: Any, *,
+                   procedure_kind: str,
+                   guards: tuple[dict[str, Any], ...] = (),
+                   events: tuple[dict[str, str], ...] = (),
+                   timing_scope: str = "no_explicit_timing",
+                   partial: bool = False, depth: int = 0) -> None:
+        if counts["truncated"]:
+            return
+        statement_budget[0] += 1
+        if statement_budget[0] > MAX_PROC_STATEMENTS or depth > MAX_PROC_DEPTH:
+            counts["unsupported_statements"] += 1
+            counts["truncated"] = True
+            return
+        if isinstance(node, list):
+            for child in node:
+                statements(path, child, procedure_kind=procedure_kind,
+                           guards=guards, events=events,
+                           timing_scope=timing_scope,
+                           partial=partial, depth=depth + 1)
+            return
+        if not isinstance(node, dict):
+            if node is not None:
+                counts["unsupported_statements"] += 1
+            return
+        kind = node.get("kind")
+        if kind == "ExpressionStatement":
+            assignment = node.get("expr")
+            if not isinstance(assignment, dict) or assignment.get("kind") != "Assignment":
+                counts["unsupported_statements"] += 1
+                return
+            extract(path, assignment, procedure_kind=procedure_kind,
+                    guards=guards, events=events, timing_scope=timing_scope,
+                    context_partial=partial)
+            return
+        if kind in ("List", "StatementList", "Block"):
+            field = {"List": "list", "StatementList": "statements",
+                     "Block": "body"}[kind]
+            children = node.get(field)
+            if not isinstance(children, (dict, list)):
+                counts["unsupported_statements"] += 1
+                return
+            statements(path, children, procedure_kind=procedure_kind,
+                       guards=guards, events=events, timing_scope=timing_scope,
+                       partial=partial, depth=depth + 1)
+            return
+        if kind == "Timed":
+            timed_events, timing, timing_partial = _timing(path, node.get("timing"))
+            child = node.get("stmt")
+            if not isinstance(child, (list, dict)):
+                counts["unsupported_statements"] += 1
+                return
+            # This index records the syntax of selected lanes. Event lists
+            # are not a cycle/latency model and implicit sensitivity is not
+            # expanded into hypothetical event dependencies.
+            statements(path, child, procedure_kind=procedure_kind,
+                       guards=guards, events=events + timed_events,
+                       timing_scope=timing, partial=partial or timing_partial,
+                       depth=depth + 1)
+            return
+        if kind == "Conditional":
+            conds = node.get("conditions")
+            valid = (isinstance(conds, list) and len(conds) == 1
+                     and isinstance(conds[0], dict)
+                     and set(conds[0]) == {"expr"}
+                     and isinstance(conds[0]["expr"], dict))
+            if not valid:
+                counts["unsupported_statements"] += 1
+            for branch, name in (("then", "ifTrue"), ("else", "ifFalse")):
+                child = node.get(name)
+                if child is None:
+                    continue
+                if not isinstance(child, (dict, list)):
+                    counts["unsupported_statements"] += 1
+                    continue
+                spec = ({"kind": "if", "branch": branch,
+                         "condition_ast_kind": str(conds[0]["expr"].get("kind", "unknown"))[:64]}
+                        if valid else {"kind": "unsupported_guard", "branch": branch})
+                if len(guards) >= MAX_PROC_GUARDS:
+                    counts["unsupported_statements"] += 1
+                statements(path, child, procedure_kind=procedure_kind,
+                           guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
+                           events=events, timing_scope=timing_scope,
+                           partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
+                           depth=depth + 1)
+            return
+        if kind == "Case":
+            mode = node.get("condition")
+            selector = node.get("expr")
+            items = node.get("items")
+            valid = (mode == "Normal" and isinstance(selector, dict)
+                     and isinstance(items, list))
+            if not valid:
+                counts["unsupported_statements"] += 1
+            for entry in items if isinstance(items, list) else []:
+                if not isinstance(entry, dict):
+                    counts["unsupported_statements"] += 1
+                    continue
+                labels = entry.get("expressions")
+                valid_entry = valid and isinstance(labels, list)
+                spec = {
+                    "kind": "case", "branch": "item",
+                    "selector_ast_kind": str(selector.get("kind", "unknown"))[:64]
+                                         if isinstance(selector, dict) else "unknown",
+                    "label_count": len(labels) if isinstance(labels, list) else 0,
+                } if valid_entry else {"kind": "unsupported_guard", "branch": "case_item"}
+                child = entry.get("stmt")
+                if isinstance(child, (list, dict)):
+                    statements(path, child, procedure_kind=procedure_kind,
+                               guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
+                               events=events, timing_scope=timing_scope,
+                               partial=partial or not valid_entry or not labels
+                                       or len(guards) >= MAX_PROC_GUARDS, depth=depth + 1)
+                elif child is not None:
+                    counts["unsupported_statements"] += 1
+            default = node.get("defaultCase")
+            if default is not None:
+                if isinstance(default, (dict, list)):
+                    spec = {"kind": "case", "branch": "default",
+                            "selector_ast_kind": str(selector.get("kind", "unknown"))[:64]
+                                                 if isinstance(selector, dict) else "unknown",
+                            "label_count": 0} if valid else {"kind": "unsupported_guard",
+                                                            "branch": "case_default"}
+                    statements(path, default, procedure_kind=procedure_kind,
+                               guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
+                               events=events, timing_scope=timing_scope,
+                               partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
+                               depth=depth + 1)
+                else:
+                    counts["unsupported_statements"] += 1
+            return
+        if kind not in ("Empty", "EmptyStatement"):
+            # Loops, task calls and opaque statement kinds are NOT silently
+            # analyzed by descending through their children.
+            counts["unsupported_statements"] += 1
 
     def visit(members: Any, parent: str | None = None) -> None:
         if not isinstance(members, list):
@@ -339,12 +532,20 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 visit(body.get("members"), path)
             elif kind == "ContinuousAssign" and parent is not None:
                 extract(parent, node.get("assignment"))
+            elif kind == "ProceduralBlock" and parent is not None:
+                procedure_kind = node.get("procedureKind")
+                if procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
+                    counts["procedural_blocks_visited"] += 1
+                    statements(parent, node.get("body"),
+                               procedure_kind=procedure_kind)
+                else:
+                    counts["procedural_blocks_skipped"] += 1
 
     visit(ast.get("design", {}).get("members"))
     rows.sort(key=lambda item: (item["target"], str(item.get("source"))))
     return {
         "schema_version": BIT_ACCESS_SCHEMA_VERSION,
-        "scope": "continuous_assign_static_select_concat_only",
+        "scope": "continuous_and_supported_procedural_static_select_concat",
         "items": rows,
         "counts": {"captured": len(rows), **counts},
         "caveat": (
@@ -353,7 +554,12 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "ne sont pas inférés. Indices dynamiques, opérations arithmétiques "
             "et conversions donnent partial ; sélections imbriquées conservées "
             "sans indices cibles aplatis ; aucune preuve fonctionnelle. "
-            "Ne couvre pas les procédures, les connexions de ports ni les écritures "
-            "dans des processus."
+            "Les affectations procédurales enregistrent le type de processus, "
+            "les gardes de branches syntaxiques et les événements explicites "
+            "sans inférer la priorité, la latence ou la sémantique des NBA. "
+            "Les sensibilité implicites ne sont pas reconstruites ; les "
+            "instructions opaques sont signalées comme exclues. "
+            "Ne couvre pas les connexions de ports ni les champs MemberAccess "
+            "sans offsets prouvés."
         ),
     }
