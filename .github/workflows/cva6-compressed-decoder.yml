@@ -48,6 +48,31 @@ jobs:
       - name: Install RTLPrep and verify integrity gates
         run: |
           python -m pip install -e '.[dev]'
+          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py
+      - name: Install pinned real slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Elaborate and analyze real CVA6 compressed decoder
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python scripts/run_cva6_compressed_decoder.py \
+            --source-root upstream_cva6 --out reports/cva6-compressed-decoder \
+            --timeout 240; then
+            cat reports/cva6-compressed-decoder/analyze.stderr.log 2>/dev/null || true
+            cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
+            exit 1
+          fi
           python - <<'PY'
           import collections, json
           from pathlib import Path
@@ -77,31 +102,6 @@ jobs:
           walk(ast.get("design",{}))
           print("PR39_AST_LINES_SEEN",sorted(seen))
           PY
-          python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py
-      - name: Install pinned real slang v12.1
-        shell: bash
-        run: |
-          set -euo pipefail
-          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
-          mkdir -p "$RUNNER_TEMP/slang-dist"
-          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
-          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
-          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
-          test -n "$BIN"
-          sudo install -m 0755 "$BIN" /usr/local/bin/slang
-          slang --version
-      - name: Elaborate and analyze real CVA6 compressed decoder
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! python scripts/run_cva6_compressed_decoder.py \
-            --source-root upstream_cva6 --out reports/cva6-compressed-decoder \
-            --timeout 240; then
-            cat reports/cva6-compressed-decoder/analyze.stderr.log 2>/dev/null || true
-            cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
-            exit 1
-          fi
           python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py
       - name: Verify no claims of exhaustive correctness
         run: |
