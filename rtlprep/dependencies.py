@@ -16,7 +16,7 @@ from .flow import build_register_flow
 from .bitaccess import build_bit_access_index, _constant as _static_integer
 from .coverage import build_coverage_summary
 from .sequential import build_sequential_candidates
-from .symbols import SignalResolver
+from .symbols import SignalResolver, member_name
 
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
@@ -162,6 +162,12 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                 return True
             name = _symbol_name(expr)
             return "constant" in expr and name not in known.get(path, set())
+        if kind == "MemberAccess":
+            # A member of a proven constant object is also constant.
+            # A 'constant' tag on a runtime signal is NOT such a proof.
+            return (member_name(expr) is not None
+                    and constant_initializer_expression(
+                        path, expr.get("value"), depth + 1))
         if kind in ("Conversion", "SignedConversion", "UnaryOp"):
             return constant_initializer_expression(
                 path, expr.get("operand"), depth + 1
@@ -288,6 +294,15 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             return ({ref} if ref else set()), set()
         if kind in LITERALS:
             return set(), set()
+        if kind == "MemberAccess":
+            if member_name(expr) is None or not isinstance(expr.get("value"), dict):
+                warn(path, "MemberAccess malformé : dépendances non démontrées")
+                return set(), set()
+            # For a runtime packed struct, the base signal is a *whole-
+            # signal* dependency: never infer packed field offsets. For an
+            # elaborated parameter/enum struct, resolve() ignores the base,
+            # without fabricating a runtime edge from the member name.
+            return reads(path, expr["value"])
         if kind in BINARY:
             left = reads(path, expr.get("left"))
             right = reads(path, expr.get("right"))
