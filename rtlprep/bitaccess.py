@@ -10,6 +10,7 @@ import re
 from typing import Any
 
 from .index import build_index
+from .symbols import SignalResolver
 
 BIT_ACCESS_SCHEMA_VERSION = 1
 MAX_RECORDS = 2000
@@ -98,14 +99,21 @@ def _name(node: Any) -> str | None:
     return parts[1] if len(parts) == 2 and parts[1] else None
 
 
-def _base(node: Any, known: set[str], path: str) -> str:
+def _base(node: Any, known: set[str], path: str,
+          resolver: SignalResolver | None = None) -> str:
     name = _name(node)
     if name not in known:
         raise _Partial("unknown_or_non_signal_base")
-    return f"{path}.{name}"
+    full = f"{path}.{name}"
+    if resolver is not None and resolver.resolve(path, node) != full:
+        # Never map a shadowed / wrong-ID AST reference by name alone.
+        raise _Partial("unresolved_symbol_identity")
+    return full
 
 
-def _selection(node: Any, known: set[str], path: str) -> tuple[str, dict[str, Any], int | None]:
+def _selection(node: Any, known: set[str], path: str,
+               resolver: SignalResolver | None = None
+               ) -> tuple[str, dict[str, Any], int | None]:
     """Trace nested static selectors without flattening array dimensions.
 
     A nested index such as arr[0][3] is not a flat bit index. Its final
@@ -119,7 +127,7 @@ def _selection(node: Any, known: set[str], path: str) -> tuple[str, dict[str, An
     for _ in range(MAX_DEPTH):
         kind = current.get("kind")
         if kind == "NamedValue":
-            base = _base(current, known, path)
+            base = _base(current, known, path, resolver)
             if not reversed_parts:
                 return base, {"kind": "whole"}, None
             parts = list(reversed(reversed_parts))
@@ -164,13 +172,14 @@ def _literal_width(node: dict[str, Any]) -> int | None:
     return None
 
 
-def _segments(node: Any, known: set[str], path: str, depth: int = 0
+def _segments(node: Any, known: set[str], path: str, depth: int = 0,
+              resolver: SignalResolver | None = None
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
     kind = node.get("kind")
     if kind in ("RangeSelect", "ElementSelect"):
-        source, selected, width = _selection(node, known, path)
+        source, selected, width = _selection(node, known, path, resolver)
         assert width is not None
         return [(source, selected, width)]
     if kind == "Concatenation":
@@ -179,7 +188,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0
             raise _Partial("malformed_or_large_concatenation")
         output: list[tuple[str | None, dict[str, Any], int]] = []
         for operand in operands:
-            output.extend(_segments(operand, known, path, depth + 1))
+            output.extend(_segments(operand, known, path, depth + 1, resolver))
             if len(output) > MAX_SEGMENTS:
                 raise _Partial("too_many_segments")
         return output
@@ -214,14 +223,17 @@ def _contains_selection(node: Any, budget: list[int], depth: int = 0) -> bool:
     return False
 
 
-def _target_name(node: Any, known: set[str], path: str) -> str | None:
+def _target_name(node: Any, known: set[str], path: str,
+                 resolver: SignalResolver | None = None) -> str | None:
     current = node
     for _ in range(MAX_DEPTH):
         if not isinstance(current, dict):
             return None
         if current.get("kind") == "NamedValue":
-            name = _name(current)
-            return f"{path}.{name}" if name in known else None
+            try:
+                return _base(current, known, path, resolver)
+            except _Partial:
+                return None
         if current.get("kind") not in ("ElementSelect", "RangeSelect"):
             return None
         current = current.get("value")
@@ -243,6 +255,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
         if not signal.get("scope"):
             known[signal["instance_path"]].add(signal["name"])
 
+    resolver = SignalResolver(ast, structural)
+
     rows: list[dict[str, Any]] = []
     counts = {"assignments_seen": 0, "precise": 0, "partial": 0,
               "unsupported_targets": 0, "truncated": False}
@@ -254,7 +268,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
         lhs, rhs = node.get("left"), node.get("right")
         if not (_contains_selection(lhs, [0]) or _contains_selection(rhs, [0])):
             return
-        target = _target_name(lhs, known[path], path)
+        target = _target_name(lhs, known[path], path, resolver)
         if target is None:
             counts["unsupported_targets"] += 1
             return
@@ -267,10 +281,10 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "rhs_width": None, "source_segments": [],
         }
         try:
-            dest, select, dest_width = _selection(lhs, known[path], path)
+            dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
             item["target_selection"] = select
-            parts = _segments(rhs, known[path], path)
+            parts = _segments(rhs, known[path], path, resolver=resolver)
             width = sum(part[2] for part in parts)
             if width > MAX_WIDTH:
                 raise _Partial("rhs_too_wide")
