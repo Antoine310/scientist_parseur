@@ -92,6 +92,12 @@ jobs:
           assert report["graph_counts"]["warnings"] == 0, report
           assert report["observed_analyzers"]["expressions"]["counts"]["captured"] == 93, report
           assert report["observed_analyzers"]["expressions"]["counts"]["partial_expressions"] == 0, report
+          bit_counts = report["observed_analyzers"]["bit_accesses"]["counts"]
+          assert bit_counts["assignments_seen"] == 93, bit_counts
+          assert bit_counts["captured"] == 52 and bit_counts["partial"] == 52, bit_counts
+          assert bit_counts["precise"] == 0, bit_counts
+          assert bit_counts["unsupported_statements"] == 0, bit_counts
+          assert report["coverage_assessment"] == "reported_limits", report
           assert report["design_coverage"] == "not_measured", report
           print("CVA6_PINNED_REAL_SLANG_PASSED", {
               "configuration": report["configuration"],
