@@ -73,6 +73,31 @@ jobs:
             cat reports/cva6-compressed-decoder/deps.result.json 2>/dev/null || true
             exit 1
           fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ast=json.loads(Path("reports/cva6-compressed-decoder/elaborated_ast.json").read_text())
+          samples=[]
+          def walk(x):
+              if isinstance(x,list):
+                  for y in x: walk(y)
+              elif isinstance(x,dict):
+                  if x.get("kind")=="UnaryOp":
+                      op=x.get("operand")
+                      source=x.get("source_line_start")
+                      samples.append({
+                          "line":str(source)[:16],
+                          "operator":str(x.get("op"))[:48],
+                          "type":str(x.get("type"))[:64],
+                          "operand_kind":str(op.get("kind"))[:40] if isinstance(op,dict) else None,
+                          "operand_type":str(op.get("type"))[:64] if isinstance(op,dict) else None,
+                      })
+                  for key,val in x.items():
+                      if key not in ("definition","internalSymbol","type") and isinstance(val,(list,dict)):
+                          walk(val)
+          walk(ast.get("design",{}))
+          print("PR40_CVA6_UNARY_AST",json.dumps(samples[:24],sort_keys=True))
+          PY
           python -m pytest -q -rs -o addopts='' tests/test_cva6_compressed_decoder.py tests/test_memberaccess_pr36.py tests/test_member_lvalue_pr37.py tests/test_procedural_bitaccess_pr38.py tests/test_typed_segments_pr39.py
       - name: Verify no claims of exhaustive correctness
         run: |
