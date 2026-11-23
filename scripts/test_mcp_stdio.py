@@ -89,7 +89,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert flow["scope"] == "always_ff_syntactic_paths_only", flow
         bits = await call("rtl_bit_accesses", signal="hierarchy_top.first.status")
         assert bits["total"] == 0, bits
-        assert bits["scope"] == "continuous_assign_static_select_concat_only", bits
+        assert bits["scope"] == "continuous_and_supported_procedural_static_select_concat", bits
         coverage = await call("rtl_coverage", limit=5)
         assert coverage["scope"] == "observed_analyzer_records_only", coverage
         assert coverage["design_coverage"] == "not_measured", coverage
