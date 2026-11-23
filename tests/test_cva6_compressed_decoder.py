@@ -115,12 +115,13 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
     assert result["observed_analyzers"]["expressions"]["counts"]["captured"] == 93
     assert result["observed_analyzers"]["expressions"]["counts"]["partial_expressions"] == 0
     assert result["observed_analyzers"]["register_flow"]["counts"]["captured"] == 0
-    # PR39 records real AST-supported widths/replication positions.
-    # Keep the observed input counts fixed; lock exact new split after CI.
+    # PR39 measured on official pinned CVA6 with real slang v12.1.
+    # Positional *syntax* only, not an exhaustive functional correctness oracle.
     bits = result["observed_analyzers"]["bit_accesses"]["counts"]
     assert bits["assignments_seen"] == 93
     assert bits["captured"] == 52
-    assert bits["precise"] + bits["partial"] == 52
+    assert bits["precise"] == 51
+    assert bits["partial"] == 1
     assert bits["unsupported_targets"] == 0
     assert bits["unsupported_statements"] == 0
     assert bits["procedural_blocks_visited"] == 1
@@ -130,6 +131,7 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
     reasons = dict(sorted(Counter(item["reason"] for item in
                                   snapshot["bit_accesses"]["items"]
                                   if item["coverage"] == "partial").items()))
+    assert reasons == {"unsupported_rhs_UnaryOp": 1}
     print("PR39_CVA6_SPLIT", {
         "precise": bits["precise"], "partial": bits["partial"],
         "partial_reasons": reasons,
