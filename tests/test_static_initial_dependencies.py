@@ -162,7 +162,7 @@ def test_mixed_supported_unsupported_initial_block_is_atomic():
 
 def test_initial_unknown_destination_and_unsupported_statement_stay_reported():
     for body in (stmt(ref("not_declared"), literal("0")),
-                 n("Timed", timing=n("SignalEvent", edge="PosEdge", expr=ref("data"))):
+                 n("Timed", timing=n("SignalEvent", edge="PosEdge", expr=ref("data")))):
         g = graph(initial(body))
         assert g["initializations"] == []
         assert not g["edges"]
