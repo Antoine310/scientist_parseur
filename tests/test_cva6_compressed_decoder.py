@@ -120,8 +120,8 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
     bits = result["observed_analyzers"]["bit_accesses"]["counts"]
     assert bits["assignments_seen"] == 93
     assert bits["captured"] == 52
-    assert bits["precise"] == 51
-    assert bits["partial"] == 1
+    assert bits["precise"] == 52
+    assert bits["partial"] == 0
     assert bits["unsupported_targets"] == 0
     assert bits["unsupported_statements"] == 0
     assert bits["procedural_blocks_visited"] == 1
@@ -131,12 +131,36 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
     reasons = dict(sorted(Counter(item["reason"] for item in
                                   snapshot["bit_accesses"]["items"]
                                   if item["coverage"] == "partial").items()))
-    assert reasons == {"unsupported_rhs_UnaryOp": 1}
-    print("PR39_CVA6_SPLIT", {
+    assert reasons == {}
+    # PR40: the one previously partial UnaryOp is a width-preserving
+    # BitwiseNot. Preserve the positional source AND the inverted value.
+    inversions = [
+        item for item in snapshot["bit_accesses"]["items"]
+        if any(segment.get("value_transform") == "bitwise_not"
+               for segment in item["source_segments"])
+    ]
+    assert len(inversions) == 1, inversions
+    item = inversions[0]
+    assert item["target"].endswith(".decoder_i.instr_o"), item
+    assert item["source"]["line"] == 708, item
+    transformed = [segment for segment in item["source_segments"]
+                   if segment.get("value_transform") == "bitwise_not"]
+    assert len(transformed) == 1, transformed
+    assert transformed[0]["source"] == (
+        "rtlprep_cva6_compressed_decoder.instr_i"
+    )
+    assert transformed[0]["selection"] == {"kind": "bit", "index": 15}
+    assert "value_transform" not in next(
+        seg for seg in item["source_segments"]
+        if seg["selection"].get("kind") == "range"
+    )
+    print("PR40_CVA6_BITWISE_NOT", {
         "precise": bits["precise"], "partial": bits["partial"],
-        "partial_reasons": reasons,
+        "inversion_source": transformed[0]["source"],
+        "inversion_index": transformed[0]["selection"]["index"],
     })
     assert result["design_coverage"] == "not_measured"
+    assert result["coverage_assessment"] == "no_reported_limits_within_scopes"
     assert result["warnings_sample"] == []
     assert all(row["observed_input_reachable"] and not row["truncated"]
                for row in result["fanin_outputs"].values())
