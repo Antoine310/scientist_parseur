@@ -188,7 +188,7 @@ def test_real_slang_packed_struct_member_write(tmp_path):
     assert any(r["target_access"]["kind"] == "member_access" for r in rows)
     assert g["coverage"]["design_coverage"] == "not_measured"
     assert g["bit_accesses"]["scope"] == (
-        "continuous_assign_static_select_concat_only"
+        "continuous_and_supported_procedural_static_select_concat"
     )
     # This PR does not suddenly claim that procedural fields are bit-mapped.
     assert g["bit_accesses"]["counts"]["precise"] == 0
