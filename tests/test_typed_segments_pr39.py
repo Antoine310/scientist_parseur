@@ -236,7 +236,7 @@ def test_unsupported_arithmetic_stays_partial_despite_a_known_type():
 
 
 @pytest.mark.skipif(shutil.which("slang") is None, reason="real slang unavailable")
-def test_real_slang_fixture_uses_true_enum_and_repeated_bit_segments(tmp_path):
+def test_real_slang_typed_param_replication_and_unknown_enum_alias(tmp_path):
     manifest = tmp_path / "design.json"
     manifest.write_text(json.dumps({
         "top": "typed_segments_pr39",
@@ -246,37 +246,12 @@ def test_real_slang_fixture_uses_true_enum_and_repeated_bit_segments(tmp_path):
     result = dependency_design(load_design(manifest), out, timeout=120)
     assert result["status"] == "passed", result
     graph = json.loads((out / "rtl_dependencies.json").read_text())
-    rows = {item["target"]: item for item in graph["bit_accesses"]["items"]}
-    assert len(rows) == 3, graph["bit_accesses"]
-    fixture_status = {
-        item["target"]: {
-            "coverage": item["coverage"],
-            "reason": item.get("reason"),
-            "rhs_width": item.get("rhs_width"),
-        } for item in graph["bit_accesses"]["items"]
-    }
-    if graph["bit_accesses"]["counts"]["precise"] != 3:
-        ast = json.loads((out / "elaborated_ast.json").read_text())
-        sample = []
-        def walk(node):
-            if isinstance(node, list):
-                for item in node:
-                    walk(item)
-            elif isinstance(node, dict):
-                if ((node.get("kind") == "NamedValue"
-                     and str(node.get("symbol", "")).endswith(" OP_A"))
-                    or (node.get("kind") in ("Parameter", "EnumValue")
-                        and node.get("name") == "OP_A")):
-                    sample.append({key: str(node.get(key, ""))[:160]
-                                   for key in ("kind", "name", "symbol",
-                                               "type", "constant", "value",
-                                               "addr")})
-                for key, value in node.items():
-                    if key not in ("definition", "internalSymbol", "type"):
-                        walk(value)
-        walk(ast.get("design", {}))
-        print("PR39_LOCAL_ENUM_AST", sample[:12])
-    assert graph["bit_accesses"]["counts"]["precise"] == 3, fixture_status
+    report = graph["bit_accesses"]
+    rows = {item["target"]: item for item in report["items"]}
+    assert len(rows) == 4, report
+    assert report["counts"]["captured"] == 4
+    assert report["counts"]["precise"] == 3, report
+    assert report["counts"]["partial"] == 1, report
     packed = rows["typed_segments_pr39.packed_o"]
     assert packed["rhs_width"] == 16 and packed["coverage"] == "rhs_lanes_only"
     assert {"source": None, "selection": {
@@ -289,8 +264,14 @@ def test_real_slang_fixture_uses_true_enum_and_repeated_bit_segments(tmp_path):
     repeated = rows["typed_segments_pr39.repeated_o"]
     assert repeated["rhs_width"] == 8 and repeated["coverage"] == "rhs_lanes_only"
     assert len(repeated["source_segments"]) == 5
+    # Real slang v12.1 exposes a local enum as a typedef alias without
+    # an explicit packed width on the NamedValue AST. Never infer its
+    # width from the 3'b101 initializer: that could be context-extended.
+    enum = rows["typed_segments_pr39.enum_alias_o"]
+    assert enum["coverage"] == "partial"
+    assert enum["reason"] == "source_width_unknown"
+    assert enum["source_segments"] == []
     assert graph["coverage"]["design_coverage"] == "not_measured"
-    assert graph["bit_accesses"]["counts"]["partial"] == 0
 
 
 def test_coverage_cannot_be_inferred_from_validated_syntax():
