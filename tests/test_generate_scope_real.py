@@ -52,6 +52,7 @@ def test_real_axis_register_generate_scope_and_edges(tmp_path, variant):
         f"    .{name}({name})" for name in (inputs | outputs)
     )
     wrapper.write_text(
+        "`timescale 1ns / 1ps\n" +
         f"module {top};\n" + "\n".join(declarations) + "\n" +
         f"  axis_register #(.REG_TYPE({variant})) dut (\n" +
         connections + "\n  );\nendmodule\n",
