@@ -112,6 +112,40 @@ def test_elaborated_constant_index_is_recorded_without_fake_constant_signal():
     assert links(g, "data") == {("top.data", "top.out")}
 
 
+def test_slang_folded_multiply_index_and_nested_selection():
+    # A generate variable 'n' is an elaboration constant, not a runtime net.
+    generated = n("BinaryOp", op="Multiply",
+                  left=ref("gen_n", "721", constant="2"),
+                  right=literal("2"), constant="4")
+    nested = n("ElementSelect",
+               value=n("ElementSelect",
+                       value=ref("data"), selector=literal("0")),
+               selector=generated)
+    g = graph(n("ContinuousAssign", assignment=assignment(ref("out"), nested)))
+    assert g["counts"]["warnings"] == 0, g["warnings"]
+    assert links(g, "data") == {("top.data", "top.out")}
+    assert any(
+        entry["selection"] == {
+            "kind": "nested", "parts": [
+                {"kind": "bit", "index": 0},
+                {"kind": "bit", "index": 4},
+            ],
+        }
+        for entry in g["static_selections"]
+    )
+
+
+def test_folded_constant_on_runtime_signal_is_not_static_index():
+    selector = n("BinaryOp", op="Add", left=ref("idx", constant="1"),
+                 right=literal("1"), constant="2")
+    g = graph(n("ContinuousAssign", assignment=assignment(
+        ref("out"), n("ElementSelect", value=ref("data"), selector=selector)
+    )))
+    assert not g["static_selections"]
+    assert any("signal entier" in w["reason"] for w in g["warnings"])
+    assert ("top.idx", "top.out") in links(g, "data")
+
+
 def test_constant_initial_is_metadata_only_not_runtime_dependency():
     g = graph(initial(stmt(ref("init"), literal("1'b0"))))
     assert g["edges"] == []
