@@ -21,7 +21,8 @@ EXCLUDED_COUNTS = {
     "expressions": ("unsupported_statements", "unsupported_targets",
                     "procedural_blocks_skipped"),
     "register_flow": (),
-    "bit_accesses": ("unsupported_targets",),
+    "bit_accesses": ("unsupported_targets", "unsupported_statements",
+                     "procedural_blocks_skipped"),
 }
 
 
