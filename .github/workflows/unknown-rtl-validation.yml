@@ -1,0 +1,123 @@
+name: RTLPrep external RTL field validation (pinned real slang)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  third-party-rtl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+      - name: Checkout pinned AXI-Stream third-party designs
+        uses: actions/checkout@v4
+        with:
+          repository: alexforencich/verilog-axis
+          ref: 48ff7a7e2ef782cf778d47910cf85835c64b1bce
+          path: upstream_unknown/verilog-axis
+          sparse-checkout: |
+            rtl/axis_register.v
+            rtl/priority_encoder.v
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Checkout pinned ZipCPU UART receiver
+        uses: actions/checkout@v4
+        with:
+          repository: ZipCPU/wbuart32
+          ref: f43a6b83c3a70fb2ac0696a45c5545b233fb860b
+          path: upstream_unknown/wbuart32
+          sparse-checkout: |
+            rtl/rxuart.v
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Check repository commits and upstream Git blob hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_unknown/verilog-axis rev-parse HEAD)" = "48ff7a7e2ef782cf778d47910cf85835c64b1bce"
+          test "$(git -C upstream_unknown/wbuart32 rev-parse HEAD)" = "f43a6b83c3a70fb2ac0696a45c5545b233fb860b"
+          test "$(git -C upstream_unknown/verilog-axis hash-object rtl/axis_register.v)" = "93fe0bee6ff1f50d1e2236f5babc283bada2f1a2"
+          test "$(git -C upstream_unknown/verilog-axis hash-object rtl/priority_encoder.v)" = "cf82512ba84c43cfddc7728782493241b563b8f3"
+          test "$(git -C upstream_unknown/wbuart32 hash-object rtl/rxuart.v)" = "1506e563944a2da1c1b01be6c1a953ad92fdff7d"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install RTLPrep and run hermetic field validation tests
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pytest -q tests/test_field_validation.py
+      - name: Install pinned real slang v12.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          curl --fail --location --show-error --silent --retry 3 "$URL" -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          test -n "$BIN"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Evaluate genuine third-party RTL and retain limits
+        run: |
+          python scripts/validate_unknown_rtl.py \
+            --sources-root upstream_unknown \
+            --out reports/unknown-validation --timeout 180
+      - name: Verify source integrity, reproducibility and non-claims
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("reports/unknown-validation/unknown_validation_report.json").read_text())
+          assert r["all_elaborated"] and r["all_probes_present"], r
+          assert r["external_cases"] == r["elaborated_cases"] == 3, r
+          assert r["accuracy"] == "not_measured_without_independent_exhaustive_oracle"
+          assert r["functional_correctness"] == "not_tested"
+          assert r["benchmarked_llm"] is False
+          assert r["reported_limit_cases"] >= 0
+          for case in r["cases"]:
+              assert case["source_integrity"] == "verified_pinned_git_blobs", case
+              assert case["execution"] == "passed", case
+              assert case["status"].startswith("observed_"), case
+              audit = case["audit"]
+              assert audit["design_coverage"] == "not_measured", audit
+              assert audit["graph_counts"]["nodes"] > 0, audit
+              assert audit["probes"] and audit["all_probes_present"], audit
+              for p in audit["probes"]:
+                  assert [x["max_edges"] for x in p["budgets"]] == [5, 100, 1000]
+                  assert all(x["returned_edges"] <= x["max_edges"] for x in p["budgets"])
+                  assert all(type(x["truncated"]) is bool for x in p["budgets"])
+          print("EXTERNAL_RTL_VALIDATION_PASSED", {
+              c["id"]: {
+                  "status": c["status"],
+                  "warnings": c["audit"]["warning_count"],
+                  "probes": len(c["audit"]["probes"])
+              } for c in r["cases"]
+          })
+          PY
+      - name: Upload field validation reports and genuine EDA diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtlprep-unknown-design-validation
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            reports/unknown-validation/unknown_validation_report.json
+            reports/unknown-validation/*/validation.case.json
+            reports/unknown-validation/*/design.json
+            reports/unknown-validation/*/deps.result.json
+            reports/unknown-validation/*/index.result.json
+            reports/unknown-validation/*/analyze.result.json
+            reports/unknown-validation/*/analyze.stdout.log
+            reports/unknown-validation/*/analyze.stderr.log

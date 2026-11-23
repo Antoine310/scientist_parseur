@@ -8,3 +8,4 @@ obj_dir/
 *.fst
 build/
 dist/
+upstream_unknown/
