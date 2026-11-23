@@ -86,6 +86,50 @@ jobs:
           assert any(c["status"] == "failed" for c in report["testcases"]), report
           print("EXPECTED_COUNTER_BUG_DETECTED", report["testcases"])
           PY
+      - name: PR41 independent oracle on real unary-bit RTL (must PASS)
+        run: |
+          python -m rtlprep simulate tests/fixtures/unary_bit_pr41_good_design.json \
+            --out reports/pr41-unary-good --timeout 180
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("reports/pr41-unary-good/simulation.result.json")
+          report=json.loads(p.read_text())
+          assert report["status"]=="passed", report
+          assert (report["tests"],report["passed"],report["failed"],report["skipped"]) == (3,3,0,0), report
+          assert Path(report["results_xml"]).is_file()
+          assert report["suite"]=="rtlprep.sim_tests.unary_bit_oracle", report
+          print("PR41_INDEPENDENT_ORACLE_GOOD_PASSED", report["testcases"])
+          PY
+      - name: PR41 same oracle on inverted-bit mutant (must FAIL with evidence)
+        shell: bash
+        run: |
+          set +e
+          python -m rtlprep simulate tests/fixtures/unary_bit_pr41_mutant_design.json \
+            --out reports/pr41-unary-mutant --timeout 180
+          code=$?
+          set -e
+          test "$code" -eq 2 || { echo "Unexpected mutant exit code: $code"; exit 1; }
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from xml.etree import ElementTree
+          good=json.loads(Path("reports/pr41-unary-good/simulation.result.json").read_text())
+          bad=json.loads(Path("reports/pr41-unary-mutant/simulation.result.json").read_text())
+          assert good["status"]=="passed" and bad["status"]=="failed", (good,bad)
+          assert bad["tests"]==3 and bad["failed"]>=1 and bad["passed"]<3, bad
+          assert good["source_fingerprint"] != bad["source_fingerprint"], (good,bad)
+          xml_file=Path(bad["results_xml"])
+          assert xml_file.is_file(), bad
+          fails=ElementTree.parse(xml_file).findall(".//failure")
+          assert fails, "Mutant did not produce a cocotb assertion failure"
+          text="\n".join(str(el.attrib)+" "+(el.text or "") for el in fails)
+          stdout=Path("reports/pr41-unary-mutant/simulation.stdout.log").read_text(encoding="utf-8")
+          assert "port=bit_o" in text or "port=bit_o" in stdout, (
+              "Mutant failure was not the expected bit-15 inversion defect: "+text[:1000]
+          )
+          print("PR41_INTENTIONAL_MUTATION_DETECTED", bad["testcases"])
+          PY
       - name: Upload positive and negative simulation reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -106,3 +150,11 @@ jobs:
             reports/sim-buggy/simulation_results.xml
             reports/sim-buggy/simulation.stdout.log
             reports/sim-buggy/simulation.stderr.log
+            reports/pr41-unary-good/simulation.result.json
+            reports/pr41-unary-good/simulation_results.xml
+            reports/pr41-unary-good/simulation.stdout.log
+            reports/pr41-unary-good/simulation.stderr.log
+            reports/pr41-unary-mutant/simulation.result.json
+            reports/pr41-unary-mutant/simulation_results.xml
+            reports/pr41-unary-mutant/simulation.stdout.log
+            reports/pr41-unary-mutant/simulation.stderr.log

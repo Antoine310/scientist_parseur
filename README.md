@@ -348,6 +348,49 @@ sans largeur prouvée restent `partial`.
 
 [Mesures CVA6, cas négatifs et reproduction de la PR #39](docs/typed-segments-cva6-pr39.md).
 
+## Opérateur unaire bit-à-bit et valeur inversée dans CVA6 (PR #40)
+
+`bit_accesses` reconnaît désormais `~expr` **uniquement** si
+l'AST slang identifie exactement `BitwiseNot` et prouve la même
+largeur packed sur l'opérande et le résultat. La provenance et la
+position de chaque segment restent conservées, avec un marqueur
+explicite `value_transform=bitwise_not` : **le résultat n'est pas
+une copie de la valeur d'entrée**.
+
+Sur le `compressed_decoder` CVA6 épinglé, l'unique `~instr_i[15]`
+auparavant `partial` est ainsi représenté sans fausse équivalence :
+**52/52 segments positionnés syntaxiquement**, sans changement
+du graphe global de **12 nœuds / 13 arêtes**. Les opérations de
+réduction, `!`, `-`, les compositions inconnues et les types non
+prouvés restent `partial`. Cette couverture d'index ne prouve
+ni la correction fonctionnelle ni l'exhaustivité du circuit.
+
+[Preuve AST, tests négatifs, limites et reproduction PR #40](docs/cva6-unary-bitwise-not-pr40.md).
+
+## Premier oracle indépendant pour les segments de bits (PR #41)
+
+Les PR #39–40 ajoutent des correspondances **syntaxiques** entre
+segments RTL. La PR #41 valide une partie de leur signification
+par une voie différente : **Verilator 5.040 + cocotb 2.0.1** simulent
+une fixture dédiée, et un **modèle Python de référence écrit
+indépendamment de l'analyseur** vérifie ses cinq sorties.
+
+Sur **1 314 vecteurs déterministes** à deux états, le circuit
+correct réussit **3/3 tests** ; une mutation volontaire
+(`~instr_i[15]` remplacé par `instr_i[15]`) provoque
+**3/3 échecs sur ces mêmes tests**, dont les assertions
+identifient bien la sortie `bit_o`.
+Un second test, avec le vrai slang, compare les positions
+et `value_transform=bitwise_not` aux attentes auditées.
+
+**Attention :** ce contrôle est indépendant et ciblé sur **une
+fixture RTLPrep** ; le décodeur officiel CVA6 est conservé comme
+régression statique, **pas simulé ni fonctionnellement prouvé** dans
+cette PR. Aucune couverture globale ni exactitude exhaustive
+n'est affirmée.
+
+[Procédure, contrôles négatifs et limites PR #41](docs/independent-unary-oracle-pr41.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont

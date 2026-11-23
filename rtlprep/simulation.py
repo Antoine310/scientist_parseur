@@ -24,6 +24,7 @@ TEST_SUITES = {
     "counter": "rtlprep.sim_tests.counter",
     "handshake_fsm": "rtlprep.sim_tests.handshake_fsm",
     "secure_csr": "rtlprep.sim_tests.secure_csr",
+    "unary_bit_pr40": "rtlprep.sim_tests.unary_bit_oracle",
 }
 
 
