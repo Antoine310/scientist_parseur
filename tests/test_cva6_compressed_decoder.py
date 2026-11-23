@@ -147,8 +147,8 @@ def test_real_pinned_cva6_module_and_report(tmp_path):
                    if segment.get("value_transform") == "bitwise_not"]
     assert len(transformed) == 1, transformed
     assert transformed[0]["source"] == (
-        "rtlprep_cva6_compressed_decoder.instr_i"
-    )
+        "rtlprep_cva6_compressed_decoder.decoder_i.instr_i"
+    )  # child port; the graph separately links it to wrapper instr_i
     assert transformed[0]["selection"] == {"kind": "bit", "index": 15}
     assert "value_transform" not in next(
         seg for seg in item["source_segments"]
