@@ -210,6 +210,44 @@ def test_runtime_signal_constant_tag_cannot_prove_static_position():
     assert item["source_segments"] == []
 
 
+def test_bit_access_never_resolves_shadowed_symbol_by_name_only():
+    def named(addr, name):
+        return n("NamedValue", symbol=f"{addr} {name}")
+
+    def ast_with_assign(lhs, rhs):
+        return {"design": n("Root", members=[n(
+            "Instance", name="top", body=n("InstanceBody", name="top",
+                members=[
+                    n("Variable", name="out", type="logic[7:0]", addr="222"),
+                    n("Variable", name="a", type="logic[7:0]", addr="111"),
+                    assign(lhs, rhs),
+                ]),
+        )])}
+
+    bad_lhs = n("ElementSelect",
+                value=named("wrong", "out"), selector=lit("0"))
+    good_rhs = n("ElementSelect",
+                 value=named("111", "a"), selector=lit("1"))
+    invalid_target = build_dependency_graph(
+        ast_with_assign(bad_lhs, good_rhs), expected_top="top"
+    )
+    assert invalid_target["bit_accesses"]["counts"]["unsupported_targets"] == 1
+    assert invalid_target["bit_accesses"]["items"] == []
+    assert invalid_target["expressions"]["counts"]["unsupported_targets"] == 1
+
+    good_lhs = n("ElementSelect",
+                 value=named("222", "out"), selector=lit("0"))
+    bad_rhs = n("ElementSelect",
+                value=named("wrong", "a"), selector=lit("1"))
+    invalid_rhs = build_dependency_graph(
+        ast_with_assign(good_lhs, bad_rhs), expected_top="top"
+    )
+    item = invalid_rhs["bit_accesses"]["items"][0]
+    assert item["coverage"] == "partial"
+    assert item["reason"] == "unresolved_symbol_identity"
+    assert item["source_segments"] == []
+
+
 def test_conversion_arithmetic_and_unknown_width_remain_partial():
     for expr in (
         n("Conversion", operand=bit("a", lit("1"))),
