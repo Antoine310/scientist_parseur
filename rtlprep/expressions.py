@@ -149,8 +149,68 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         if kind in ("Conversion", "SignedConversion"):
             return {"kind": "conversion", "ast_kind": kind,
                     "operand": expression(path, node.get("operand"), state, depth + 1)}
-        # Do not silently flatten ternaries, selectors, calls, or concatenations:
-        # their exact behavior and bit mapping is outside this first increment.
+        if kind in ("ElementSelect", "RangeSelect"):
+            # Retain the syntactic base and selector(s), without asserting
+            # bit-lane correspondence or evaluating a dynamic index.
+            base = expression(path, node.get("value"), state, depth + 1)
+            if kind == "ElementSelect":
+                return {
+                    "kind": "element_select", "value": base,
+                    "selector": expression(path, node.get("selector"), state, depth + 1),
+                }
+            return {
+                "kind": "range_select", "value": base,
+                "left": expression(path, node.get("left"), state, depth + 1),
+                "right": expression(path, node.get("right"), state, depth + 1),
+            }
+        if kind == "Concatenation":
+            operands = node.get("operands")
+            if not isinstance(operands, list) or not 1 <= len(operands) <= 32:
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_concatenation"}
+            return {
+                "kind": "concatenation",
+                "operands": [
+                    expression(path, part, state, depth + 1) for part in operands
+                ],
+            }
+        if kind == "Replication":
+            # slang 12.1 stores {N{expression}} as count + concat.
+            if not isinstance(node.get("count"), dict) or not isinstance(
+                node.get("concat"), dict
+            ):
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_replication"}
+            return {
+                "kind": "replication",
+                "count": expression(path, node["count"], state, depth + 1),
+                "concat": expression(path, node["concat"], state, depth + 1),
+            }
+        if kind == "ConditionalOp":
+            # Preserve the complete condition syntax; never collapse multiple
+            # conditions or pattern matches into a guessed Boolean predicate.
+            conds = node.get("conditions")
+            if not isinstance(conds, list) or not 1 <= len(conds) <= 16:
+                state["partial"] = True
+                return {"kind": "unsupported", "ast_kind": "malformed_conditional"}
+            rendered: list[dict[str, Any]] = []
+            for condition in conds:
+                if not isinstance(condition, dict) or not isinstance(
+                    condition.get("expr"), dict
+                ):
+                    state["partial"] = True
+                    return {"kind": "unsupported", "ast_kind": "conditional_condition"}
+                if set(condition) - {"expr"}:
+                    state["partial"] = True
+                    return {"kind": "unsupported", "ast_kind": "conditional_pattern"}
+                rendered.append(expression(path, condition["expr"], state, depth + 1))
+            return {
+                "kind": "conditional", "conditions": rendered,
+                "left": expression(path, node.get("left"), state, depth + 1),
+                "right": expression(path, node.get("right"), state, depth + 1),
+            }
+        # Calls, casts with unrecognized semantics and future AST nodes are
+        # deliberately left partial; unsupported never masquerades as a value.
         state["partial"] = True
         return {"kind": "unsupported", "ast_kind": _atom(kind)}
 
