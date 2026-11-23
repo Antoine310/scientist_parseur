@@ -57,22 +57,33 @@ def _number(value: Any) -> int | None:
     return result if 0 <= result <= MAX_WIDTH else None
 
 
-def _constant(node: Any, depth: int = 0) -> int | None:
-    if not isinstance(node, dict) or depth > 5:
+def _constant(node: Any, depth: int = 0, *,
+              known: set[str] | None = None) -> int | None:
+    """Decode bounded compile-time positions; reject runtime-signal names.
+
+    slang generates constant-valued n/l indices and folded Multiply/Add for
+    generate loops. A 'constant' tag on a known runtime signal is not proof.
+    These values are indices only, never evaluated RTL data values.
+    """
+    if not isinstance(node, dict) or depth > 8:
         return None
     kind = node.get("kind")
     if kind == "IntegerLiteral":
         return _number(node.get("value"))
     if kind == "NamedValue" and "constant" in node:
+        if known is not None and _name(node) in known:
+            return None
         return _number(node.get("constant"))
     if kind in ("Conversion", "SignedConversion"):
-        return _constant(node.get("operand"), depth + 1)
-    if kind == "BinaryOp" and node.get("op") in ("Add", "Subtract"):
-        left = _constant(node.get("left"), depth + 1)
-        right = _constant(node.get("right"), depth + 1)
+        return _constant(node.get("operand"), depth + 1, known=known)
+    if kind == "BinaryOp" and node.get("op") in ("Add", "Subtract", "Multiply"):
+        left = _constant(node.get("left"), depth + 1, known=known)
+        right = _constant(node.get("right"), depth + 1, known=known)
         if left is None or right is None:
             return None
-        val = left + right if node["op"] == "Add" else left - right
+        op = node["op"]
+        val = (left + right if op == "Add"
+               else left - right if op == "Subtract" else left * right)
         return val if 0 <= val <= MAX_WIDTH else None
     return None
 
@@ -95,30 +106,51 @@ def _base(node: Any, known: set[str], path: str) -> str:
 
 
 def _selection(node: Any, known: set[str], path: str) -> tuple[str, dict[str, Any], int | None]:
+    """Trace nested static selectors without flattening array dimensions.
+
+    A nested index such as arr[0][3] is not a flat bit index. Its final
+    selected width is known, but it has no justified target_lsb/target_msb.
+    """
     if not isinstance(node, dict):
         raise _Partial("malformed_selection")
-    kind = node.get("kind")
-    if kind == "NamedValue":
-        return _base(node, known, path), {"kind": "whole"}, None
-    if kind == "ElementSelect":
-        source = _base(node.get("value"), known, path)
-        index = _constant(node.get("selector"))
-        if index is None:
-            raise _Partial("dynamic_or_unknown_index")
-        return source, {"kind": "bit", "index": index}, 1
-    if kind == "RangeSelect":
-        source = _base(node.get("value"), known, path)
-        msb = _constant(node.get("left"))
-        lsb = _constant(node.get("right"))
-        if msb is None or lsb is None:
-            raise _Partial("dynamic_or_unknown_range")
-        if msb < lsb:
-            raise _Partial("ascending_or_unsupported_range")
-        width = msb - lsb + 1
-        if width > MAX_WIDTH:
-            raise _Partial("range_too_wide")
-        return source, {"kind": "range", "msb": msb, "lsb": lsb}, width
-    raise _Partial("unsupported_selection_" + str(kind)[:48])
+    current = node
+    reversed_parts: list[dict[str, Any]] = []
+    widths: list[int] = []
+    for _ in range(MAX_DEPTH):
+        kind = current.get("kind")
+        if kind == "NamedValue":
+            base = _base(current, known, path)
+            if not reversed_parts:
+                return base, {"kind": "whole"}, None
+            parts = list(reversed(reversed_parts))
+            width = widths[0]  # outermost / final selector determines width
+            if len(parts) == 1:
+                return base, parts[0], width
+            return base, {"kind": "nested", "selectors": parts}, width
+        if kind == "ElementSelect":
+            index = _constant(current.get("selector"), known=known)
+            if index is None:
+                raise _Partial("dynamic_or_unknown_index")
+            reversed_parts.append({"kind": "bit", "index": index})
+            widths.append(1)
+        elif kind == "RangeSelect":
+            msb = _constant(current.get("left"), known=known)
+            lsb = _constant(current.get("right"), known=known)
+            if msb is None or lsb is None:
+                raise _Partial("dynamic_or_unknown_range")
+            if msb < lsb:
+                raise _Partial("ascending_or_unsupported_range")
+            width = msb - lsb + 1
+            if width > MAX_WIDTH:
+                raise _Partial("range_too_wide")
+            reversed_parts.append({"kind": "range", "msb": msb, "lsb": lsb})
+            widths.append(width)
+        else:
+            raise _Partial("unsupported_selection_" + str(kind)[:48])
+        current = current.get("value")
+        if not isinstance(current, dict):
+            raise _Partial("malformed_selection")
+    raise _Partial("selection_depth_exceeded")
 
 
 def _literal_width(node: dict[str, Any]) -> int | None:
@@ -184,7 +216,7 @@ def _contains_selection(node: Any, budget: list[int], depth: int = 0) -> bool:
 
 def _target_name(node: Any, known: set[str], path: str) -> str | None:
     current = node
-    for _ in range(4):
+    for _ in range(MAX_DEPTH):
         if not isinstance(current, dict):
             return None
         if current.get("kind") == "NamedValue":
@@ -251,7 +283,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     "source": source, "selection": selection,
                     "rhs_lsb": rhs_lsb, "rhs_msb": rhs_lsb + span - 1,
                 }
-                if dest_width is not None:
+                if dest_width is not None and select["kind"] in ("bit", "range"):
                     start = select["lsb"] if select["kind"] == "range" else select["index"]
                     seg["target_lsb"] = start + rhs_lsb
                     seg["target_msb"] = start + rhs_lsb + span - 1
@@ -259,8 +291,11 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 rhs_lsb += span
             item["source_segments"] = list(reversed(positioned))
             item["rhs_width"] = width
-            item["coverage"] = ("explicit_target_lanes" if dest_width is not None
-                                else "rhs_lanes_only")
+            item["coverage"] = (
+                "explicit_target_lanes"
+                if dest_width is not None and select["kind"] in ("bit", "range")
+                else "rhs_lanes_only"
+            )
             counts["precise"] += 1
         except _Partial as exc:
             item["reason"] = str(exc)
@@ -302,7 +337,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "Correspondances syntaxiques des positions de la RHS. "
             "Sans largeur élaborée du signal cible entier, ses bits de sortie "
             "ne sont pas inférés. Indices dynamiques, opérations arithmétiques "
-            "et conversions donnent partial ; aucune preuve fonctionnelle. "
+            "et conversions donnent partial ; sélections imbriquées conservées "
+            "sans indices cibles aplatis ; aucune preuve fonctionnelle. "
             "Ne couvre pas les procédures, les connexions de ports ni les écritures "
             "dans des processus."
         ),
