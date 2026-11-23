@@ -421,6 +421,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             return
         if kind == "Timed":
             timed_events, timing, timing_partial = _timing(path, node.get("timing"))
+            if timing_partial:
+                counts["unsupported_statements"] += 1
             child = node.get("stmt")
             if not isinstance(child, (list, dict)):
                 counts["unsupported_statements"] += 1
@@ -438,7 +440,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             valid = (isinstance(conds, list) and len(conds) == 1
                      and isinstance(conds[0], dict)
                      and set(conds[0]) == {"expr"}
-                     and isinstance(conds[0]["expr"], dict))
+                     and isinstance(conds[0]["expr"], dict)
+                     and isinstance(node.get("ifTrue"), (dict, list)))
             if not valid:
                 counts["unsupported_statements"] += 1
             for branch, name in (("then", "ifTrue"), ("else", "ifFalse")):
