@@ -137,14 +137,14 @@ def test_ambiguous_rhs_is_partial_with_event_but_without_fabricated_data():
     assert any("données omises" in w["reason"] for w in graph["warnings"])
 
 
-def test_literal_width_mismatch_is_partial_not_silent():
+def test_constant_rhs_never_creates_signal_data_edges_even_if_width_differs():
     lhs = concat(ref("ck_uart"), ref("q_uart"))
     graph = build_dependency_graph(synthetic(
         statement(lhs, n("IntegerLiteral", value="3'h0"))
     ), expected_top="top")
     assert not links(graph, "data")
     assert len(links(graph, "event")) == 2
-    assert graph["counts"]["warnings"] >= 1
+    assert graph["counts"]["warnings"] == 0
 
 
 @pytest.mark.skipif(shutil.which("slang") is None, reason="slang réel absent")
