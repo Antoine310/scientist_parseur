@@ -272,16 +272,46 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             })
 
     def target(path: str, expr: Any) -> str | None:
-        if not isinstance(expr, dict):
-            warn(path, "Cible d'affectation non structurée")
-            return None
-        kind = expr.get("kind")
-        if kind == "NamedValue":
-            return resolve(path, expr)
-        if kind in ("ElementSelect", "RangeSelect"):
-            record_selection(path, expr, "write")
-            return target(path, expr.get("value"))
-        warn(path, f"Cible non prise en charge : {kind}")
+        """Resolve MemberAccess writes conservatively to their *base* signal.
+
+        A member lvalue never establishes a complete-vector or packed-field
+        write. Combined member/part selections also cannot establish a flat
+        bit position. Malformed tokens fail closed instead of resolving by
+        field name; every accepted member write emits a coverage warning.
+        """
+        current = expr
+        selections: list[dict[str, Any]] = []
+        has_member = False
+        for _ in range(16):
+            if not isinstance(current, dict):
+                warn(path, "Cible d'affectation non structurée")
+                return None
+            kind = current.get("kind")
+            if kind == "NamedValue":
+                resolved = resolve(path, current)
+                if resolved is None and has_member:
+                    warn(path, "Cible de membre : base RTL non résolue")
+                    return None
+                if has_member:
+                    warn(path, "Écriture de membre : dépendance au signal entier (champs non localisés)")
+                    if selections:
+                        warn(path, "Sélection de membre : positions de bits non démontrées")
+                else:
+                    for sel in selections:
+                        record_selection(path, sel, "write")
+                return resolved
+            if kind == "MemberAccess":
+                if member_name(current) is None:
+                    warn(path, "Cible MemberAccess malformée ou inconnue")
+                    return None
+                has_member = True
+            elif kind in ("ElementSelect", "RangeSelect"):
+                selections.append(current)
+            else:
+                warn(path, f"Cible non prise en charge : {kind}")
+                return None
+            current = current.get("value")
+        warn(path, "Cible d'affectation trop profondément imbriquée")
         return None
 
     def reads(path: str, expr: Any) -> tuple[set[str], set[str]]:

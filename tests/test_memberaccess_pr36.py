@@ -167,7 +167,7 @@ def test_constant_initial_member_is_metadata_only_and_runtime_member_is_not():
     assert any("Initial" in w["reason"] for w in runtime["warnings"])
 
 
-def test_member_access_lvalue_is_still_outside_current_support():
+def test_member_access_lvalue_preserves_syntax_but_not_field_mapping():
     lhs = member(ref("bundle", "101"), name="ready")
     ast = design()
     ast["design"]["members"][0]["body"]["members"][-1] = n(
@@ -176,9 +176,15 @@ def test_member_access_lvalue_is_still_outside_current_support():
         ),
     )
     g = build_dependency_graph(ast, expected_top="top")
-    assert g["edges"] == []
-    assert any("Cible non prise en charge" in w["reason"] for w in g["warnings"])
-    assert g["expressions"]["counts"]["unsupported_targets"] == 1
+    assert g["edges"] == []  # source is a literal
+    assert any("Écriture de membre" in w["reason"] for w in g["warnings"])
+    assert g["expressions"]["counts"]["unsupported_targets"] == 0
+    row = g["expressions"]["items"][0]
+    assert row["coverage"] == "syntax_supported"
+    assert row["target"] == "top.bundle"
+    assert row["target_write_scope"] == "whole_signal_approximation"
+    assert row["target_access"]["kind"] == "member_access"
+    assert row["target_access"]["member"] == "ready"
 
 
 def test_member_base_in_if_guard_is_control_dependency_not_spurious_data():

@@ -250,7 +250,12 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             kind = current.get("kind")
             if kind == "NamedValue":
                 return symbols.resolve(path, current), selected
-            if kind not in ("ElementSelect", "RangeSelect"):
+            if kind == "MemberAccess":
+                # Retain syntactic field selection without inventing a bit
+                # offset or trusting an unverified member declaration ID.
+                if member_name(current) is None:
+                    return None, selected
+            elif kind not in ("ElementSelect", "RangeSelect"):
                 return None, selected
             selected = True
             current = current.get("value")
@@ -283,6 +288,16 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             # Preserve the exact AST lvalue shape and identity. A selection
             # does not imply an inferred packed bit offset or a full write.
             row["target_access"] = expression(path, lhs, state)
+            # 'syntax_supported' only describes the expression AST. A field
+            # write must not look like a proven complete-vector assignment.
+            current = lhs
+            for _ in range(MAX_DEPTH):
+                if not isinstance(current, dict) or current.get("kind") == "NamedValue":
+                    break
+                if current.get("kind") == "MemberAccess":
+                    row["target_write_scope"] = "whole_signal_approximation"
+                    break
+                current = current.get("value")
         if procedure_kind is not None:
             rendered_guards: list[dict[str, Any]] = []
             for g in guards[:MAX_GUARDS]:
