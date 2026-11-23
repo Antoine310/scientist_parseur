@@ -147,6 +147,23 @@ def test_constant_rhs_never_creates_signal_data_edges_even_if_width_differs():
     assert graph["counts"]["warnings"] == 0
 
 
+@pytest.mark.parametrize("kind", ["Conversion", "SignedConversion"])
+def test_literal_conversion_is_source_free_but_signal_conversion_is_not(kind):
+    lhs = concat(ref("ck_uart"), ref("qq_uart"), ref("q_uart"))
+    constant = n(kind, operand=n("IntegerLiteral", value="3'b0"),
+                 constant="3'b0")
+    safe = build_dependency_graph(synthetic(statement(lhs, constant)),
+                                  expected_top="top")
+    assert not links(safe, "data")
+    assert safe["counts"]["warnings"] == 0
+    unsafe = build_dependency_graph(synthetic(
+        statement(lhs, n(kind, operand=ref("i_uart_rx"), constant="3'b0"))
+    ), expected_top="top")
+    assert not links(unsafe, "data")
+    assert any("positions RHS non démontrées" in w["reason"]
+               for w in unsafe["warnings"])
+
+
 @pytest.mark.skipif(shutil.which("slang") is None, reason="slang réel absent")
 @pytest.mark.skipif(not RXUART.is_file(), reason="checkout épinglé rxuart absent")
 def test_real_pinned_rxuart_concat_lvalue_dependencies(tmp_path):
@@ -161,29 +178,6 @@ def test_real_pinned_rxuart_concat_lvalue_dependencies(tmp_path):
     result = dependency_design(load_design(design_path), out, 90)
     assert result["status"] == "passed", result
     graph = json.loads((out / "rtl_dependencies.json").read_text(encoding="utf-8"))
-    ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
-    def inspect_concats(item):
-        if isinstance(item, list):
-            for child in item:
-                yield from inspect_concats(child)
-        elif isinstance(item, dict):
-            if (item.get("kind") == "Assignment"
-                    and isinstance(item.get("left"), dict)
-                    and item["left"].get("kind") == "Concatenation"):
-                right = item.get("right")
-                if isinstance(right, dict):
-                    operand = right.get("operand")
-                    yield {
-                        "rhs_kind": right.get("kind"),
-                        "rhs_keys": sorted(right.keys()),
-                        "rhs_value": right.get("value"),
-                        "operand_kind": operand.get("kind") if isinstance(operand, dict) else None,
-                        "operand_value": operand.get("value") if isinstance(operand, dict) else None,
-                    }
-            for child in item.values():
-                if isinstance(child, (dict, list)):
-                    yield from inspect_concats(child)
-    print("PR32_REAL_CONCAT_RHS_SHAPES", list(inspect_concats(ast)))
     assert {
         ("rxuart.qq_uart", "rxuart.ck_uart"),
         ("rxuart.q_uart", "rxuart.qq_uart"),
@@ -192,7 +186,7 @@ def test_real_pinned_rxuart_concat_lvalue_dependencies(tmp_path):
     for signal in ("ck_uart", "qq_uart", "q_uart"):
         assert ("rxuart.i_clk", f"rxuart.{signal}") in links(graph, "event")
     assert not any(
-        "Cible non prise en charge : Concatenation" in w["reason"]
+        "Concaténation cible" in w["reason"]
         for w in graph["warnings"]
     ), graph["warnings"]
     # No claim about complete analysis of all the UART constructs.
