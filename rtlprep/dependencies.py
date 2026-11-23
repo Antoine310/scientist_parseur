@@ -13,7 +13,7 @@ from typing import Any
 from .index import build_index
 from .expressions import build_expression_index
 from .flow import build_register_flow
-from .bitaccess import build_bit_access_index
+from .bitaccess import build_bit_access_index, _constant as _static_integer
 from .coverage import build_coverage_summary
 from .sequential import build_sequential_candidates
 from .symbols import SignalResolver
@@ -92,6 +92,9 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     seen_edges: set[tuple[str, str, str, bool, str]] = set()
     warnings: list[dict[str, Any]] = []
     warning_keys: set[tuple[str, str]] = set()
+    initializations: list[dict[str, Any]] = []
+    static_selections: list[dict[str, Any]] = []
+    selection_keys: set[tuple[str, str, str, str]] = set()
 
     # slang encodes references as "symbol-address symbol-name". The address
     # refers to the *exact* semantic declaration in the same exported AST.
@@ -137,6 +140,131 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             warn(path, f"Référence NamedValue inconnue/ambiguë : {name!r}")
         return resolved
 
+    def constant_initializer_expression(path: str, expr: Any,
+                                        depth: int = 0) -> bool:
+        """Prove an initializer contains no runtime-signal reads.
+
+        A 'constant' property on a live signal is not sufficient proof:
+        only semantic Parameter/EnumValue IDs or non-signal constants count.
+        """
+        if not isinstance(expr, dict) or depth > 16:
+            return False
+        kind = expr.get("kind")
+        if kind in ("IntegerLiteral", "UnbasedUnsizedIntegerLiteral",
+                    "RealLiteral", "StringLiteral"):
+            return True
+        if kind == "NamedValue":
+            symbol = expr.get("symbol")
+            if not isinstance(symbol, str):
+                return False
+            address = symbol.split(maxsplit=1)[0]
+            if address in constant_declarations:
+                return True
+            name = _symbol_name(expr)
+            return "constant" in expr and name not in known.get(path, set())
+        if kind in ("Conversion", "SignedConversion", "UnaryOp"):
+            return constant_initializer_expression(
+                path, expr.get("operand"), depth + 1
+            )
+        if kind == "BinaryOp":
+            return (constant_initializer_expression(path, expr.get("left"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("right"), depth + 1))
+        if kind == "ElementSelect":
+            return (constant_initializer_expression(path, expr.get("value"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("selector"), depth + 1))
+        if kind == "RangeSelect":
+            return (constant_initializer_expression(path, expr.get("value"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("left"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("right"), depth + 1))
+        if kind == "Concatenation":
+            parts = expr.get("operands")
+            return (isinstance(parts, list) and 1 <= len(parts) <= 32
+                    and all(constant_initializer_expression(path, part, depth + 1)
+                            for part in parts))
+        if kind == "Replication":
+            return (constant_initializer_expression(path, expr.get("count"), depth + 1)
+                    and constant_initializer_expression(path, expr.get("concat"), depth + 1))
+        return False
+
+    def static_index(path: str, expr: Any) -> int | None:
+        """Use slang's elaborated constant only after proving no signal reads.
+
+        Real generated indices contain Multiply/Add and compiler-reduced
+        'constant' values. Re-parsing the source formula is not necessary.
+        """
+        if not constant_initializer_expression(path, expr):
+            return None
+        number = _static_integer(expr)
+        if number is not None:
+            return number
+        if not isinstance(expr, dict):
+            return None
+        folded = expr.get("constant")
+        if not isinstance(folded, (int, str)):
+            return None
+        return _static_integer({"kind": "IntegerLiteral", "value": folded})
+
+    def record_selection(path: str, expr: dict[str, Any], role: str) -> None:
+        """Trace static selections including nested array/part selections.
+
+        No bit-level graph edges are inferred: metadata lists selectors from
+        the base signal outward. Unknown or dynamic selectors still warn.
+        """
+        parts: list[dict[str, Any]] = []
+        current: Any = expr
+        for _ in range(6):
+            if not isinstance(current, dict):
+                break
+            kind = current.get("kind")
+            if kind == "ElementSelect":
+                index = static_index(path, current.get("selector"))
+                if index is None:
+                    warn(path, "Sélection de bits/plage : dépendance au signal entier"
+                         if role == "read" else
+                         "Sélection de bits : dépendance au signal entier (approximation)")
+                    return
+                parts.append({"kind": "bit", "index": index})
+            elif kind == "RangeSelect":
+                left = static_index(path, current.get("left"))
+                right = static_index(path, current.get("right"))
+                if left is None or right is None or left < right:
+                    warn(path, "Sélection de bits/plage : dépendance au signal entier"
+                         if role == "read" else
+                         "Sélection de bits : dépendance au signal entier (approximation)")
+                    return
+                parts.append({"kind": "range", "msb": left, "lsb": right})
+            else:
+                break
+            current = current.get("value")
+        if not parts:
+            return
+        if not isinstance(current, dict) or current.get("kind") != "NamedValue":
+            warn(path, "Sélection imbriquée : dépendance au signal entier")
+            return
+        symbol = current.get("symbol")
+        address = symbol.split(maxsplit=1)[0] if isinstance(symbol, str) else None
+        if address in constant_declarations or (
+            "constant" in current
+            and _symbol_name(current) not in known.get(path, set())
+        ):
+            return
+        signal = resolve(path, current)
+        if signal is None:
+            return  # resolve() already warned
+        selection = (parts[0] if len(parts) == 1 else {
+            "kind": "nested", "parts": list(reversed(parts))
+        })
+        key = (path, role, signal, str(selection))
+        if key not in selection_keys:
+            if len(static_selections) >= 2000:
+                warn(path, "Preuves de sélections statiques tronquées (limite 2000)")
+                return
+            selection_keys.add(key)
+            static_selections.append({
+                "context": path, "role": role, "signal": signal,
+                "selection": selection, "source": _location(expr),
+            })
+
     def target(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict):
             warn(path, "Cible d'affectation non structurée")
@@ -145,7 +273,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         if kind == "NamedValue":
             return resolve(path, expr)
         if kind in ("ElementSelect", "RangeSelect"):
-            warn(path, "Sélection de bits : dépendance au signal entier (approximation)")
+            record_selection(path, expr, "write")
             return target(path, expr.get("value"))
         warn(path, f"Cible non prise en charge : {kind}")
         return None
@@ -177,7 +305,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             for selector_expr in selectors:
                 sel_data, sel_control = reads(path, selector_expr)
                 data.update(sel_data | sel_control)
-            warn(path, "Sélection de bits/plage : dépendance au signal entier")
+            record_selection(path, expr, "read")
             return data, control
         if kind == "Replication":
             # slang v12.1: {N{expression}} -> Replication(count, concat).
@@ -474,6 +602,50 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         else:
             warn(path, f"Instruction non prise en charge : {kind}")
 
+    def initial_statements(path: str, body: Any, depth: int = 0
+                           ) -> list[dict[str, Any]] | None:
+        """Accept only constant, direct-lvalue initial assignments.
+
+        Initial values are metadata, NEVER data, clock or reset graph edges.
+        A partially unsupported initial block is rejected atomically.
+        """
+        if not isinstance(body, dict) or depth > 16:
+            return None
+        kind = body.get("kind")
+        if kind in ("Block", "List", "StatementList"):
+            field = ("body" if kind == "Block"
+                     else "list" if kind == "List" else "statements")
+            children = body.get(field)
+            if isinstance(children, dict):
+                children = [children]
+            if not isinstance(children, list) or len(children) > 256:
+                return None
+            found: list[dict[str, Any]] = []
+            for child in children:
+                child_rows = initial_statements(path, child, depth + 1)
+                if child_rows is None:
+                    return None
+                found.extend(child_rows)
+            return found
+        if kind != "ExpressionStatement":
+            return None
+        assign = body.get("expr")
+        if not isinstance(assign, dict) or assign.get("kind") != "Assignment":
+            return None
+        lhs, rhs = assign.get("left"), assign.get("right")
+        if not isinstance(lhs, dict) or lhs.get("kind") != "NamedValue":
+            return None
+        if not constant_initializer_expression(path, rhs):
+            return None
+        destination = resolve(path, lhs)
+        if destination is None:
+            return None
+        return [{
+            "target": destination, "source": _location(assign),
+            "expression_kind": rhs.get("kind"),
+            "scope": "initial_only_not_runtime",
+        }]
+
     def connections(node: dict[str, Any], path: str, parent: str | None) -> None:
         if parent is None:
             return
@@ -521,11 +693,19 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                 continue
             if node.get("kind") == "ProceduralBlock" and parent is not None:
                 procedure_kind = node.get("procedureKind")
-                if procedure_kind not in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
-                    warn(parent, f"Procédure non prise en charge : {procedure_kind}")
-                else:
+                if procedure_kind == "Initial":
+                    records = initial_statements(parent, node.get("body"))
+                    if records is None:
+                        warn(parent, "Procédure non prise en charge : Initial")
+                    elif len(initializations) + len(records) > 2000:
+                        warn(parent, "Initialisations constantes tronquées (limite 2000)")
+                    else:
+                        initializations.extend(records)
+                elif procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
                     statements(parent, node.get("body"),
                                sequential=(procedure_kind == "AlwaysFF"))
+                else:
+                    warn(parent, f"Procédure non prise en charge : {procedure_kind}")
                 continue
             if node.get("kind") != "Instance":
                 continue
@@ -541,10 +721,18 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     for missing_path in sorted(set(instances) - visited_instances):
         warn(missing_path, "Instance connue de l'index mais absente du graphe")
     edges.sort(key=lambda x: (x["target"], x["source"], x["kind"], x["detail"]))
+    initializations.sort(key=lambda x: (
+        x["target"], str(x["source"]), x["expression_kind"]
+    ))
+    static_selections.sort(key=lambda x: (
+        x["context"], x["role"], x["signal"], str(x["selection"])
+    ))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
     graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
+        "initializations": initializations,
+        "static_selections": static_selections,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
         "expressions": build_expression_index(ast, expected_top=expected_top, index=structural),
@@ -560,6 +748,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         ),
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
+            "Initialisations constantes recensées séparément, sans arêtes d'exécution",
+            "Sélections statiques décrites en métadonnées, sans arêtes bit-à-bit",
             "Case normal, concaténations, sélections et generate if simples seulement",
             "Pas de résolution des fonctions, tâches, casez/casex, generate complexes",
             "Événements toujours classés event : horloge versus reset non inférés",

@@ -54,7 +54,7 @@ jobs:
       - name: Install RTLPrep and run hermetic field validation tests
         run: |
           python -m pip install -e '.[dev]'
-          python -m pytest -q tests/test_field_validation.py tests/test_timing_controls.py tests/test_concat_lvalue.py
+          python -m pytest -q tests/test_field_validation.py tests/test_timing_controls.py tests/test_concat_lvalue.py tests/test_static_initial_dependencies.py
       - name: Install pinned real slang v12.1
         shell: bash
         run: |
@@ -74,6 +74,9 @@ jobs:
       - name: Regress real pinned ZipCPU rxuart concatenated lvalues
         run: |
           python -m pytest -q -rs -o addopts='' tests/test_concat_lvalue.py
+      - name: Regress static selects and constant-only initial blocks with real slang
+        run: |
+          python -m pytest -q -rs -o addopts='' tests/test_static_initial_dependencies.py
       - name: Evaluate genuine third-party RTL and retain limits
         run: |
           python scripts/validate_unknown_rtl.py \
@@ -109,12 +112,17 @@ jobs:
                   "compiled_but_no_dependency_edges",
               ), case
               audit = case["audit"]
+              # All three pinned real designs now have zero dependency
+              # warnings, without claiming exhaustive functional coverage.
+              assert audit["warning_count"] == 0, case
+              graph_path = Path("reports/unknown-validation") / case["id"] / "rtl_dependencies.json"
+              graph = json.loads(graph_path.read_text(encoding="utf-8"))
+              if case["id"] == "priority_encoder":
+                  assert graph["static_selections"], case
+              if case["id"] == "rxuart":
+                  assert graph["initializations"], case
               if case["id"] == "axis_register":
                   assert audit["graph_counts"]["edges"] >= 69, case
-                  # Both formerly unknown timing nodes are now modeled
-                  # conservatively: implicit has no invented event edges;
-                  # explicit posedge creates an actual clock dependency.
-                  assert audit["warning_count"] == 0, case
               if audit["graph_counts"]["edges"] == 0:
                   assert case["status"] == "compiled_but_no_dependency_edges", case
                   assert audit["zero_edge_graph"]
@@ -151,6 +159,7 @@ jobs:
             reports/unknown-validation/*/validation.case.json
             reports/unknown-validation/*/design.json
             reports/unknown-validation/*/deps.result.json
+            reports/unknown-validation/*/rtl_dependencies.json
             reports/unknown-validation/*/index.result.json
             reports/unknown-validation/*/analyze.result.json
             reports/unknown-validation/*/analyze.stdout.log
