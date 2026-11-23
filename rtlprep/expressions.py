@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from .index import build_index
+from .symbols import SignalResolver
 
 EXPRESSION_SCHEMA_VERSION = 1
 MAX_EXPRESSIONS = 2000
@@ -60,7 +61,9 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         for p, inst in instances.items()
     }
     for sig in structural["signals"]:
-        known[sig["instance_path"]].add(sig["name"])
+        if not sig.get("scope"):
+            known[sig["instance_path"]].add(sig["name"])
+    symbols = SignalResolver(ast, structural)
 
     # Only explicit semantic declaration IDs distinguish shadowed constants
     # from ordinary signals. Do not use identifier-prefix heuristics.
@@ -117,8 +120,9 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
                 return {"kind": "unsupported", "ast_kind": "unresolved_symbol"}
             if address in constant_ids:
                 return {"kind": "constant_reference", "name": _atom(name)}
-            if name in known.get(path, set()):
-                return {"kind": "signal", "name": name, "path": f"{path}.{name}"}
+            resolved = symbols.resolve(path, node)
+            if resolved is not None:
+                return {"kind": "signal", "name": name, "path": resolved}
             state["partial"] = True
             return {"kind": "unsupported", "ast_kind": "unknown_symbol"}
         if kind in LITERAL_KINDS:
@@ -162,16 +166,14 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             stats["unsupported_statements"] += 1
             return
         lhs = node.get("left")
-        _, name = symbol(lhs)
-        if not isinstance(lhs, dict) or lhs.get("kind") != "NamedValue" or (
-            name not in known.get(path, set())
-        ):
+        resolved_target = symbols.resolve(path, lhs)
+        if resolved_target is None:
             stats["unsupported_targets"] += 1
             return
         state: dict[str, Any] = {"nodes": 0, "partial": context_partial}
         tree = expression(path, node.get("right"), state)
         row: dict[str, Any] = {
-            "target": f"{path}.{name}",
+            "target": resolved_target,
             "expression": tree,
             "source": _source(node) or _source(source_fallback or {}),
         }
