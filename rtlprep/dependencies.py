@@ -16,6 +16,7 @@ from .flow import build_register_flow
 from .bitaccess import build_bit_access_index
 from .coverage import build_coverage_summary
 from .sequential import build_sequential_candidates
+from .symbols import SignalResolver
 
 GRAPH_SCHEMA_VERSION = 1
 LITERALS = frozenset({"IntegerLiteral", "RealLiteral", "StringLiteral",
@@ -57,8 +58,14 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         for path, inst in instances.items()
     }
     for sig in structural["signals"]:
-        known[sig["instance_path"]].add(sig["name"])
-    nodes = sorted(f"{path}.{name}" for path, names in known.items() for name in names)
+        if not sig.get("scope"):
+            known[sig["instance_path"]].add(sig["name"])
+    nodes = sorted(
+        {f"{path}.{name}" for path, names in known.items() for name in names}
+        | {(sig.get("path") or f"{sig['instance_path']}.{sig['name']}")
+           for sig in structural["signals"]}
+    )
+    symbols = SignalResolver(ast, structural)
     node_set = set(nodes)
     edges: list[dict[str, Any]] = []
     seen_edges: set[tuple[str, str, str, bool, str]] = set()
@@ -104,10 +111,10 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         # use that semantic tag, never a name prefix or regex.
         if "constant" in expr and name not in known.get(path, set()):
             return None
-        if name not in known.get(path, set()):
-            warn(path, f"Référence NamedValue inconnue : {name!r}")
-            return None
-        return f"{path}.{name}"
+        resolved = symbols.resolve(path, expr)
+        if resolved is None:
+            warn(path, f"Référence NamedValue inconnue/ambiguë : {name!r}")
+        return resolved
 
     def target(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict):

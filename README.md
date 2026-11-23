@@ -81,6 +81,19 @@ le [guide de validation des RTL externes](docs/unknown-designs-validation.md).
 Les sources externes ne sont pas recopiées dans le dépôt et sont ignorées
 par Git dans le dossier `upstream_unknown/`.
 
+## Scopes generate et identités AST (PR #29)
+
+RTLPrep indexe désormais les registres et nets déclarés dans des blocs
+`generate` actifs **nommés**, avec chemins qualifiés (`genblk1.reg`).
+Le graphe et les expressions relient leurs références aux adresses
+sémantiques de slang **dans le même AST**, sans fusionner les homonymes.
+Les adresses instables ne sont pas enregistrées dans les rapports.
+
+Régression sur la véritable IP AXI-Stream `axis_register` et ses variantes
+`REG_TYPE=0,1,2`. L'extraction de dépendances reste **syntaxique**
+et ne couvre pas tous les scopes/événements de SystemVerilog.
+
+[Guide PR #29 : résolution des signaux sous generate](docs/generate-scope-symbols.md).
 ## 📚 Documentation pédagogique détaillée
 
 Une documentation en français explique **tous les composants de RTLPrep v0.1**, avec extraits du code réel, schémas de circulation des données, tutoriels et exercices :

@@ -143,8 +143,12 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
     instances = {x["path"]: x for x in structural["instances"]}
     known_by_path = {p: {port["name"] for port in inst["ports"]}
                      for p, inst in instances.items()}
+    # Le moteur de flow ne dispose pas encore des identités de scopes
+    # generate. Ne pas aplatir ces déclarations : cela fabriquerait des
+    # candidats de transition sur le mauvais signal homonyme.
     for sig in structural["signals"]:
-        known_by_path[sig["instance_path"]].add(sig["name"])
+        if not sig.get("scope"):
+            known_by_path[sig["instance_path"]].add(sig["name"])
 
     items: list[dict[str, Any]] = []
     stats: dict[str, Any] = {
