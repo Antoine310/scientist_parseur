@@ -13,7 +13,7 @@ from typing import Any
 from .index import build_index
 from .expressions import build_expression_index
 from .flow import build_register_flow
-from .bitaccess import build_bit_access_index
+from .bitaccess import build_bit_access_index, _constant as _static_integer
 from .coverage import build_coverage_summary
 from .sequential import build_sequential_candidates
 from .symbols import SignalResolver
@@ -93,6 +93,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     warnings: list[dict[str, Any]] = []
     warning_keys: set[tuple[str, str]] = set()
     initializations: list[dict[str, Any]] = []
+    static_selections: list[dict[str, Any]] = []
+    selection_keys: set[tuple[str, str, str, str, int, int]] = set()
 
     # slang encodes references as "symbol-address symbol-name". The address
     # refers to the *exact* semantic declaration in the same exported AST.
@@ -184,6 +186,61 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                     and constant_initializer_expression(path, expr.get("concat"), depth + 1))
         return False
 
+    def record_selection(path: str, expr: dict[str, Any], role: str) -> None:
+        """Keep independently inspectable static positions, without bit edges.
+
+        The dependency graph stays at signal granularity, so an observed
+        static select is evidence about access, not a bit-level dependency.
+        Dynamic/unknown positions continue to raise a warning.
+        """
+        kind = expr.get("kind")
+        if kind == "ElementSelect":
+            selector = expr.get("selector")
+            index = (_static_integer(selector)
+                     if constant_initializer_expression(path, selector) else None)
+            if index is None:
+                warn(path, "Sélection de bits dynamique/inconnue : dépendance au signal entier")
+                return
+            shape = {"kind": "bit", "index": index}
+            a, b = index, index
+        elif kind == "RangeSelect":
+            lhs, rhs = expr.get("left"), expr.get("right")
+            left = (_static_integer(lhs)
+                    if constant_initializer_expression(path, lhs) else None)
+            right = (_static_integer(rhs)
+                     if constant_initializer_expression(path, rhs) else None)
+            if left is None or right is None or left < right:
+                warn(path, "Sélection de plage dynamique/inconnue : dépendance au signal entier")
+                return
+            shape = {"kind": "range", "msb": left, "lsb": right}
+            a, b = left, right
+        else:
+            return
+        base = expr.get("value")
+        if not isinstance(base, dict) or base.get("kind") != "NamedValue":
+            warn(path, "Sélection imbriquée : dépendance au signal entier")
+            return
+        symbol = base.get("symbol")
+        address = symbol.split(maxsplit=1)[0] if isinstance(symbol, str) else None
+        if address in constant_declarations or (
+            "constant" in base and _symbol_name(base) not in known.get(path, set())
+        ):
+            # Compile-time constant operands are not runtime graph sources.
+            return
+        signal = resolve(path, base)
+        if signal is None:
+            return  # resolve() has already warned
+        key = (path, role, signal, kind, a, b)
+        if key not in selection_keys:
+            if len(static_selections) >= 2000:
+                warn(path, "Preuves de sélections statiques tronquées (limite 2000)")
+                return
+            selection_keys.add(key)
+            static_selections.append({
+                "context": path, "role": role, "signal": signal,
+                "selection": shape, "source": _location(expr),
+            })
+
     def target(path: str, expr: Any) -> str | None:
         if not isinstance(expr, dict):
             warn(path, "Cible d'affectation non structurée")
@@ -192,7 +249,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         if kind == "NamedValue":
             return resolve(path, expr)
         if kind in ("ElementSelect", "RangeSelect"):
-            warn(path, "Sélection de bits : dépendance au signal entier (approximation)")
+            record_selection(path, expr, "write")
             return target(path, expr.get("value"))
         warn(path, f"Cible non prise en charge : {kind}")
         return None
@@ -224,7 +281,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             for selector_expr in selectors:
                 sel_data, sel_control = reads(path, selector_expr)
                 data.update(sel_data | sel_control)
-            warn(path, "Sélection de bits/plage : dépendance au signal entier")
+            record_selection(path, expr, "read")
             return data, control
         if kind == "Replication":
             # slang v12.1: {N{expression}} -> Replication(count, concat).
@@ -643,11 +700,15 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     initializations.sort(key=lambda x: (
         x["target"], str(x["source"]), x["expression_kind"]
     ))
+    static_selections.sort(key=lambda x: (
+        x["context"], x["role"], x["signal"], str(x["selection"])
+    ))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
     graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
         "initializations": initializations,
+        "static_selections": static_selections,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
         "expressions": build_expression_index(ast, expected_top=expected_top, index=structural),
@@ -664,6 +725,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "limitations": [
             "Dépendances conservatrices au niveau signal, sans granularité bit",
             "Initialisations constantes recensées séparément, sans arêtes d'exécution",
+            "Sélections statiques décrites en métadonnées, sans arêtes bit-à-bit",
             "Case normal, concaténations, sélections et generate if simples seulement",
             "Pas de résolution des fonctions, tâches, casez/casex, generate complexes",
             "Événements toujours classés event : horloge versus reset non inférés",
