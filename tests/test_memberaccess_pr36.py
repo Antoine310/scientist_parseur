@@ -167,6 +167,20 @@ def test_constant_initial_member_is_metadata_only_and_runtime_member_is_not():
     assert any("Initial" in w["reason"] for w in runtime["warnings"])
 
 
+def test_member_access_lvalue_is_still_outside_current_support():
+    lhs = member(ref("bundle", "101"), name="ready")
+    ast = design()
+    ast["design"]["members"][0]["body"]["members"][-1] = n(
+        "ContinuousAssign", assignment=n(
+            "Assignment", left=lhs, right=lit(), isNonBlocking=False,
+        ),
+    )
+    g = build_dependency_graph(ast, expected_top="top")
+    assert g["edges"] == []
+    assert any("Cible non prise en charge" in w["reason"] for w in g["warnings"])
+    assert g["expressions"]["counts"]["unsupported_targets"] == 1
+
+
 def test_member_base_in_if_guard_is_control_dependency_not_spurious_data():
     clause = n("Conditional", conditions=[
         {"expr": member(ref("bundle", "101"))},
