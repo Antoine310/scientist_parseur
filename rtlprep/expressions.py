@@ -123,6 +123,11 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             resolved = symbols.resolve(path, node)
             if resolved is not None:
                 return {"kind": "signal", "name": name, "path": resolved}
+            if "constant" in node and name not in known.get(path, set()):
+                # Generate-loop genvars are already elaborated by slang. Do
+                # not reclassify a resolvable (possibly shadowed) runtime
+                # signal merely because the AST exposes a 'constant' field.
+                return {"kind": "constant_reference", "name": _atom(name)}
             state["partial"] = True
             return {"kind": "unsupported", "ast_kind": "unknown_symbol"}
         if kind in LITERAL_KINDS:
@@ -214,6 +219,26 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         state["partial"] = True
         return {"kind": "unsupported", "ast_kind": _atom(kind)}
 
+    def selected_target(path: str, lhs: Any) -> tuple[str | None, bool]:
+        """Resolve a selected lvalue by the exact semantic base declaration.
+
+        The returned boolean only marks selection syntax, not a flattened
+        destination lane or functional information.
+        """
+        selected = False
+        current = lhs
+        for _ in range(MAX_DEPTH):
+            if not isinstance(current, dict):
+                return None, selected
+            kind = current.get("kind")
+            if kind == "NamedValue":
+                return symbols.resolve(path, current), selected
+            if kind not in ("ElementSelect", "RangeSelect"):
+                return None, selected
+            selected = True
+            current = current.get("value")
+        return None, selected
+
     def add_assignment(path: str, node: Any, *, procedure_kind: str | None = None,
                        guards: tuple[dict[str, Any], ...] = (),
                        events: tuple[dict[str, Any], ...] = (),
@@ -226,7 +251,7 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             stats["unsupported_statements"] += 1
             return
         lhs = node.get("left")
-        resolved_target = symbols.resolve(path, lhs)
+        resolved_target, is_selected = selected_target(path, lhs)
         if resolved_target is None:
             stats["unsupported_targets"] += 1
             return
@@ -237,6 +262,10 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             "expression": tree,
             "source": _source(node) or _source(source_fallback or {}),
         }
+        if is_selected:
+            # Preserve the exact AST lvalue shape and identity. A selection
+            # does not imply an inferred packed bit offset or a full write.
+            row["target_access"] = expression(path, lhs, state)
         if procedure_kind is not None:
             rendered_guards: list[dict[str, Any]] = []
             for g in guards[:MAX_GUARDS]:
