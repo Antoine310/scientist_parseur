@@ -182,16 +182,24 @@ def execute(out,sizes=DEFAULT_SIZES,repetitions=3,timeout=180,include_alu=True):
     if sys.platform!="linux":
         raise RuntimeError("Linux required")
     out=out.resolve()
-    entry=next(e for e in load_lock() if e["repository"]=="openhwfoundation/cv32e40p") if include_alu else None
+    entries=load_lock()
+    for fixture in entries:
+        upstream_path=(ROOT/fixture["destination"]).resolve()
+        if out==upstream_path or out.is_relative_to(upstream_path):
+            raise ValueError("output must not be inside official RTL checkout")
+    entry=next(e for e in entries if e["repository"]=="openhwfoundation/cv32e40p") if include_alu else None
     if entry:
         upstream=ROOT/entry["destination"]
         verify_checkout(upstream,entry)
-        if out==upstream or out.is_relative_to(upstream):
-            raise ValueError("output must not be inside official RTL checkout")
     out.mkdir(parents=True,exist_ok=True)
     run=Path(tempfile.mkdtemp(prefix="run-",dir=out))
+    cpu_model=next((line.split(":",1)[1].strip() for line in Path("/proc/cpuinfo").read_text().splitlines()
+                    if line.startswith("model name") and ":" in line),None)
     report={"schema_version":1,"status":"incomplete","environment":{
         "platform":platform.platform(),"python":sys.version.split()[0],"cpu_count":os.cpu_count(),
+        "cpu_model":cpu_model,"machine":platform.machine(),
+        "tracked_worktree_dirty":bool(subprocess.run(["git","-C",str(ROOT),"status","--porcelain","--untracked-files=no"],
+            capture_output=True,text=True,check=True,timeout=10).stdout.strip()),
         "slang":subprocess.run(["slang","--version"],capture_output=True,text=True,check=True,timeout=10).stdout.strip(),
         "rtlprep_revision":subprocess.run(["git","-C",str(ROOT),"rev-parse","HEAD"],
             capture_output=True,text=True,check=True,timeout=10).stdout.strip()},
