@@ -36,11 +36,12 @@ def mutate_decoder(original: str) -> str:
 
 
 def _oracle_failure_evidence(xml: Path) -> bool:
-    """An actual cocotb assertion on output bit24, not a compilation failure."""
+    """Require a real bit24 failure on a valid C.LI, not only rd=x0 HINTs."""
     tree = ElementTree.parse(xml)
     failures = tree.findall(".//failure")
     return bool(failures) and any(
         "PR43_CLI_VALUE_MISMATCH" in (str(el.attrib) + " " + (el.text or ""))
+        and "class=valid_cli" in (str(el.attrib) + " " + (el.text or ""))
         and "bit24_diff=1" in (str(el.attrib) + " " + (el.text or ""))
         for el in failures
     )
