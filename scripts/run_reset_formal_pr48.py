@@ -71,7 +71,15 @@ def execute(root,out):
                 key=label+"_"+mode
                 results[key]=task(out/key,files,top,mode,is_ras,plugin)
                 if results[key]["status"]!="passed":
-                    raise RuntimeError(key+" failed")
+                    failure = results[key]
+                    tail = (out/key/"console.log").read_text().splitlines()[-45:]
+                    report["status"] = "failed"
+                    report["failed_task"] = key
+                    raise RuntimeError(
+                        f"{key} failed: SBY={failure['sby_status']}, "
+                        f"returncode={failure['returncode']}; "
+                        f"log={out/key/'console.log'}\n" + "\n".join(tail)
+                    )
         # A real counterexample on the flush-priority mutant validates the
         # property harness, not just the simulator exit status.
         generated=out/"generated"
