@@ -235,7 +235,8 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             # The arguments are syntax, not a summary of the return value.
             state["partial"] = True
             args = node.get("arguments", [])
-            if not isinstance(args, list) or len(args) > 32:
+            if (not isinstance(node.get("subroutine"), str) or not node["subroutine"]
+                    or "args" in node or not isinstance(args, list) or len(args) > 32):
                 return {"kind": "unsupported", "ast_kind": "malformed_or_large_call"}
             return {"kind": "call", "arguments": [
                 expression(path, arg, state, depth + 1) for arg in args
