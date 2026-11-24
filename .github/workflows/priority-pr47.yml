@@ -1,0 +1,98 @@
+name: Real OpenHW CVA6 NBA and RAS priority controls (Verilator + cocotb)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-priority-pr47:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+
+      - name: Checkout exact OpenHW CVA6 sources (never vendored)
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cva6
+          ref: 742dc82a0c706e0a3bfb98b709fd3ee06d50d12a
+          path: upstream_cva6
+          sparse-checkout: |
+            core/include/config_pkg.sv
+            core/include/cv32a6_imac_sv32_config_pkg.sv
+            core/include/riscv_pkg.sv
+            core/include/build_config_pkg.sv
+            core/frontend/ras.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Verify pinned Git commit and five actual blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_cva6 rev-parse HEAD)" = "742dc82a0c706e0a3bfb98b709fd3ee06d50d12a"
+          test "$(git -C upstream_cva6 hash-object core/include/config_pkg.sv)" = "a68b2c14ea758bc820a35cc3ac27035359763d0a"
+          test "$(git -C upstream_cva6 hash-object core/include/cv32a6_imac_sv32_config_pkg.sv)" = "d0824c0b8202b1f2b048864f502ba2c7b2375e8f"
+          test "$(git -C upstream_cva6 hash-object core/include/riscv_pkg.sv)" = "146bcc2c307ec236c3c0ca3854ca69ce6fdcecb9"
+          test "$(git -C upstream_cva6 hash-object core/include/build_config_pkg.sv)" = "429080949a6626f4f42cdb1c717383bb3b7f3843"
+          test "$(git -C upstream_cva6 hash-object core/frontend/ras.sv)" = "422a829fa4c1d4d4fa3b1c78cf38337003887de1"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned compatible Verilator
+        uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089 # v2
+        with:
+          version: '5.040'
+
+      - name: Install reviewed cocotb runner and verify versions
+        run: |
+          python -m pip install -e '.[dev,simulation]'
+          python - <<'PY'
+          import re
+          import subprocess
+          import cocotb
+          assert cocotb.__version__ == "2.0.1", cocotb.__version__
+          version = subprocess.check_output(["verilator", "--version"], text=True)
+          match = re.search(r"Verilator (\d+)\.(\d+)", version)
+          assert match and tuple(map(int, match.groups())) >= (5, 36), version
+          print("PR47_EDA_VERSIONS", cocotb.__version__, version.strip())
+          PY
+
+      - name: Install pinned slang v12.1
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --silent --retry 3 https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+
+      - name: Unit tests
+        run: python -m pytest -q tests/test_nba_priority_pr47.py tests/test_sequential_candidates.py
+
+      - name: Validate NBA fixture and real RAS priority
+        run: |
+          python -m scripts.run_priority_pr47 --source-root upstream_cva6 --out reports/pr47
+          test -z "$(git -C upstream_cva6 status --porcelain)"
+
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr47-priority
+          path: |
+            reports/pr47/priority.result.json
+            reports/pr47/static/rtl_dependencies.json
+            reports/pr47/*/simulation_results.xml
