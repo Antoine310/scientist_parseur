@@ -1,0 +1,84 @@
+name: Real OpenHW CVA6 reset and RAS formal properties (SBY + Z3)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-reset-formal-pr48:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+
+      - name: Checkout exact OpenHW CVA6 sources (never vendored)
+        uses: actions/checkout@v4
+        with:
+          repository: openhwfoundation/cva6
+          ref: 742dc82a0c706e0a3bfb98b709fd3ee06d50d12a
+          path: upstream_cva6
+          sparse-checkout: |
+            core/include/config_pkg.sv
+            core/include/cv32a6_imac_sv32_config_pkg.sv
+            core/include/riscv_pkg.sv
+            core/include/build_config_pkg.sv
+            core/frontend/ras.sv
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Verify pinned Git commit and five actual blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream_cva6 rev-parse HEAD)" = "742dc82a0c706e0a3bfb98b709fd3ee06d50d12a"
+          test "$(git -C upstream_cva6 hash-object core/include/config_pkg.sv)" = "a68b2c14ea758bc820a35cc3ac27035359763d0a"
+          test "$(git -C upstream_cva6 hash-object core/include/cv32a6_imac_sv32_config_pkg.sv)" = "d0824c0b8202b1f2b048864f502ba2c7b2375e8f"
+          test "$(git -C upstream_cva6 hash-object core/include/riscv_pkg.sv)" = "146bcc2c307ec236c3c0ca3854ca69ce6fdcecb9"
+          test "$(git -C upstream_cva6 hash-object core/include/build_config_pkg.sv)" = "429080949a6626f4f42cdb1c717383bb3b7f3843"
+          test "$(git -C upstream_cva6 hash-object core/frontend/ras.sv)" = "422a829fa4c1d4d4fa3b1c78cf38337003887de1"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned formal toolchain
+        uses: YosysHQ/setup-oss-cad-suite@c7845bc0d335c8076aa22047e85972caa8a916df
+        with:
+          version: '2026-11-18'
+          github-token: ${{ github.token }}
+
+      - name: Install Python package
+        run: python -m pip install -e '.[dev]'
+
+      - name: Check tools and verdict unit tests
+        run: |
+          yosys -V
+          sby --version
+          z3 --version
+          python -m pytest -q tests/test_reset_formal_pr48.py
+
+      - name: Prove and cover fixture and real RAS; require mutant counterexample
+        run: |
+          python -m scripts.run_reset_formal_pr48 --source-root upstream_cva6 --out reports/pr48
+          test -z "$(git -C upstream_cva6 status --porcelain)"
+
+      - name: Preserve proof and counterexample evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr48-reset-formal
+          path: |
+            reports/pr48/reset_formal.result.json
+            reports/pr48/*/task.sby
+            reports/pr48/*/console.log
+            reports/pr48/*/work/status
+            reports/pr48/*/work/logfile.txt
+            reports/pr48/*/work/**/trace*.vcd
