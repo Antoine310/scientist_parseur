@@ -1,0 +1,1890 @@
+{
+  "schema_version": 1,
+  "annotation_method": "Manual source-derived labels prepared separately from analyzer output; no independent human reviewer yet.",
+  "scope": "direct syntactic signal edges and fixed assignment-local bit positions; not transitive or functional influence",
+  "cases": [
+    {
+      "name": "fixture",
+      "top": "annotated_pr56",
+      "source": "tests/fixtures/annotated_pr56.sv",
+      "git_blob": "c381b4eee495a14b5d77ac2753d091e7c20773d2",
+      "signal": [
+        {
+          "source": "a",
+          "target": "swap_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 6,
+          "note": "Both slices read a"
+        },
+        {
+          "source": "b",
+          "target": "swap_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 6,
+          "note": "b is absent"
+        },
+        {
+          "source": "b",
+          "target": "inv_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 7,
+          "note": "Both slices read b"
+        },
+        {
+          "source": "a",
+          "target": "inv_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 7,
+          "note": "a is absent"
+        },
+        {
+          "source": "a",
+          "target": "mix_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 8,
+          "note": "True branch"
+        },
+        {
+          "source": "b",
+          "target": "mix_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 8,
+          "note": "False branch"
+        },
+        {
+          "source": "en",
+          "target": "mix_o",
+          "kind": "control",
+          "sequential": false,
+          "label": "positive",
+          "line": 8,
+          "note": "Ternary selector"
+        },
+        {
+          "source": "en",
+          "target": "mix_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 8,
+          "note": "Selector classified as control"
+        },
+        {
+          "source": "idx",
+          "target": "mix_o",
+          "kind": "control",
+          "sequential": false,
+          "label": "negative",
+          "line": 8,
+          "note": "idx is absent"
+        },
+        {
+          "source": "a",
+          "target": "call_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "unknown",
+          "line": 12,
+          "note": "Call body not in direct expression-reference scope"
+        },
+        {
+          "source": "b",
+          "target": "call_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "unknown",
+          "line": 12,
+          "note": "Argument occurrence does not establish return dependency"
+        },
+        {
+          "source": "a",
+          "target": "bit_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 13,
+          "note": "Selected base"
+        },
+        {
+          "source": "idx",
+          "target": "bit_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 13,
+          "note": "Runtime index classified as data in signal graph"
+        },
+        {
+          "source": "b",
+          "target": "bit_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 13,
+          "note": "b is absent"
+        },
+        {
+          "source": "a",
+          "target": "q",
+          "kind": "data",
+          "sequential": true,
+          "label": "positive",
+          "line": 15,
+          "note": "NBA RHS"
+        },
+        {
+          "source": "en",
+          "target": "q",
+          "kind": "control",
+          "sequential": true,
+          "label": "positive",
+          "line": 15,
+          "note": "If guard"
+        },
+        {
+          "source": "clk",
+          "target": "q",
+          "kind": "event",
+          "sequential": true,
+          "label": "positive",
+          "line": 14,
+          "note": "Explicit posedge"
+        },
+        {
+          "source": "b",
+          "target": "q",
+          "kind": "data",
+          "sequential": true,
+          "label": "negative",
+          "line": 15,
+          "note": "b is absent"
+        },
+        {
+          "source": "a",
+          "target": "q",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 15,
+          "note": "NBA not combinational"
+        }
+      ],
+      "bit": [
+        {
+          "source": "a",
+          "source_bit": 0,
+          "target": "swap_o",
+          "target_bit": 4,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 0,
+          "target": "swap_o",
+          "target_bit": 0,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 0,
+          "target": "inv_o",
+          "target_bit": 0,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 0,
+          "target": "inv_o",
+          "target_bit": 0,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 0,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 1,
+          "target": "swap_o",
+          "target_bit": 5,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 1,
+          "target": "swap_o",
+          "target_bit": 1,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 1,
+          "target": "inv_o",
+          "target_bit": 1,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 1,
+          "target": "inv_o",
+          "target_bit": 1,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 1,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 2,
+          "target": "swap_o",
+          "target_bit": 6,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 2,
+          "target": "swap_o",
+          "target_bit": 2,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 2,
+          "target": "inv_o",
+          "target_bit": 2,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 2,
+          "target": "inv_o",
+          "target_bit": 2,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 2,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 3,
+          "target": "swap_o",
+          "target_bit": 7,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 3,
+          "target": "swap_o",
+          "target_bit": 3,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 3,
+          "target": "inv_o",
+          "target_bit": 3,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 3,
+          "target": "inv_o",
+          "target_bit": 3,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 3,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 4,
+          "target": "swap_o",
+          "target_bit": 0,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 4,
+          "target": "swap_o",
+          "target_bit": 4,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 4,
+          "target": "inv_o",
+          "target_bit": 4,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 4,
+          "target": "inv_o",
+          "target_bit": 4,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 4,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 5,
+          "target": "swap_o",
+          "target_bit": 1,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 5,
+          "target": "swap_o",
+          "target_bit": 5,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 5,
+          "target": "inv_o",
+          "target_bit": 5,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 5,
+          "target": "inv_o",
+          "target_bit": 5,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 5,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 6,
+          "target": "swap_o",
+          "target_bit": 2,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 6,
+          "target": "swap_o",
+          "target_bit": 6,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 6,
+          "target": "inv_o",
+          "target_bit": 6,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 6,
+          "target": "inv_o",
+          "target_bit": 6,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 6,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        },
+        {
+          "source": "a",
+          "source_bit": 7,
+          "target": "swap_o",
+          "target_bit": 3,
+          "label": "positive",
+          "line": 6,
+          "note": "Nibble swap"
+        },
+        {
+          "source": "a",
+          "source_bit": 7,
+          "target": "swap_o",
+          "target_bit": 7,
+          "label": "negative",
+          "line": 6,
+          "note": "Not identity"
+        },
+        {
+          "source": "b",
+          "source_bit": 7,
+          "target": "inv_o",
+          "target_bit": 7,
+          "label": "positive",
+          "line": 7,
+          "note": "Identity positions, upper nibble inverted"
+        },
+        {
+          "source": "a",
+          "source_bit": 7,
+          "target": "inv_o",
+          "target_bit": 7,
+          "label": "negative",
+          "line": 7,
+          "note": "a absent"
+        },
+        {
+          "source": "a",
+          "source_bit": 7,
+          "target": "bit_o",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 13,
+          "note": "Dynamic selector; no fixed position"
+        }
+      ]
+    },
+    {
+      "name": "cv32e40p_alu",
+      "top": "cv32e40p_alu",
+      "source": "rtl/cv32e40p_alu.sv",
+      "git_blob": "aa900a787d985d9d62d55118914f2646e4ffc6e5",
+      "signal": [
+        {
+          "source": "operand_a_i",
+          "target": "operand_a_neg",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 59,
+          "note": "Bitwise inversion"
+        },
+        {
+          "source": "operand_b_i",
+          "target": "operand_a_neg",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 59,
+          "note": "b absent"
+        },
+        {
+          "source": "operand_b_i",
+          "target": "operand_b_neg",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 79,
+          "note": "Bitwise inversion"
+        },
+        {
+          "source": "operand_a_i",
+          "target": "operand_b_neg",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 79,
+          "note": "a absent"
+        },
+        {
+          "source": "operand_a_i",
+          "target": "operand_a_rev",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal"
+        },
+        {
+          "source": "operand_b_i",
+          "target": "operand_a_rev",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 65,
+          "note": "b absent"
+        },
+        {
+          "source": "operand_a_neg",
+          "target": "operand_a_neg_rev",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal"
+        },
+        {
+          "source": "operand_a_i",
+          "target": "operand_a_neg_rev",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 73,
+          "note": "Indirect only through operand_a_neg"
+        },
+        {
+          "source": "cmp_result",
+          "target": "comparison_result_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 427,
+          "note": "Static single-bit read"
+        },
+        {
+          "source": "operand_a_i",
+          "target": "comparison_result_o",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 427,
+          "note": "Indirect only"
+        },
+        {
+          "source": "adder_result",
+          "target": "adder_round_result",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 186,
+          "note": "Adder input"
+        },
+        {
+          "source": "adder_round_value",
+          "target": "adder_round_result",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 186,
+          "note": "Adder input"
+        },
+        {
+          "source": "operand_c_i",
+          "target": "adder_round_result",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 186,
+          "note": "c absent from RHS"
+        },
+        {
+          "source": "bmask_a_i",
+          "target": "extract_sign",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 819,
+          "note": "Dynamic selector"
+        },
+        {
+          "source": "shift_result",
+          "target": "extract_sign",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 819,
+          "note": "Selected base"
+        },
+        {
+          "source": "extract_is_signed",
+          "target": "extract_sign",
+          "kind": "data",
+          "sequential": false,
+          "label": "positive",
+          "line": 819,
+          "note": "Binary AND operand"
+        },
+        {
+          "source": "operand_a_i",
+          "target": "extract_sign",
+          "kind": "data",
+          "sequential": false,
+          "label": "negative",
+          "line": 819,
+          "note": "Indirect only"
+        }
+      ],
+      "bit": [
+        {
+          "source": "operand_a_i",
+          "source_bit": 0,
+          "target": "operand_a_rev",
+          "target_bit": 31,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 0,
+          "target": "operand_a_rev",
+          "target_bit": 0,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 0,
+          "target": "operand_a_neg_rev",
+          "target_bit": 31,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 0,
+          "target": "operand_a_neg_rev",
+          "target_bit": 0,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 1,
+          "target": "operand_a_rev",
+          "target_bit": 30,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 1,
+          "target": "operand_a_rev",
+          "target_bit": 1,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 1,
+          "target": "operand_a_neg_rev",
+          "target_bit": 30,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 1,
+          "target": "operand_a_neg_rev",
+          "target_bit": 1,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 2,
+          "target": "operand_a_rev",
+          "target_bit": 29,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 2,
+          "target": "operand_a_rev",
+          "target_bit": 2,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 2,
+          "target": "operand_a_neg_rev",
+          "target_bit": 29,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 2,
+          "target": "operand_a_neg_rev",
+          "target_bit": 2,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 3,
+          "target": "operand_a_rev",
+          "target_bit": 28,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 3,
+          "target": "operand_a_rev",
+          "target_bit": 3,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 3,
+          "target": "operand_a_neg_rev",
+          "target_bit": 28,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 3,
+          "target": "operand_a_neg_rev",
+          "target_bit": 3,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 4,
+          "target": "operand_a_rev",
+          "target_bit": 27,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 4,
+          "target": "operand_a_rev",
+          "target_bit": 4,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 4,
+          "target": "operand_a_neg_rev",
+          "target_bit": 27,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 4,
+          "target": "operand_a_neg_rev",
+          "target_bit": 4,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 5,
+          "target": "operand_a_rev",
+          "target_bit": 26,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 5,
+          "target": "operand_a_rev",
+          "target_bit": 5,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 5,
+          "target": "operand_a_neg_rev",
+          "target_bit": 26,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 5,
+          "target": "operand_a_neg_rev",
+          "target_bit": 5,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 6,
+          "target": "operand_a_rev",
+          "target_bit": 25,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 6,
+          "target": "operand_a_rev",
+          "target_bit": 6,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 6,
+          "target": "operand_a_neg_rev",
+          "target_bit": 25,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 6,
+          "target": "operand_a_neg_rev",
+          "target_bit": 6,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 7,
+          "target": "operand_a_rev",
+          "target_bit": 24,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 7,
+          "target": "operand_a_rev",
+          "target_bit": 7,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 7,
+          "target": "operand_a_neg_rev",
+          "target_bit": 24,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 7,
+          "target": "operand_a_neg_rev",
+          "target_bit": 7,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 8,
+          "target": "operand_a_rev",
+          "target_bit": 23,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 8,
+          "target": "operand_a_rev",
+          "target_bit": 8,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 8,
+          "target": "operand_a_neg_rev",
+          "target_bit": 23,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 8,
+          "target": "operand_a_neg_rev",
+          "target_bit": 8,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 9,
+          "target": "operand_a_rev",
+          "target_bit": 22,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 9,
+          "target": "operand_a_rev",
+          "target_bit": 9,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 9,
+          "target": "operand_a_neg_rev",
+          "target_bit": 22,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 9,
+          "target": "operand_a_neg_rev",
+          "target_bit": 9,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 10,
+          "target": "operand_a_rev",
+          "target_bit": 21,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 10,
+          "target": "operand_a_rev",
+          "target_bit": 10,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 10,
+          "target": "operand_a_neg_rev",
+          "target_bit": 21,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 10,
+          "target": "operand_a_neg_rev",
+          "target_bit": 10,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 11,
+          "target": "operand_a_rev",
+          "target_bit": 20,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 11,
+          "target": "operand_a_rev",
+          "target_bit": 11,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 11,
+          "target": "operand_a_neg_rev",
+          "target_bit": 20,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 11,
+          "target": "operand_a_neg_rev",
+          "target_bit": 11,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 12,
+          "target": "operand_a_rev",
+          "target_bit": 19,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 12,
+          "target": "operand_a_rev",
+          "target_bit": 12,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 12,
+          "target": "operand_a_neg_rev",
+          "target_bit": 19,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 12,
+          "target": "operand_a_neg_rev",
+          "target_bit": 12,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 13,
+          "target": "operand_a_rev",
+          "target_bit": 18,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 13,
+          "target": "operand_a_rev",
+          "target_bit": 13,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 13,
+          "target": "operand_a_neg_rev",
+          "target_bit": 18,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 13,
+          "target": "operand_a_neg_rev",
+          "target_bit": 13,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 14,
+          "target": "operand_a_rev",
+          "target_bit": 17,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 14,
+          "target": "operand_a_rev",
+          "target_bit": 14,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 14,
+          "target": "operand_a_neg_rev",
+          "target_bit": 17,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 14,
+          "target": "operand_a_neg_rev",
+          "target_bit": 14,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 15,
+          "target": "operand_a_rev",
+          "target_bit": 16,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 15,
+          "target": "operand_a_rev",
+          "target_bit": 15,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 15,
+          "target": "operand_a_neg_rev",
+          "target_bit": 16,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 15,
+          "target": "operand_a_neg_rev",
+          "target_bit": 15,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 16,
+          "target": "operand_a_rev",
+          "target_bit": 15,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 16,
+          "target": "operand_a_rev",
+          "target_bit": 16,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 16,
+          "target": "operand_a_neg_rev",
+          "target_bit": 15,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 16,
+          "target": "operand_a_neg_rev",
+          "target_bit": 16,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 17,
+          "target": "operand_a_rev",
+          "target_bit": 14,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 17,
+          "target": "operand_a_rev",
+          "target_bit": 17,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 17,
+          "target": "operand_a_neg_rev",
+          "target_bit": 14,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 17,
+          "target": "operand_a_neg_rev",
+          "target_bit": 17,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 18,
+          "target": "operand_a_rev",
+          "target_bit": 13,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 18,
+          "target": "operand_a_rev",
+          "target_bit": 18,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 18,
+          "target": "operand_a_neg_rev",
+          "target_bit": 13,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 18,
+          "target": "operand_a_neg_rev",
+          "target_bit": 18,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 19,
+          "target": "operand_a_rev",
+          "target_bit": 12,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 19,
+          "target": "operand_a_rev",
+          "target_bit": 19,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 19,
+          "target": "operand_a_neg_rev",
+          "target_bit": 12,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 19,
+          "target": "operand_a_neg_rev",
+          "target_bit": 19,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 20,
+          "target": "operand_a_rev",
+          "target_bit": 11,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 20,
+          "target": "operand_a_rev",
+          "target_bit": 20,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 20,
+          "target": "operand_a_neg_rev",
+          "target_bit": 11,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 20,
+          "target": "operand_a_neg_rev",
+          "target_bit": 20,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 21,
+          "target": "operand_a_rev",
+          "target_bit": 10,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 21,
+          "target": "operand_a_rev",
+          "target_bit": 21,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 21,
+          "target": "operand_a_neg_rev",
+          "target_bit": 10,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 21,
+          "target": "operand_a_neg_rev",
+          "target_bit": 21,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 22,
+          "target": "operand_a_rev",
+          "target_bit": 9,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 22,
+          "target": "operand_a_rev",
+          "target_bit": 22,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 22,
+          "target": "operand_a_neg_rev",
+          "target_bit": 9,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 22,
+          "target": "operand_a_neg_rev",
+          "target_bit": 22,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 23,
+          "target": "operand_a_rev",
+          "target_bit": 8,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 23,
+          "target": "operand_a_rev",
+          "target_bit": 23,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 23,
+          "target": "operand_a_neg_rev",
+          "target_bit": 8,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 23,
+          "target": "operand_a_neg_rev",
+          "target_bit": 23,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 24,
+          "target": "operand_a_rev",
+          "target_bit": 7,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 24,
+          "target": "operand_a_rev",
+          "target_bit": 24,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 24,
+          "target": "operand_a_neg_rev",
+          "target_bit": 7,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 24,
+          "target": "operand_a_neg_rev",
+          "target_bit": 24,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 25,
+          "target": "operand_a_rev",
+          "target_bit": 6,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 25,
+          "target": "operand_a_rev",
+          "target_bit": 25,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 25,
+          "target": "operand_a_neg_rev",
+          "target_bit": 6,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 25,
+          "target": "operand_a_neg_rev",
+          "target_bit": 25,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 26,
+          "target": "operand_a_rev",
+          "target_bit": 5,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 26,
+          "target": "operand_a_rev",
+          "target_bit": 26,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 26,
+          "target": "operand_a_neg_rev",
+          "target_bit": 5,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 26,
+          "target": "operand_a_neg_rev",
+          "target_bit": 26,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 27,
+          "target": "operand_a_rev",
+          "target_bit": 4,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 27,
+          "target": "operand_a_rev",
+          "target_bit": 27,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 27,
+          "target": "operand_a_neg_rev",
+          "target_bit": 4,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 27,
+          "target": "operand_a_neg_rev",
+          "target_bit": 27,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 28,
+          "target": "operand_a_rev",
+          "target_bit": 3,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 28,
+          "target": "operand_a_rev",
+          "target_bit": 28,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 28,
+          "target": "operand_a_neg_rev",
+          "target_bit": 3,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 28,
+          "target": "operand_a_neg_rev",
+          "target_bit": 28,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 29,
+          "target": "operand_a_rev",
+          "target_bit": 2,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 29,
+          "target": "operand_a_rev",
+          "target_bit": 29,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 29,
+          "target": "operand_a_neg_rev",
+          "target_bit": 2,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 29,
+          "target": "operand_a_neg_rev",
+          "target_bit": 29,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 30,
+          "target": "operand_a_rev",
+          "target_bit": 1,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 30,
+          "target": "operand_a_rev",
+          "target_bit": 30,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 30,
+          "target": "operand_a_neg_rev",
+          "target_bit": 1,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 30,
+          "target": "operand_a_neg_rev",
+          "target_bit": 30,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 31,
+          "target": "operand_a_rev",
+          "target_bit": 0,
+          "label": "positive",
+          "line": 65,
+          "note": "Generated reversal 31-k"
+        },
+        {
+          "source": "operand_a_i",
+          "source_bit": 31,
+          "target": "operand_a_rev",
+          "target_bit": 31,
+          "label": "negative",
+          "line": 65,
+          "note": "Not identity"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 31,
+          "target": "operand_a_neg_rev",
+          "target_bit": 0,
+          "label": "positive",
+          "line": 73,
+          "note": "Generated reversal 31-m"
+        },
+        {
+          "source": "operand_a_neg",
+          "source_bit": 31,
+          "target": "operand_a_neg_rev",
+          "target_bit": 31,
+          "label": "negative",
+          "line": 73,
+          "note": "Not identity"
+        },
+        {
+          "source": "cmp_result",
+          "source_bit": 3,
+          "target": "comparison_result_o",
+          "target_bit": 0,
+          "label": "positive",
+          "line": 427,
+          "note": "Direct selected bit"
+        },
+        {
+          "source": "cmp_result",
+          "source_bit": 2,
+          "target": "comparison_result_o",
+          "target_bit": 0,
+          "label": "negative",
+          "line": 427,
+          "note": "Wrong index"
+        },
+        {
+          "source": "shift_result",
+          "source_bit": 0,
+          "target": "extract_sign",
+          "target_bit": 0,
+          "label": "unknown",
+          "line": 819,
+          "note": "Dynamic selection and AND; no fixed positional map"
+        }
+      ]
+    }
+  ]
+}
