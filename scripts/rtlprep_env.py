@@ -388,12 +388,20 @@ def main(argv: list[str] | None = None) -> int:
     choices.add_argument("--update", action="store_true", help="sync to project pins and upgrade .venv extras")
     choices.add_argument("--check-updates", action="store_true", help="compare latest releases, no changes")
     choices.add_argument("--verify-lock", action="store_true", help="verify lockfile and Python pins, no changes")
+    choices.add_argument("--install-rtl-fixtures", action="store_true", help="install pinned external RTL checkouts; never modify existing ones")
+    choices.add_argument("--check-rtl-fixtures", action="store_true", help="verify pinned external RTL checkouts offline")
     parser.add_argument("--with-system", action="store_true",
                         help="with --install/--update: authorize sudo apt for missing base packages")
     args = parser.parse_args(argv)
     if args.with_system and not (args.install or args.update):
         parser.error("--with-system requires --install or --update")
     try:
+        if args.install_rtl_fixtures or args.check_rtl_fixtures:
+            if __package__:
+                from .rtl_fixtures import run
+            else:
+                from rtl_fixtures import run
+            return run(ROOT, install=args.install_rtl_fixtures)
         lock = load_lock()
         verify_lock_matches_project(lock)
         if args.verify_lock:
@@ -421,7 +429,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         ok = check(lock)
         return 0 if ok else 1
-    except (BootstrapError, OSError, subprocess.CalledProcessError, ValueError) as exc:
+    except (BootstrapError, OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as exc:
         print(f"Dependency setup: {exc}", file=sys.stderr)
         return 2
 

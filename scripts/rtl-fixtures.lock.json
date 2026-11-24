@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "repositories": [
+    {
+      "repository": "alexforencich/verilog-axis",
+      "destination": "upstream_unknown/verilog-axis",
+      "commit": "48ff7a7e2ef782cf778d47910cf85835c64b1bce",
+      "blobs": {
+        "rtl/axis_register.v": "93fe0bee6ff1f50d1e2236f5babc283bada2f1a2",
+        "rtl/priority_encoder.v": "cf82512ba84c43cfddc7728782493241b563b8f3"
+      }
+    },
+    {
+      "repository": "ZipCPU/wbuart32",
+      "destination": "upstream_unknown/wbuart32",
+      "commit": "f43a6b83c3a70fb2ac0696a45c5545b233fb860b",
+      "blobs": {
+        "rtl/rxuart.v": "1506e563944a2da1c1b01be6c1a953ad92fdff7d"
+      }
+    },
+    {
+      "repository": "openhwfoundation/cv32e40p",
+      "destination": "upstream_cv32e40p",
+      "commit": "b353438ff469c030c89f6804f3b24a2852880e8b",
+      "blobs": {
+        "rtl/include/cv32e40p_pkg.sv": "319e790b62623d5daa0388cc92af1ce83aed61fc",
+        "rtl/cv32e40p_popcnt.sv": "c7fe53e810c411a4cef0ab6ae8591b9e54e652f9",
+        "rtl/cv32e40p_ff_one.sv": "57461c6114763836df894bd5da4c785d727d5afc",
+        "rtl/cv32e40p_alu_div.sv": "a7449e01cf1c566838d6e3478c83f34cf66fe892",
+        "rtl/cv32e40p_alu.sv": "aa900a787d985d9d62d55118914f2646e4ffc6e5",
+        "rtl/cv32e40p_compressed_decoder.sv": "4621c754d315e2cf3d5929b9d211bd382c5b32ae"
+      }
+    },
+    {
+      "repository": "openhwfoundation/cva6",
+      "destination": "upstream_cva6",
+      "commit": "742dc82a0c706e0a3bfb98b709fd3ee06d50d12a",
+      "blobs": {
+        "core/include/config_pkg.sv": "a68b2c14ea758bc820a35cc3ac27035359763d0a",
+        "core/include/cv32a6_imac_sv32_config_pkg.sv": "d0824c0b8202b1f2b048864f502ba2c7b2375e8f",
+        "core/include/riscv_pkg.sv": "146bcc2c307ec236c3c0ca3854ca69ce6fdcecb9",
+        "core/include/build_config_pkg.sv": "429080949a6626f4f42cdb1c717383bb3b7f3843",
+        "core/compressed_decoder.sv": "76385e5ea0b9eb0cc2d0e96fe978a90d4e122c19",
+        "core/frontend/ras.sv": "422a829fa4c1d4d4fa3b1c78cf38337003887de1"
+      }
+    }
+  ]
+}
