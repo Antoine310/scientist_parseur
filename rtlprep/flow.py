@@ -206,9 +206,16 @@ def build_register_flow(ast: dict[str, Any], *, expected_top: str,
                     raise _Unknown("nested_or_ambiguous_timing")
                 event_seen[0] = True
                 timing = node.get("timing")
-                if not isinstance(timing, dict) or timing.get("kind") != "EventList":
+                if not isinstance(timing, dict):
                     raise _Unknown("unsupported_timing")
-                raw = timing.get("events")
+                # slang v12.1 serializes a single edge directly as SignalEvent.
+                # Match the event handling already used by dependencies.py.
+                if timing.get("kind") == "SignalEvent":
+                    raw = [timing]
+                elif timing.get("kind") == "EventList":
+                    raw = timing.get("events")
+                else:
+                    raise _Unknown("unsupported_timing")
                 if not isinstance(raw, list) or not 1 <= len(raw) <= 16:
                     raise _Unknown("invalid_event_list")
                 for event in raw:
