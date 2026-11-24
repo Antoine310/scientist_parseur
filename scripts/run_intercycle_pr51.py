@@ -21,7 +21,13 @@ def execute(out):
     graph=json.loads((out/"rtl_dependencies.json").read_text())
     data=graph["intercycle_dependencies"]
     rows={r["target"]:r for r in data["items"]}
-    assert len(rows)==4 and all(r["coverage"]=="syntactic_event_candidates_supported" for r in rows.values())
+    if len(rows)!=4 or any(r["coverage"]!="syntactic_event_candidates_supported" for r in rows.values()):
+        diagnostic = {"intercycle": data, "register_flow": graph["register_flow"]}
+        (out/"intercycle.diagnostic.json").write_text(json.dumps(diagnostic,indent=2))
+        raise RuntimeError("Incomplete fixture candidates: " + json.dumps([
+            {"target":r["target"],"coverage":r["coverage"],"reason":r.get("reason"),"events":r.get("events")}
+            for r in graph["register_flow"]["items"]
+        ]))
     for target,source in (("q1","data_i"),("q2","q1"),("q3","q2"),("cross_q","q3")):
         assert any(p["data_sources"]==[TOP+"."+source] for p in rows[TOP+"."+target]["paths"])
     assert any(p["relation"]=="local_hold_candidate" and p["control_sources"]==[TOP+".en"]
