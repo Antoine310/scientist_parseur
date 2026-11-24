@@ -139,12 +139,18 @@ def trace_event_candidates(report, target, *, max_steps=4, max_paths=128):
             continue
         edges=[]
         for path in row["paths"]:
+            if len(output)+len(pending)+len(edges)>=max_paths:
+                truncated=True
+                break
             if not path["data_sources"]:
                 output.append({"chain":chain,"boundary":signal,"reason":"constant_rhs_candidate",
                                "path_index":path["path_index"],"guards":path["guards"]})
             for src in path["data_sources"]:
                 step={"source":src,"target":signal,"event":row["events"][0],
                       "path_index":path["path_index"],"guards":path["guards"],"relation":path["relation"]}
+                if len(output)+len(pending)+len(edges)>=max_paths:
+                    truncated=True
+                    break
                 edges.append((src,chain+[step],row["events"][0]))
         if len(pending)+len(edges)+len(output)>max_paths:
             truncated=True
