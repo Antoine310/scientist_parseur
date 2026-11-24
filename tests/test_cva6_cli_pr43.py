@@ -112,10 +112,13 @@ def test_xml_only_accepts_real_bit24_mutant_failure(tmp_path):
     header = "<testsuites><testsuite><testcase name='decode'>"
     footer = "</testcase></testsuite></testsuites>"
     xml.write_text(header + "<failure message='PR43_CLI_VALUE_MISMATCH "
-                   "bit24_diff=1'/>" + footer, encoding="utf-8")
+                   "class=valid_cli bit24_diff=1'/>" + footer, encoding="utf-8")
     assert probe._oracle_failure_evidence(xml)
-    for error in ("compiler error", "PR43_CLI_VALUE_MISMATCH bit24_diff=0",
-                  "PR42_CJ_VALUE_MISMATCH bit24_diff=1"):
+    for error in ("compiler error",
+                  "PR43_CLI_VALUE_MISMATCH class=valid_cli bit24_diff=0",
+                  "PR43_CLI_VALUE_MISMATCH class=hint_rd_zero bit24_diff=1",
+                  "PR43_CLI_VALUE_MISMATCH bit24_diff=1",
+                  "PR42_CJ_VALUE_MISMATCH class=valid_cli bit24_diff=1"):
         xml.write_text(header + f"<failure message='{error}'/>" + footer,
                        encoding="utf-8")
         assert not probe._oracle_failure_evidence(xml)
