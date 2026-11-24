@@ -4,7 +4,7 @@ module ras_formal_properties(input wire clk_i, rst_ni, flush_bp_i, push_i, pop_i
   wire [65:0] state_o;
   wire [32:0] top_o;
   ras_formal_probe dut(.clk_i(clk_i), .rst_ni(rst_ni), .flush_bp_i(flush_bp_i),
-    .push_i(push_i), .pop_i(pop_i), .data_i(data_i), .state_o(state_o), .top_o(top_o);
+    .push_i(push_i), .pop_i(pop_i), .data_i(data_i), .state_o(state_o), .top_o(top_o));
   reg [32:0] upper, lower;
   reg initialized = 1'b0;
   initial assume(!rst_ni);
