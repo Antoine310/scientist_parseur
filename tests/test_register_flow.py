@@ -242,3 +242,34 @@ def test_flows_do_not_exist_for_continuous_assignments():
     })
     data = build_register_flow(ast, expected_top="unit")
     assert data["items"] == []
+
+
+@pytest.mark.parametrize("edge", ["PosEdge", "NegEdge"])
+def test_direct_single_signal_event_from_slang(edge):
+    ast = _ast(_if(_ref("enable"), _assign(_ref("count"), 10)))
+    block = ast["design"]["members"][0]["body"]["members"][-1]
+    block["body"]["timing"] = {
+        "kind": "SignalEvent", "edge": edge, "expr": _ref("clk"),
+    }
+    graph = build_dependency_graph(ast, expected_top="unit")
+    flow = graph["register_flow"]["items"][0]
+    assert flow["coverage"] == "syntactic_paths_supported"
+    assert flow["events"] == [{"edge": edge, "signal": "unit.clk"}]
+    row = graph["intercycle_dependencies"]["items"][0]
+    assert row["coverage"] == "syntactic_event_candidates_supported"
+    assert row["event_scope"] == "single_edge_event"
+    assert {p["relation"] for p in row["paths"]} == {
+        "last_nba_rhs_references", "local_hold_candidate",
+    }
+
+
+def test_direct_generic_signal_event_stays_partial():
+    ast = _ast(_assign(_lit("0"), 10))
+    block = ast["design"]["members"][0]["body"]["members"][-1]
+    block["body"]["timing"] = {
+        "kind": "SignalEvent", "edge": "None", "expr": _ref("clk"),
+    }
+    row = _rows(ast)[0]
+    assert row["coverage"] == "partial"
+    assert row["reason"] == "unsupported_event_expression"
+    assert row["paths"] == []
