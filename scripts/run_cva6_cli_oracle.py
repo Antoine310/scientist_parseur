@@ -143,7 +143,8 @@ def run(source_root: Path, output: Path, variant: str) -> tuple[int, dict]:
         code = 0
     elif (variant == "mutant" and report["tests"] == 3 and
           report["failed"] >= 1 and report["skipped"] == 0 and
-          report.get("mutation_failure_evidence") is True):
+          report.get("mutation_failure_evidence") is True and
+          "simulator_exception" not in report and "xml_error" not in report):
         report["status"] = "expected_mutation_failure"
         code = 2
     else:
