@@ -89,6 +89,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             value.strip() in ("logic", "bit", "reg") for value in types
         )
 
+    direct_scalar_inputs: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     seen_edges: set[tuple[str, str, str, bool, str]] = set()
     warnings: list[dict[str, Any]] = []
@@ -707,6 +708,13 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             direction = port.get("direction")
             if direction == "In":
                 data, control = reads(parent, expr)
+                # Only direct elaborated scalar input connections are candidates
+                # for event identity. General port edges are not aliases.
+                if isinstance(expr, dict) and expr.get("kind") == "NamedValue":
+                    direct = resolve(parent, expr)
+                    if direct in node_set and local in node_set and single_bit(direct) and single_bit(local) and data == {direct} and not control:
+                        direct_scalar_inputs.append({"source": direct, "target": local,
+                                                     "location": _location(expr)})
                 for source in sorted(data | control):
                     add(source, local, "port_input", expr if isinstance(expr, dict) else port)
             elif direction == "Out":
@@ -806,6 +814,10 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     graph["coverage"] = build_coverage_summary(graph)
     graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     graph["intercycle_dependencies"] = build_intercycle_dependencies(graph["sequential_candidates"])
+    graph["hierarchical_event_bindings"] = {
+        "schema_version": 1, "scope": "direct_scalar_input_port_candidates",
+        "items": sorted(direct_scalar_inputs, key=lambda x: (x["target"], x["source"])),
+    }
     return graph
 
 
