@@ -17,6 +17,7 @@ from .bitaccess import build_bit_access_index, _constant as _static_integer
 from .coverage import build_coverage_summary
 from .sequential import build_sequential_candidates
 from .intercycle import build_intercycle_dependencies
+from .complex_constructs import build_complex_construct_index
 from .symbols import SignalResolver, member_name
 
 GRAPH_SCHEMA_VERSION = 1
@@ -811,6 +812,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             "Pas de preuve fonctionnelle, timing ou CDC",
         ],
     }
+    graph["complex_constructs"] = build_complex_construct_index(ast, index=structural)
     graph["coverage"] = build_coverage_summary(graph)
     graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     graph["intercycle_dependencies"] = build_intercycle_dependencies(graph["sequential_candidates"])
