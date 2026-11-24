@@ -418,6 +418,29 @@ des assertions `c.j`.
 [Sources épinglées, vérification indépendante, mutations et
 reproduction PR #42](docs/cva6-real-cj-behavioral-pr42.md).
 
+## Décompression C.LI réelle : immédiat variable et HINTs (PR #43)
+
+L'oracle `c.j` de la PR #42 concernait un bit d'entrée fixé par
+l'opcode. La PR #43 valide, avec la **même version épinglée du vrai
+décodeur CVA6**, l'instruction **`c.li` → `addi rd, x0, imm`**,
+dont le registre, le signe et l'immédiat sont **variables**.
+
+Le modèle Python indépendant de slang et de `bitaccess.py`
+vérifie **2 336 stimuli** avec **Verilator 5.040 + cocotb 2.0.1**,
+dont **2 048 encodages** de cette famille dans le demi-mot bas
+(1 984 instructions `c.li` valides et 64 encodages
+`rd=x0` traités comme **HINTs**, testés uniquement comme
+comportement de l'implémentation CVA6). Un mutant isolé inverse
+le bit variable `instr_i[6]` ; le test doit signaler une divergence
+du **bit 24** de l'instruction décompressée. Aucune copie du RTL
+OpenHW n'est ajoutée au dépôt.
+
+Les rapports restent bornés à la branche testée, à un commit et
+une configuration. La couverture globale et la correction
+fonctionnelle de tout CVA6 restent **non mesurées**.
+
+[Protocole, domaine ISA/HINT, mutation et reproduction PR #43](docs/cva6-real-cli-behavioral-pr43.md).
+
 ## Reconnaissance sémantique des constantes et vraie ALU CV32E40P
 
 Les paramètres et les valeurs d'énumération des packages SystemVerilog sont
