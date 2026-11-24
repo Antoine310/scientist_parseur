@@ -1,0 +1,53 @@
+name: Pinned external RTL fixture installer
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rtl-fixtures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python tests
+        run: python -m pip install -e '.[dev]'
+      - name: Test non-destructive Git fixture operations
+        run: python -m pytest -q tests/test_rtl_fixtures.py
+      - name: Install pinned slang v12.1
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --silent --retry 3 https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+
+      - name: Install all reviewed checkouts and verify twice
+        run: |
+          python scripts/rtlprep_env.py --install-rtl-fixtures
+          python scripts/rtlprep_env.py --check-rtl-fixtures
+          python scripts/rtlprep_env.py --install-rtl-fixtures
+      - name: Require every previously skipped real RTL test to execute
+        run: |
+          python -m pytest -q -rs --junitxml=reports/rtl-fixtures-tests.xml tests/test_concat_lvalue.py tests/test_generate_scope_real.py tests/test_static_initial_dependencies.py tests/test_structured_coverage_pr34.py
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          tests=ET.parse("reports/rtl-fixtures-tests.xml").findall(".//testcase")
+          assert tests and not any(t.find("skipped") is not None for t in tests)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rtl-fixture-integration
+          path: reports/rtl-fixtures-tests.xml
