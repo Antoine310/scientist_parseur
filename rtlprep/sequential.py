@@ -154,6 +154,14 @@ def build_sequential_candidates(flow: dict[str, Any]) -> dict[str, Any]:
                    for w in writes):
                 failed = "malformed_write"
                 break
+            orders = [w["order"] for w in writes]
+            # Do not silently select a winner from inconsistent metadata.
+            # Orders are local to one syntactic path, not global time.
+            if any(order <= 0 for order in orders) or any(
+                a >= b for a, b in zip(orders, orders[1:])
+            ):
+                failed = "non_monotonic_write_order"
+                break
             if not writes:
                 candidate: dict[str, Any] = {"kind": "unwritten_in_this_process"}
                 match = None
