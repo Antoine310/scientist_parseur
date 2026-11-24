@@ -29,6 +29,8 @@ def literal_index(node):
     if not isinstance(node,dict) or node.get("kind")!="IntegerLiteral":
         return None
     value=node.get("value")
+    if isinstance(value,str) and len(value)>64:
+        return None
     if isinstance(value,str) and re.search(r"'[sS]",value):
         # Signed bit patterns can be negative. Accept only decimal syntax.
         if not re.fullmatch(r"\d+'[sS][dD][0-9_]+",value):
@@ -41,6 +43,8 @@ def literal_index(node):
 
 def reference_summary(node, resolve):
     """References in expression syntax only; unresolved locals stay unknown."""
+    if not isinstance(node,(dict,list)):
+        return {"signal_references":[],"unresolved_references":1,"complete":False,"truncated":False}
     pending=[(node,0)]
     found=set()
     unknown=0
@@ -81,7 +85,7 @@ def call_record(node,resolve):
         if re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*",candidate):
             name=candidate
     args=node.get("arguments",[])
-    if not isinstance(args,list) or len(args)>MAX_ARGS:
+    if name is None or "args" in node or not isinstance(args,list) or len(args)>MAX_ARGS:
         return {"kind":"call","callee":name,"coverage":"partial","reason":"malformed_or_bounded_arguments","arguments":[]}
     return {"kind":"call","callee":name,"coverage":"partial",
             "reason":"callee_semantics_not_resolved",
@@ -192,6 +196,9 @@ def build_complex_construct_index(ast,*,index):
             items.append({"instance":owner,"context":context,"source":location(obj),**row})
         for key,child in reversed(list(obj.items())):
             if key not in METADATA and isinstance(child,(dict,list)):
+                if len(pending)+visited>=MAX_NODES:
+                    truncated=True
+                    break
                 pending.append((child,owner,depth+1,context))
     counts=Counter(r["kind"] for r in items)
     return {"schema_version":1,"scope":"procedural_and_continuous_ast_constructs",
