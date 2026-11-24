@@ -355,6 +355,63 @@ def _target_name(node: Any, known: set[str], path: str,
     return None
 
 
+def _graph_literal_position(node: Any) -> bool:
+    """Strict nonnegative direct literal; no conversion/overflow guessing."""
+    if not isinstance(node, dict) or node.get("kind") != "IntegerLiteral":
+        return False
+    raw = node.get("value")
+    value = _number(raw)
+    if value is None:
+        return False
+    if type(raw) is int or (isinstance(raw, str) and raw.isdecimal()):
+        return True
+    if not isinstance(raw, str):
+        return False
+    match = re.fullmatch(r"(\d+)'([sS]?)[bBoOdDhH][0-9a-fA-F_]+", raw)
+    if not match:
+        return False
+    width = int(match.group(1))
+    return 1 <= width <= MAX_WIDTH and value < (1 << (width - bool(match.group(2))))
+
+
+def _bit_graph_positions_valid(node: Any, depth: int = 0,
+                               budget: list[int] | None = None) -> bool:
+    """Stricter gate for bit graph than the legacy position metadata.
+
+    In particular an indexed part select's right operand is a width,
+    not an endpoint. Reject nested/dynamic selections and nonliteral
+    positions rather than applying legacy approximations.
+    """
+    if budget is None:
+        budget = [MAX_NODES]
+    budget[0] -= 1
+    if budget[0] < 0 or depth > MAX_DEPTH or not isinstance(node, dict):
+        return False
+    kind = node.get("kind")
+    if kind in ("NamedValue", "IntegerLiteral"):
+        return True
+    if kind in ("ElementSelect", "RangeSelect"):
+        base = node.get("value")
+        if not isinstance(base, dict) or base.get("kind") != "NamedValue":
+            return False
+        if kind == "ElementSelect":
+            return _graph_literal_position(node.get("selector"))
+        return (node.get("selectionKind") == "Simple"
+                and _graph_literal_position(node.get("left"))
+                and _graph_literal_position(node.get("right")))
+    if kind == "Concatenation":
+        parts = node.get("operands")
+        return (isinstance(parts, list) and 1 <= len(parts) <= MAX_SEGMENTS
+                and all(_bit_graph_positions_valid(p, depth + 1, budget) for p in parts))
+    if kind == "Replication":
+        return (_graph_literal_position(node.get("count"))
+                and _bit_graph_positions_valid(node.get("concat"), depth + 1, budget))
+    if kind in ("Conversion", "SignedConversion") or (
+            kind == "UnaryOp" and node.get("op") == "BitwiseNot"):
+        return _bit_graph_positions_valid(node.get("operand"), depth + 1, budget)
+    return False
+
+
 def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
@@ -403,6 +460,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "target": target, "source": _location(node),
             "coverage": "partial", "target_selection": None,
             "rhs_width": None, "source_segments": [],
+            "bit_graph_eligible": (_bit_graph_positions_valid(lhs)
+                                   and _bit_graph_positions_valid(rhs)),
         }
         if procedure_kind is not None:
             nonblocking = node.get("isNonBlocking")
