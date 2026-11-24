@@ -231,7 +231,16 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
                 "left": expression(path, node.get("left"), state, depth + 1),
                 "right": expression(path, node.get("right"), state, depth + 1),
             }
-        # Calls, casts with unrecognized semantics and future AST nodes are
+        if kind == "Call":
+            # The arguments are syntax, not a summary of the return value.
+            state["partial"] = True
+            args = node.get("arguments", [])
+            if not isinstance(args, list) or len(args) > 32:
+                return {"kind": "unsupported", "ast_kind": "malformed_or_large_call"}
+            return {"kind": "call", "arguments": [
+                expression(path, arg, state, depth + 1) for arg in args
+            ], "callee_semantics": "not_resolved"}
+        # Casts with unrecognized semantics and future AST nodes are
         # deliberately left partial; unsupported never masquerades as a value.
         state["partial"] = True
         return {"kind": "unsupported", "ast_kind": _atom(kind)}
