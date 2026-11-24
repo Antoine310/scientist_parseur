@@ -123,10 +123,13 @@ Le **bit6 d'entrée** varie entre 0 et 1 sur le balayage exhaustif.
 Il est normalement utilisé comme le **bit24 de l'instruction ADDI**
 (`imm[4]`), et le mutant inverse précisément cette correspondance.
 
-Si la mutation est effectivement détectée, le test échoué doit
-indiquer `PR43_CLI_VALUE_MISMATCH` et **`bit24_diff=1`**
-dans le XML xUnit cocotb. Une erreur de compilation, un faux
-échec générique ou un XML absent **ne valide pas le mutant**.
+Si la mutation est effectivement détectée, **au moins une
+assertion sur une instruction C.LI ordinaire (`class=valid_cli`,
+`rd != x0`)** doit indiquer `PR43_CLI_VALUE_MISMATCH` et
+**`bit24_diff=1`** dans le XML xUnit cocotb.
+Un échec limité aux HINTs (`class=hint_rd_zero`), une erreur de
+compilation, un faux échec générique ou un XML absent **ne valide
+pas le mutant**.
 Le workflow contrôle aussi l'absence d'exception du simulateur
 et la différence des empreintes.
 
@@ -167,7 +170,7 @@ python -m pytest -q -rs tests/test_cva6_cli_pr43.py
 Pour simuler le **vrai** CVA6 localement, installer
 `cocotb==2.0.1` et Verilator >= 5.036, et disposer du checkout
 Git `upstream_cva6` sur le commit **exact** et les cinq blobs
-épignlés. Le test n'exécute aucun RTL tiers non vérifié.
+épinglés. Le test n'exécute aucun RTL tiers non vérifié.
 
 ```bash
 python -m scripts.run_cva6_cli_oracle \
