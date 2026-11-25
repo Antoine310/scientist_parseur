@@ -226,7 +226,8 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
               resolver: SignalResolver | None = None,
               constant_ids: frozenset[tuple[str, str]] = frozenset(),
               width_events: list[dict[str, Any]] | None = None,
-              allow_literals: bool = False
+              allow_literals: bool = False,
+              trial_bounds: dict | None = None
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
@@ -234,6 +235,8 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
     if kind in ("RangeSelect", "ElementSelect"):
         source, selected, width = _selection(node, known, path, resolver)
         assert width is not None
+        if trial_bounds is not None:
+            source_positions(selected,trial_bounds.get(source),width)
         return [(source, selected, width)]
     if kind == "Concatenation":
         operands = node.get("operands")
@@ -241,7 +244,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             raise _Partial("malformed_or_large_concatenation")
         output: list[tuple[str | None, dict[str, Any], int]] = []
         for operand in operands:
-            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids, width_events, allow_literals))
+            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids, width_events, allow_literals, trial_bounds))
             if len(output) > MAX_SEGMENTS:
                 raise _Partial("too_many_segments")
         return output
@@ -274,6 +277,8 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             return [(None, {"kind": "constant_reference", "width": width}, width)]
         source = _base(node, known, path, resolver)
         # This is deliberately opaque: no source sub-lane offsets inferred.
+        if trial_bounds is not None:
+            source_positions({"kind":"whole"},trial_bounds.get(source),width)
         return [(source, {"kind": "whole"}, width)]
     if kind == "Replication":
         count_node, concat = node.get("count"), node.get("concat")
@@ -286,7 +291,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if count is None or count < 1 or count > MAX_SEGMENTS:
             raise _Partial("replication_count_out_of_bounds")
         unit = _segments(concat, known, path, depth + 1,
-                         resolver, constant_ids, width_events, allow_literals)
+                         resolver, constant_ids, width_events, allow_literals, trial_bounds)
         if not unit or len(unit) * count > MAX_SEGMENTS:
             raise _Partial("replication_segments_exceed_limit")
         if sum(part[2] for part in unit) * count > MAX_WIDTH:
@@ -309,7 +314,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if output_width is None or input_width is None or output_width != input_width:
             raise _Partial("bitwise_not_width_unproven_or_changed")
         parts = _segments(operand, known, path, depth + 1,
-                          resolver, constant_ids, width_events, allow_literals)
+                          resolver, constant_ids, width_events, allow_literals, trial_bounds)
         if sum(part[2] for part in parts) != output_width:
             raise _Partial("bitwise_not_segment_width_mismatch")
         # Do not guess how nested transforms compose or simplify.
@@ -326,7 +331,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         source_width = _packed_width(operand.get("type"))
         if dest_width is not None and dest_width == source_width:
             segments = _segments(operand, known, path, depth + 1,
-                                 resolver, constant_ids, width_events, allow_literals)
+                                 resolver, constant_ids, width_events, allow_literals, trial_bounds)
             if sum(part[2] for part in segments) != dest_width:
                 raise _Partial("conversion_width_mismatch")
             return segments
@@ -348,9 +353,11 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
                 segments=[(None,{"kind":"constant_reference","width":n},n)]
             else:
                 source=_base(operand,known,path,resolver)
+                if trial_bounds is not None:
+                    source_positions({"kind":"whole"},trial_bounds.get(source),n)
                 segments=[(source,{"kind":"whole"},n)]
         else:
-            segments=_segments(operand,known,path,depth+1,resolver,constant_ids,width_events,allow_literals)
+            segments=_segments(operand,known,path,depth+1,resolver,constant_ids,width_events,allow_literals,trial_bounds)
         try:
             result,mode=(resize_constant_state(segments,a,b) if allow_literals
                          else resize_parts(segments,a,b))
@@ -548,7 +555,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             width_events=[] if enable_width_conversions and candidate["bit_graph_eligible"] else None
             parts = _segments(rhs, known[path], path, resolver=resolver,
                               constant_ids=constant_ids,width_events=width_events,
-                              allow_literals=additional)
+                              allow_literals=additional,
+                              trial_bounds=extended_bounds if additional else None)
             width = sum(part[2] for part in parts)
             if width > MAX_WIDTH:
                 raise _Partial("rhs_too_wide")
