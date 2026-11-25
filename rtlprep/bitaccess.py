@@ -470,7 +470,8 @@ def _bit_graph_positions_valid(node: Any, depth: int = 0,
 def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None,
                            enable_width_conversions: bool = True,
-                           enable_width_literals: bool = True) -> dict[str, Any]:
+                           enable_width_literals: bool = True,
+                           captured_assignments: list | None = None) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
@@ -665,6 +666,9 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     item=trial
         counts["partial" if item["coverage"]=="partial" else "precise"]+=1
         rows.append(item)
+        if captured_assignments is not None:
+            captured_assignments.append((item,node,path,
+                dict(procedural_constants or selector_constants or {}),context_partial))
 
     def _timing(path: str, node: Any
                 ) -> tuple[tuple[dict[str, str], ...], str, bool]:
@@ -870,6 +874,10 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
 
     visit(ast.get("design", {}).get("members"))
     rows.sort(key=lambda item: (item["target"], str(item.get("source"))))
+    if captured_assignments is not None:
+        ordinals={id(row):i for i,row in enumerate(rows)}
+        captured_assignments[:]=[(ordinals[id(row)],row,node,path,constants,partial)
+                                  for row,node,path,constants,partial in captured_assignments]
     return {
         "schema_version": BIT_ACCESS_SCHEMA_VERSION,
         "scope": "continuous_and_supported_procedural_static_select_concat",
