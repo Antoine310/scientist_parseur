@@ -105,3 +105,17 @@ def test_unknown_state_value_not_interpreted():
     out,mode=resize_constant_state(p,integral_shape("logic[3:0]"),integral_shape("bit[7:0]"))
     assert mode=="constant_state_zero_extend"
     assert all(x[0] is None for x in out) and sum(x[2] for x in out)==8
+
+
+def test_truncation_does_not_hide_invalid_high_source():
+    # An invalid high selector would disappear if the concatenation were
+    # truncated before validating all source segments.
+    bad=n("RangeSelect",type="logic[3:0]",selectionKind="Simple",
+          value=ref("a",10,"logic[7:0]"),left=n("IntegerLiteral",value="11"),
+          right=n("IntegerLiteral",value="8"))
+    low=n("RangeSelect",type="logic[3:0]",selectionKind="Simple",
+          value=ref("a",10,"logic[7:0]"),left=n("IntegerLiteral",value="3"),
+          right=n("IntegerLiteral",value="0"))
+    rhs=n("Concatenation",type="logic[7:0]",operands=[bad,low])
+    b=graph(fixture(rhs,target_type="logic[3:0]",select=False))["bit_dependency_graph"]
+    assert b["counts"]["partial"]==1 and not b["edges"]
