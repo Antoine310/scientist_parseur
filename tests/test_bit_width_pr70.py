@@ -17,7 +17,7 @@ def fixture(rhs,target_type="logic[7:0]",*,select=True,extra=None,source_type="l
     if select:
         y=n("RangeSelect",type="logic[7:0]",selectionKind="Simple",value=y,
             left=n("IntegerLiteral",value="7"),right=n("IntegerLiteral",value="0"))
-    assignment=n("Assignment",left=y,right=rhs,isNonBlocking=False,**(extra or {}))
+    assignment=n("Assignment",type=y["type"],left=y,right=rhs,isNonBlocking=False,**(extra or {}))
     members=[n("Variable",name="a",addr=10,type=source_type),
              n("Variable",name="y",addr=20,type=target_type),
              n("ContinuousAssign",assignment=assignment)]
@@ -119,3 +119,60 @@ def test_truncation_does_not_hide_invalid_high_source():
     rhs=n("Concatenation",type="logic[7:0]",operands=[bad,low])
     b=graph(fixture(rhs,target_type="logic[3:0]",select=False))["bit_dependency_graph"]
     assert b["counts"]["partial"]==1 and not b["edges"]
+
+
+def test_untyped_assignment_preserves_legacy_unary_metadata():
+    rhs=n("UnaryOp",op="BitwiseNot",type="logic",operand=n("ElementSelect",type="logic",
+          value=ref("a",10,"logic[7:0]"),selector=n("IntegerLiteral",value="7")))
+    ast=fixture(rhs,select=False)
+    del ast["design"]["members"][0]["body"]["members"][-1]["assignment"]["type"]
+    old,new=graph(ast,False),graph(ast)
+    assert new["bit_accesses"]==old["bit_accesses"]
+    row=new["bit_accesses"]["items"][0]
+    assert row["coverage"]=="rhs_lanes_only"
+    assert row["source_segments"][0]["value_transform"]=="bitwise_not"
+
+def generated_constant_ast(mode):
+    # Matches the shape of the scalar mcountinhibit_q assignment:
+    # an elaborated genvar Parameter and a constant resized to logic.
+    index=n("NamedValue",type="integer",symbol="30 k",constant="2")
+    rhs=n("Conversion",type="logic",operand=n("Conversion",type="logic[31:0]",
+          operand=lit("32'd1","bit[31:0]","IntegerLiteral")))
+    ast=fixture(rhs,select=False)
+    members=ast["design"]["members"][0]["body"]["members"]
+    assignment=members.pop()["assignment"]
+    assignment["type"]="logic"
+    assignment["left"]=n("ElementSelect",type="logic",value=ref("y",20,"logic[7:0]"),selector=index)
+    declaration=n("Parameter",name="k",addr=30,type="integer",isLocal=True,value="2")
+    if mode=="runtime":
+        declaration=n("Variable",name="k",addr=30,type="integer")
+    elif mode=="wrong_identity":
+        declaration["addr"]=31
+    elif mode=="conflicting_constant":
+        declaration["value"]="3"
+    procedural=n("ProceduralBlock",procedureKind="AlwaysComb",
+                 body=n("ExpressionStatement",expr=assignment))
+    block=n("GenerateBlock",name="gen",members=[declaration,procedural])
+    if mode=="other_scope":
+        members.extend([n("GenerateBlock",name="other",members=[declaration]),
+                        n("GenerateBlock",name="gen",members=[procedural])])
+    else:
+        members.append(block)
+    return ast
+
+def test_scoped_genvar_procedural_conversion():
+    ast=generated_constant_ast("valid")
+    old,new=graph(ast,False),graph(ast)
+    assert old["bit_dependency_graph"]["counts"]["partial"]==1
+    row=new["bit_dependency_graph"]["items"][0]
+    assert row["coverage"]!="partial"
+    assert row["constant_target_bits"]==[2]
+    assert row["edge_count"]==0
+    evidence=new["bit_accesses"]["items"][0]["width_conversions"]
+    assert any(x["mode"]=="scoped_procedural_selectors" for x in evidence)
+
+@pytest.mark.parametrize("mode",["runtime","wrong_identity","conflicting_constant","other_scope"])
+def test_unproved_procedural_selector_stays_partial(mode):
+    ast=generated_constant_ast(mode)
+    assert graph(ast)["bit_dependency_graph"]==graph(ast,False)["bit_dependency_graph"]
+    assert graph(ast)["bit_dependency_graph"]["counts"]["partial"]==1
