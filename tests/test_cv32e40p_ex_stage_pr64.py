@@ -55,3 +55,71 @@ def test_unsafe_additional_pin(tmp_path,pin):
     with pytest.raises(FixtureError,match="unsafe additional pin"):
         materialize(tmp_path,tmp_path/"out",entry,additional_pins={pin:"0"*40})
     assert not (tmp_path/"out").exists()
+
+
+from rtlprep.dependencies import _sign_cast_operand, build_dependency_graph
+
+def call(name="$signed", source_type="logic[31:0]", result_type="logic signed[31:0]"):
+    return {"kind":"Call","subroutine":name,"type":result_type,
+            "arguments":[{"kind":"NamedValue","symbol":"10 a","type":source_type}]}
+
+@pytest.mark.parametrize("name,src,dst",[
+    ("$signed","logic[31:0]","logic signed[31:0]"),
+    ("$unsigned","logic signed[31:0]","logic[31:0]"),
+    ("$signed","int unsigned","bit signed[31:0]"),
+    ("$unsigned","integer","logic[31:0]"),
+])
+def test_builtin_sign_cast(name,src,dst):
+    expr=call(name,src,dst)
+    assert _sign_cast_operand(expr) is expr["arguments"][0]
+
+@pytest.mark.parametrize("mode",["user","unknown","width","state","signedness","alias",
+                                  "missing","multiple","iterator","malformed"])
+def test_sign_cast_reject(mode):
+    expr=call()
+    if mode=="user":
+        expr["subroutine"]="123 signed"
+    elif mode=="unknown":
+        expr["subroutine"]="$clog2"
+    elif mode=="width":
+        expr["type"]="logic signed[15:0]"
+    elif mode=="state":
+        expr["type"]="bit signed[31:0]"
+    elif mode=="signedness":
+        expr["type"]="logic[31:0]"
+    elif mode=="alias":
+        expr["arguments"][0]["type"]="word_t"
+    elif mode=="missing":
+        del expr["arguments"]
+    elif mode=="multiple":
+        expr["arguments"].append(expr["arguments"][0].copy())
+    elif mode=="iterator":
+        expr["iterVar"]="i"
+    else:
+        expr["arguments"]=[None]
+    assert _sign_cast_operand(expr) is None
+
+@pytest.mark.parametrize("valid",[True,False])
+def test_signal_graph_signed_call_inside_binary(valid):
+    expr=call()
+    if not valid:
+        expr["subroutine"]="123 signed"
+    members=[
+        {"kind":"Port","name":"a","direction":"In","type":"logic[31:0]"},
+        {"kind":"Net","name":"a","addr":10,"type":"logic[31:0]"},
+        {"kind":"Port","name":"y","direction":"Out","type":"logic[31:0]"},
+        {"kind":"Variable","name":"y","addr":20,"type":"logic[31:0]"},
+        {"kind":"ContinuousAssign","assignment":{"kind":"Assignment","isNonBlocking":False,
+            "left":{"kind":"NamedValue","symbol":"20 y","type":"logic[31:0]"},
+            "right":{"kind":"BinaryOp","op":"Add","type":"logic[31:0]","left":expr,
+                     "right":{"kind":"IntegerLiteral","value":"32'd1","type":"logic[31:0]"}}}},
+    ]
+    ast={"design":{"kind":"Root","members":[{"kind":"Instance","name":"top",
+        "body":{"kind":"InstanceBody","name":"top","members":members}}]}}
+    g=build_dependency_graph(ast,expected_top="top")
+    assert any(e["source"]=="top.a" and e["target"]=="top.y" and e["kind"]=="data"
+               for e in g["edges"]) is valid
+    assert any("Expression non prise en charge : Call" in w["reason"]
+               for w in g["warnings"]) is (not valid)
+    # Arithmetic stays outside positional bit inference.
+    assert not g["bit_dependency_graph"]["edges"]
