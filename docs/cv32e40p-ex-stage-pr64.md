@@ -11,7 +11,7 @@ Use the PR63 read-only snapshot mechanism with one additional verified
 blob pin. The original fixture lock and PR63 label inventory stay
 unchanged. The additional-pin API rejects overlap and unsafe paths.
 No official RTL changes, no wrapper substituting for real EX logic,
-no semantic engine changes.
+a narrow signal-level semantic refinement described below.
 
 ## Static validation
 
@@ -51,8 +51,26 @@ local mux probes, not a claim that such instructions occur in a core.
 Report: reports/pr64/run-*/ex_stage.result.json. Failure diagnostics,
 static AST, graph, index and simulation XML remain in the fresh run
 directory. Official checkout and snapshot blobs verified before/after.
-16 targeted unit cases, six instances, 44 labels, five paths and
+32 targeted unit cases, six instances, 44 labels, five paths and
 384 sampled scenarios expected. Local and CI validation pending.
 Next: elaborate the actual core with one coordinated configuration,
 record limits and unsupported constructs explicitly; do not extrapolate
 the EX-stage evidence to the complete processor.
+
+
+## Correction after the first local EX-stage run
+
+The initial 776-test suite and all 44 direct labels passed, but the
+two multiplier operand-to-forwarding paths were not observed. The
+signal graph discarded all Call expressions, including the integral
+system functions $signed/$unsigned used in int_result. Slang v12.1
+serializes system calls with the bare builtin name and user calls
+with an identity link. Accept only these two exact builtins with a
+single argument, explicit equal integral widths and unchanged
+two/four-state representation. The signal references are collected
+through the operand; this does not add positional bit edges or
+evaluate arithmetic. All other calls remain unsupported by this
+signal reader. Historical signal counts may increase and warning
+counts decrease; frozen annotations and positional counts are not
+relaxed. The two missing path assertions remain strict. Actual
+revalidation with slang and Verilator is pending.
