@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.1 — 25 novembre 2026 (audit historique GitHub)**  
+**Version : 1.2 — 25 novembre 2026 (baseline #67 et chantier #68)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #64** (`51716dccae285307f538fb12ed1b580a5e8fe88a`).  
-**PR en cours : #65**, validée localement, non fusionnée lors de la dernière vérification (`d41f2cfe9a2062a8b34cad3b6b0c8816b3471a52`). CI revérifiée : 36/36 réussis sur ce head exact. GitHub indique encore `merged=false` ; ne pas confondre un SHA de merge calculé avec une fusion effective. Attendre l'accord explicite.
+**Dernière PR fusionnée confirmée : #67** (`614be44c02c86b0d4a9f10a6883aa8bbe9c8fcdf`). 37/37 CI sur le head testé.
+**PR en cours : #68**, politique bornée de plafonds de lignes, comparaison sur AST identique ; validation locale et CI à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -356,15 +356,57 @@ Profondeur deux, RV32, modèle de pile indépendant ; les extensions de preuve/m
 
 ### PR #65 — Cœur CV32E40P complet
 
-- [?] **PR65-MERGE-01 · P0** — Local 812/812 et rapport `passed`, 36/36 CI réussis sur head exact revérifiés. GitHub indique non fusionnée ; la fusion n'est pas demandée dans ce chantier documentaire. Clôture : accord explicite et commit de merge effectif enregistré.
-- [ ] **PR65-LIMIT-01 · P0** — Deux analyseurs tronqués : `expressions`, `complex_constructs`. Constantes connues : MAX_EXPRESSIONS=2 000 ; MAX_ROWS=2 000 et MAX_NODES=50 000 dans complex_constructs. **Cause exacte à lire dans le rapport / instrumenter**, pas supposée. Clôture : relance de référence, cause par plafond, politique bornée, comparaison avant/après et non-régression, compteurs réconciliés.
-- [ ] **PR65-BIT-01 · P0** — Inventaire bit à bit du cœur : les nombres supportés/partiels ne figurent pas dans le résumé transmis. Extraire `bit_accesses` et `bit_dependency_graph`, compteurs, raisons, exclusions, assignation/source/instance, principaux modules. Clôture : tableau par 24 instances et par famille, identités stables (pas adresses AST), baseline archivée ; comparer ALU standalone au sous-module intégré sans forcer égalité.
-- [ ] **PR65-WARN-01 · P1** — 15 avertissements signal : extraire les 15 lignes, regrouper motifs et sources, distinguer lacunes de l'analyseur et constructions ambiguës ; traiter et suivre chaque motif. Clôture : inventaire détaillé et test pour chaque correction, avertissements résiduels justifiés.
-- [ ] **PR65-COV-01 · P0** — 8 analyseurs non tronqués ≠ complets. Recenser leurs lignes partielles, exclusions et éventuels constructs omis, y compris seq/loops/arrays/functions. Clôture : rapport par instance et analyseur avec dénominateur, `unknown` explicite et non-additivité des compteurs.
+- [x] **PR65-MERGE-01** — 812 tests locaux, 36/36 CI, fusion autorisée et effective : `55298e78f43037af439809dda4e0af2e0f01f3af`.
+- [~] **PR65-LIMIT-01 · P0** — #67 confirme les deux plafonds de 2 000 lignes (1 803 déclenchements expressions, 1 arrêt constructions complexes à 38 102 visites). #68 propose 4 096 lignes par défaut, configuration bornée à 8 192 ; autres limites inchangées. Clôture : mesure avant/après, absence de troncature résiduelle pour cette configuration, non-régression et compteurs réconciliés.
+- [~] **PR65-BIT-01 · P0** — #67 : 1 199 affectations bit, 467 supportées, 732 partielles, 2 842 arêtes, toutes attribuées aux instances. Inventaire par instance et motif produit. Reste : identités stables entre runs, audit des exclusions et caractérisation/correction des familles partielles. Clôture : baseline archivée, classification justifiée, pas de confusion avec le dénominateur AST.
+- [~] **PR65-WARN-01 · P1** — #67 inventorie les 15 avertissements signal par motif et instance ; localisation absente lorsque non fournie. Reste : analyser chaque motif et ajouter des tests pour chaque correction ; avertissements résiduels justifiés.
+- [~] **PR65-COV-01 · P0** — #67 fournit les lignes partielles des dix analyseurs et un recensement syntaxique indépendant (3 811 occurrences AST). Reste : comptabiliser les exclusions/omissions de manière justifiée, notamment décodeur et boucles. Clôture : dénominateurs explicites, raisons et non-additivité.
 - [ ] **PR65-PATH-01 · P1** — 47 annotations signal toutes correctes et 7 chemins observés, sélection étroite. Ajouter cas conditionnels, chemins négatifs (absence justifiée), tests intercycles, clock gating et frontières. Clôture : corpus gelé élargi avant exécution et vérification indépendante ; pas de claim de faisabilité ou CDC.
 - [ ] **PR65-SIM-01 · P1** — Première simulation du vrai cœur, avec mémoire instruction/données et programmes RISC-V de référence, reset/boot, ALU, branchements, load/store, stalls et interruptions sélectionnés. Clôture : traces architecturales comparées à oracle ISA indépendant, tests négatifs, configuration/limites enregistrées.
 - [ ] **PR65-CONFIG-01 · P2** — Une seule config du CPU ; pas FPU, PULP/cluster, HW-loop, PMP ou SoC ; clock gate modèle de simulation. Clôture : variantes choisies et dépendances officielles vérifiées, rapports séparés, pas d'affirmation ASIC/FPGA à partir du modèle.
 - [ ] **PR65-PERF-01 · P2** — Mesurer au moins 3 répétitions du cœur sur même machine/configuration, RSS/temps par phase, taille des résultats après déplafonnement et vitesse des requêtes. Clôture : min/médiane/max, versions et impact des corrections documentés. Lien PR55-PERF-01.
+
+### PR #66 — Registre permanent
+
+- [x] **PR66-DOC-01** — Registre et README intégrés, 35/35 CI, fusion `128d959790df7ee48b94e03c61cab3ef7ee0396e`. Actualisation à chaque chantier.
+
+### PR #67 — Inventaire de référence (fusionnée)
+
+Source : [résultats locaux consignés sur la PR](https://github.com/Antoine310/scientist_parseur/pull/67#issuecomment-7163298534), `reports/pr67/run-2aqsrksy/diagnostics.result.json` et `diagnostics.summary.md`. CI 37/37 sur `b6cca3df6ee44b158dca2f065f8692f5df9e272c`. Fusion `614be44c02c86b0d4a9f10a6883aa8bbe9c8fcdf`. Les totaux pytest locaux ne figuraient pas dans le dernier extrait transmis.
+
+| Mesure | ALU hiérarchique | Cœur |
+|---|---:|---:|
+| Occurrences AST | 612 | 3 811 |
+| Bit : affectations / supportées / partielles | 479 / 254 / 225 | 1 199 / 467 / 732 |
+| Arêtes bit | 477 | 2 842 |
+| Nœuds / arêtes signal / warnings | 149 / 328 / 3 | 1 597 / 3 566 / 15 |
+| Troncatures globales | 0 | 2 |
+
+| Motif bit partiel | ALU | Cœur |
+|---|---:|---:|
+| Opérateurs binaires | 50 | 175 |
+| Incompatibilité de largeur | 37 | 165 |
+| Conversion de largeur | 39 | 145 |
+| Conditionnelles | 35 | 138 |
+| Indices dynamiques/inconnus | 63 | 70 |
+| Positions AST non validées | 0 | 23 |
+| Littéraux non dimensionnés | 0 | 9 |
+| Contexte procédural non supporté | 0 | 4 |
+| Layout packed non prouvé | 1 | 2 |
+| Largeur source inconnue | 0 | 1 |
+
+Principales concentrations : CSR 274, register file 162, ff_one 96, ALU racine 93, multiplicateur 32, popcnt 31. Les 225 lignes ALU sont incluses dans les 732 du cœur, pas additionnées. Les taux 53,0 % / 38,9 % ne valent que pour les lignes bit recensées.
+
+Autres lignes partielles cœur : expressions 213/2 000, register_flow 81/130, complex_constructs 51/2 000, functions 34/34, arrays 127/221, sequential 81/130, intercycle 88/130. Pas de lignes static_loop_expansion ; pas une preuve d'absence de boucles. Aucune ligne bit non attribuée. Signal 39 TP / 8 TN / 0 FP / 0 FN, 7/7 chemins. Pipeline 2,217 s, RSS Python/slang 183 732 / 207 484 Kio (pics séparés).
+
+- [x] **PR67-BASE-01** — Inventaire des dix analyseurs et rapprochement bit par instance, causes réelles des deux plafonds. Rapport réussi et CI verte.
+- [ ] **PR67-CENSUS-01 · P0** — Dénominateurs syntaxe et lignes bit distincts : décodeur 1 200 occurrences AST pour 28 lignes bit ; investiguer les critères d'éligibilité, modules sans ligne et boucles non recensées. Identifiants de lignes actuellement locaux à l'artefact. Clôture : rapprochement explicite des sites par catégorie et identités stables, sans soustraire arbitrairement les compteurs.
+- [ ] **PR67-WARN-01 · P1** — Huit approximations de sélection au signal entier, un StructuredAssignmentPattern, une écriture de membre, un Call, un case Inside, une expression Inside, un ValueRange, une cible non structurée. Relier aux dettes #7/#8/#20/#36/#37/#58 ; tests sur chaque correction. Clôture : provenance et motif de chaque avertissement résiduel.
+
+### PR #68 — Politique bornée de lignes (en cours)
+
+- [~] **PR68-ROW-01 · P0** — Plafonds expressions et complex_constructs : défaut proposé 4 096, API configurable 1..8 192 ; les anciens 2 000 sont reproduits sur le même AST. Clôture : nouvelles lignes recensées sans perte de lignes précédentes ni modification des autres graphes, limites effectives reportées, mesure temps/RSS, validation locale et CI. Si un plafond de parcours devient visible, le conserver explicitement et le traiter séparément.
+- [~] **PR68-AST-01 · P1** — Worker #55 utilise désormais read_ast borné avant construction de l'index. Validation en attente. Cela ne constitue pas un quota mémoire/CPU/disque ni une validation de toutes les entrées. Voir PR62-LIMIT-02.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -449,5 +491,5 @@ Prochaine action : ...
 
 - Contexte de reprise du 24/11/2026 (`Texte collé(20261124-103538).txt`) et feuille de route après #42 (`Texte collé (2)(1).txt`) : objectifs et historique ancien. La numérotation proposée a évolué, les PR réelles prévalent.
 - Logs locaux #55–62, notamment `reports/pr62/run-*/analysis_budgets.result.json` (copie fournie `Texte collé(20261125-093753).txt`) ; #63 `reports/pr63/run-hmavjqd5/multi_unit.result.json` ; #64 `reports/pr64/run-e23jsimh/ex_stage.result.json` ; #65 `reports/pr65/run-z8ycwvw9/core.result.json` (résumé terminal fourni).
-- GitHub : descriptions des PR #1–48 et #50–65 relues (64 PR), issue #49 identifiée et fermée. Sources : https://github.com/Antoine310/scientist_parseur/pull/NUMERO (remplacer NUMERO par le numéro réel) et https://github.com/Antoine310/scientist_parseur/issues/49. Les descriptions historiques peuvent être antérieures aux corrections : elles renseignent le périmètre et les limites déclarées, non la validation actuelle. Audit des descriptions, pas audit exhaustif du code, des commentaires, des logs CI ou de chaque ancien commit. #65 : 36/36 CI sur head exact, non fusionnée à la vérification.
+- GitHub : descriptions des PR #1–48 et #50–65 relues (64 PR), issue #49 identifiée et fermée. Sources : https://github.com/Antoine310/scientist_parseur/pull/NUMERO (remplacer NUMERO par le numéro réel) et https://github.com/Antoine310/scientist_parseur/issues/49. Les descriptions historiques peuvent être antérieures aux corrections : elles renseignent le périmètre et les limites déclarées, non la validation actuelle. Audit des descriptions, pas audit exhaustif du code, des commentaires, des logs CI ou de chaque ancien commit. #65–67 : fusions effectives confirmées, voir en-tête et sections par PR.
 - Les tâches, priorités et critères de clôture sont des propositions d'ingénierie, pas des défauts tous reproduits ni des preuves déjà réalisées. Les éléments non vérifiés sont volontairement marqués comme audit/mesure à effectuer.

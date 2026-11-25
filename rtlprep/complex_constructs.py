@@ -7,7 +7,7 @@ from .symbols import SignalResolver
 from .bitaccess import _number
 
 MAX_NODES = 50000
-MAX_ROWS = 2000
+MAX_ROWS = 4096
 MAX_DEPTH = 48
 MAX_ARGS = 32
 MAX_REFS = 128
@@ -136,7 +136,9 @@ def loop_record(node,resolve):
     return result
 
 
-def build_complex_construct_index(ast,*,index):
+def build_complex_construct_index(ast,*,index,row_limit=None):
+    from .row_budgets import effective_row_limit
+    limit=effective_row_limit(row_limit,MAX_ROWS)
     resolver=SignalResolver(ast,index)
     items=[]
     pending=[(ast.get("design",{}).get("members",[]),None,0,None)]
@@ -151,10 +153,10 @@ def build_complex_construct_index(ast,*,index):
     while pending:
         obj,owner,depth,context=pending.pop()
         visited+=1
-        if visited>MAX_NODES or len(items)>=MAX_ROWS:
+        if visited>MAX_NODES or len(items)>=limit:
             if visited>MAX_NODES:
                 hit("node_cap",owner,depth)
-            if len(items)>=MAX_ROWS:
+            if len(items)>=limit:
                 hit("row_cap",owner,depth)
             truncated=True
             break
@@ -216,6 +218,7 @@ def build_complex_construct_index(ast,*,index):
     counts=Counter(r["kind"] for r in items)
     return {"schema_version":1,"scope":"procedural_and_continuous_ast_constructs",
             "truncation_events":{"hits":cap_events,"first":first,"visited":visited,"pending_at_stop":len(pending)},
+            "row_limit":limit,
             "items":items,"counts":{"captured":len(items),"calls":counts["call"],
                 "selections":counts["selection"],"loops":counts["loop"],"truncated":truncated},
             "caveat":"Observed argument and selector references only; no function return influence, "
