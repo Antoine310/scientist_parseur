@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.2 — 25 novembre 2026 (baseline #67 et chantier #68)**  
+**Version : 1.3 — 25 novembre 2026 (validation locale #68 et chantier #69)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
 **Dernière PR fusionnée confirmée : #67** (`614be44c02c86b0d4a9f10a6883aa8bbe9c8fcdf`). 37/37 CI sur le head testé.
-**PR en cours : #68**, politique bornée de plafonds de lignes, comparaison sur AST identique ; validation locale et CI à effectuer.
+**PR en cours : #68** (validation locale réussie, CI à revérifier) et #69 (empilée sur #68, validation à effectuer).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -403,10 +403,20 @@ Autres lignes partielles cœur : expressions 213/2 000, register_flow 81/130, co
 - [ ] **PR67-CENSUS-01 · P0** — Dénominateurs syntaxe et lignes bit distincts : décodeur 1 200 occurrences AST pour 28 lignes bit ; investiguer les critères d'éligibilité, modules sans ligne et boucles non recensées. Identifiants de lignes actuellement locaux à l'artefact. Clôture : rapprochement explicite des sites par catégorie et identités stables, sans soustraire arbitrairement les compteurs.
 - [ ] **PR67-WARN-01 · P1** — Huit approximations de sélection au signal entier, un StructuredAssignmentPattern, une écriture de membre, un Call, un case Inside, une expression Inside, un ValueRange, une cible non structurée. Relier aux dettes #7/#8/#20/#36/#37/#58 ; tests sur chaque correction. Clôture : provenance et motif de chaque avertissement résiduel.
 
-### PR #68 — Politique bornée de lignes (en cours)
+### PR #68 — Politique bornée de lignes (validation locale réussie)
 
-- [~] **PR68-ROW-01 · P0** — Plafonds expressions et complex_constructs : défaut proposé 4 096, API configurable 1..8 192 ; les anciens 2 000 sont reproduits sur le même AST. Clôture : nouvelles lignes recensées sans perte de lignes précédentes ni modification des autres graphes, limites effectives reportées, mesure temps/RSS, validation locale et CI. Si un plafond de parcours devient visible, le conserver explicitement et le traiter séparément.
-- [~] **PR68-AST-01 · P1** — Worker #55 utilise désormais read_ast borné avant construction de l'index. Validation en attente. Cela ne constitue pas un quota mémoire/CPU/disque ni une validation de toutes les entrées. Voir PR62-LIMIT-02.
+- [~] **PR68-ROW-01 · P0** — Plafonds expressions et complex_constructs : défaut proposé 4 096, API configurable 1..8 192 ; les anciens 2 000 sont reproduits sur le même AST. Validation locale #68 : 23 tests ciblés, 856 au total, 0 skip. Expressions 2 000→3 803 (303 partielles), constructions complexes 2 000→2 738 (92 partielles), 2→0 analyseurs tronqués. Même AST, anciens enregistrements conservés, autres graphes identiques. Clôture après CI et fusion. Si un plafond de parcours devient visible, le conserver explicitement et le traiter séparément.
+- [~] **PR68-AST-01 · P1** — Worker #55 utilise désormais read_ast borné avant construction de l'index. Chemin exercé avec succès lors du benchmark #68. CI/fusion restent à confirmer. Cela ne constitue pas un quota mémoire/CPU/disque ni une validation de toutes les entrées. Voir PR62-LIMIT-02.
+
+Mesures locales #68 : [preuve sur la PR](https://github.com/Antoine310/scientist_parseur/pull/68#issuecomment-7163588621), `reports/pr68/run-rcktxfgu/row_budgets.result.json`. Pipeline complet 2,587 s ; même AST hors slang 1,681→1,952 s ; graphe 17 085 519→21 634 749 octets ; RSS workers 235 036 Kio dans les deux essais (un échantillon, pas une preuve d'égalité des besoins mémoire). ALU 479/254/225/477, cœur 1199/467/732/2842 inchangés ; 15 warnings.
+
+- [ ] **PR68-MARGIN-01 · P1** — 49 187/50 000 visites complexes (813 de marge), expressions 3 803/4 096 ; vérifier les plafonds sur variantes et CVA6. Ne pas augmenter sans mesure ; distinguer budget de parcours et cap de publication. Clôture : rapport de marge et stratégie bornée éprouvée sur designs plus grands.
+
+### PR #69 — Conversions bit à bit (en cours)
+
+- [~] **PR69-WIDTH-01 · P1** — Première famille : conversions intégrales explicites, extensions signe/zéro non ambiguës et troncature MSB, uniquement sur lignes positionnelles déjà éligibles. Types/layouts et positions doivent être prouvés ; préserver toutes les anciennes arêtes supportées. Comparaison même AST avec ancien mode, fixture de 256 vecteurs. Tests et mesures en attente.
+- [ ] **PR69-WIDTH-02 · P1** — Reste : conversions à signedness ambiguë (slang v12.1 ne sérialise pas ConversionKind), changements d'état 2/4, types alias, mismatch sans conversion explicitement démontrée, littéraux non dimensionnés et appels système au niveau bit. Recenser ce qui reste après #69 avant de choisir un complément. Ne pas supposer les 320 cas résolus. Liens PR61-BIT-02, PR39-WIDTH-01, PR64-CAST-01.
+- [ ] **PR69-EVAL-01 · P1** — Comparaison ancienne/nouvelle sur ALU et core, mesurer par instance et raison ; conserver oracle #56, labels #65, dénominateurs et anciens résultats. Clôture : rapport réel, tests et CI, analyse des nouveaux cas supportés. Aucune preuve générale d'influence.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

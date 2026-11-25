@@ -14,6 +14,7 @@ from typing import Any
 from .index import build_index
 from .symbols import SignalResolver
 from .constant_indices import normalize_positions, scope_constants
+from .bit_widths import integral_shape, width as shape_width, resize_parts
 
 BIT_ACCESS_SCHEMA_VERSION = 1
 MAX_RECORDS = 2000
@@ -221,7 +222,8 @@ def _semantic_constant_ids(ast: dict[str, Any]) -> set[tuple[str, str]]:
 
 def _segments(node: Any, known: set[str], path: str, depth: int = 0,
               resolver: SignalResolver | None = None,
-              constant_ids: frozenset[tuple[str, str]] = frozenset()
+              constant_ids: frozenset[tuple[str, str]] = frozenset(),
+              width_events: list[dict[str, Any]] | None = None
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
@@ -236,7 +238,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             raise _Partial("malformed_or_large_concatenation")
         output: list[tuple[str | None, dict[str, Any], int]] = []
         for operand in operands:
-            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids))
+            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids, width_events))
             if len(output) > MAX_SEGMENTS:
                 raise _Partial("too_many_segments")
         return output
@@ -271,7 +273,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if count is None or count < 1 or count > MAX_SEGMENTS:
             raise _Partial("replication_count_out_of_bounds")
         unit = _segments(concat, known, path, depth + 1,
-                         resolver, constant_ids)
+                         resolver, constant_ids, width_events)
         if not unit or len(unit) * count > MAX_SEGMENTS:
             raise _Partial("replication_segments_exceed_limit")
         if sum(part[2] for part in unit) * count > MAX_WIDTH:
@@ -294,7 +296,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if output_width is None or input_width is None or output_width != input_width:
             raise _Partial("bitwise_not_width_unproven_or_changed")
         parts = _segments(operand, known, path, depth + 1,
-                          resolver, constant_ids)
+                          resolver, constant_ids, width_events)
         if sum(part[2] for part in parts) != output_width:
             raise _Partial("bitwise_not_segment_width_mismatch")
         # Do not guess how nested transforms compose or simplify.
@@ -309,13 +311,41 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             raise _Partial("conversion_operand_missing")
         dest_width = _packed_width(node.get("type"))
         source_width = _packed_width(operand.get("type"))
-        if dest_width is None or dest_width != source_width:
+        if dest_width is not None and dest_width == source_width:
+            segments = _segments(operand, known, path, depth + 1,
+                                 resolver, constant_ids, width_events)
+            if sum(part[2] for part in segments) != dest_width:
+                raise _Partial("conversion_width_mismatch")
+            return segments
+        if width_events is None or kind != "Conversion":
             raise _Partial("conversion_width_unproven_or_changed")
-        segments = _segments(operand, known, path, depth + 1,
-                             resolver, constant_ids)
-        if sum(part[2] for part in segments) != dest_width:
-            raise _Partial("conversion_width_mismatch")
-        return segments
+        a=integral_shape(operand.get("type"))
+        b=integral_shape(node.get("type"))
+        if a is None or b is None:
+            raise _Partial("conversion_width_unproven_or_changed")
+        # Only this conversion path extends the recognized whole-signal
+        # type set. Keep the original row eligibility and legacy parser.
+        if operand.get("kind") == "NamedValue":
+            raw=operand.get("symbol")
+            tokens=raw.split(maxsplit=1) if isinstance(raw,str) else []
+            if len(tokens)!=2:
+                raise _Partial("unresolved_symbol_identity")
+            n=shape_width(a)
+            if tuple(tokens) in constant_ids:
+                segments=[(None,{"kind":"constant_reference","width":n},n)]
+            else:
+                source=_base(operand,known,path,resolver)
+                segments=[(source,{"kind":"whole"},n)]
+        else:
+            segments=_segments(operand,known,path,depth+1,resolver,constant_ids,width_events)
+        try:
+            result,mode=resize_parts(segments,a,b)
+        except ValueError as exc:
+            raise _Partial(str(exc)) from exc
+        width_events.append({"mode":mode,"source_width":shape_width(a),
+                             "destination_width":shape_width(b),
+                             "source_signed":a[2],"destination_signed":b[2]})
+        return result
     raise _Partial("unsupported_rhs_" + str(kind)[:48])
 
 
@@ -414,7 +444,8 @@ def _bit_graph_positions_valid(node: Any, depth: int = 0,
 
 
 def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
-                           index: dict[str, Any] | None = None) -> dict[str, Any]:
+                           index: dict[str, Any] | None = None,
+                           enable_width_conversions: bool = True) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
@@ -489,8 +520,9 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
             item["target_selection"] = select
+            width_events=[] if enable_width_conversions and item["bit_graph_eligible"] else None
             parts = _segments(rhs, known[path], path, resolver=resolver,
-                              constant_ids=constant_ids)
+                              constant_ids=constant_ids,width_events=width_events)
             width = sum(part[2] for part in parts)
             if width > MAX_WIDTH:
                 raise _Partial("rhs_too_wide")
@@ -519,6 +551,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     seg["target_msb"] = start + rhs_lsb + span - 1
                 positioned.append(seg)
                 rhs_lsb += span
+            if width_events:
+                item["width_conversions"]=width_events
             item["source_segments"] = list(reversed(positioned))
             item["rhs_width"] = width
             item["coverage"] = (
@@ -753,8 +787,9 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             "explicitement reconnus et constantes Parameter/EnumValue "
             "validées par identité et nom ; source entière opaque sans "
             "sous-indices garantis. Réplications de nombre littéral "
-            "bornées ; conversions uniquement si largeur inchangée et "
-            "explicitement prouvée. Alias de types, indices dynamiques, "
+            "bornées ; conversions de largeur explicite, extensions de signe/zéro "
+            "non ambiguës et troncatures dans le périmètre positionnel validé. "
+            "Alias de types, indices dynamiques, "
             "opérations arithmétiques/non positionnelles restent partiels ; "
             "sélections imbriquées sans indices cibles aplatis. "
             "Une négation unaire BitwiseNot de largeur prouvée reste "
