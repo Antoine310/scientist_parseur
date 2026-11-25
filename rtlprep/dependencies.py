@@ -837,7 +837,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "static_selections": static_selections,
         "counts": {"nodes": len(nodes), "edges": len(edges), "warnings": len(warnings)},
         "warnings": warnings,
-        "expressions": build_expression_index(ast, expected_top=expected_top, index=structural),
+        "expressions": build_expression_index(ast, expected_top=expected_top, index=structural,
+                                              row_limit=budget.expression_rows),
         "register_flow": build_register_flow(ast, expected_top=expected_top, index=structural),
         "bit_accesses": build_bit_access_index(ast, expected_top=expected_top, index=structural),
         "resolved_parameter_symbols": sorted(
@@ -859,7 +860,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             "Pas de preuve fonctionnelle, timing ou CDC",
         ],
     }
-    graph["complex_constructs"] = build_complex_construct_index(ast, index=structural)
+    graph["complex_constructs"] = build_complex_construct_index(ast, index=structural, row_limit=budget.complex_rows)
     graph["bit_dependency_graph"] = build_bit_dependency_graph(graph["bit_accesses"], structural)
     graph["function_dependencies"] = build_function_dependencies(ast, index=structural)
     graph["static_loop_expansion"] = build_static_loop_expansion(ast, index=structural)
