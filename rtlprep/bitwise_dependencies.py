@@ -113,6 +113,8 @@ def expression(expr,resolve,declared,constants,ops,budget,depth=0):
             lanes.extend(child(part))
             if len(lanes)>n:
                 raise Unsupported("expression_width_mismatch")
+            if sum(len(x) for x in lanes)>MAX_ROW_PAIRS:
+                raise Unsupported("row_pair_budget")
         return checked(lanes,n)
     if kind=="Replication":
         count=evaluate(expr.get("count"),constants)
@@ -120,14 +122,21 @@ def expression(expr,resolve,declared,constants,ops,budget,depth=0):
         if count is None or not 1<=count<=64:
             raise Unsupported("replication_count_unproven")
         part=child(concat)
-        if len(part)*count!=n or sum(len(x) for x in part)*count>MAX_ROW_PAIRS:
-            raise Unsupported("replication_width_or_pair_budget")
+        if len(part)*count!=n:
+            raise Unsupported("replication_width_mismatch")
+        if sum(len(x) for x in part)*count>MAX_ROW_PAIRS:
+            raise Unsupported("row_pair_budget")
         return checked(part*count,n)
     if kind=="BinaryOp" and op in BINARY:
         left,right=expr.get("left"),expr.get("right")
-        if shape(left)!=(n,state) or shape(right)!=(n,state):
+        lm,ls=shape(left)
+        rm,rs=shape(right)
+        if lm!=n or rm!=n:
             raise Unsupported("bitwise_operand_width_or_state_mismatch")
         a,b=child(left),child(right)
+        # A differently typed literal contributes no runtime coordinate.
+        if (ls!=state and any(a)) or (rs!=state and any(b)):
+            raise Unsupported("bitwise_operand_width_or_state_mismatch")
         ops.add(op)
         return checked([merge(x,y) for x,y in zip(a,b)],n)
     if kind=="UnaryOp" and op in UNARY:
