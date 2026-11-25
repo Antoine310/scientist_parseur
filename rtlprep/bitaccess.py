@@ -502,7 +502,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 events: tuple[dict[str, str], ...] = (),
                 timing_scope: str = "not_procedural",
                 context_partial: bool = False,
-                selector_constants: dict | None = None) -> None:
+                selector_constants: dict | None = None,
+                procedural_constants: dict | None = None) -> None:
         counts["assignments_seen"] += 1
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
             return
@@ -543,10 +544,17 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 "guards": list(guards), "events": list(events),
                 "timing_scope": timing_scope,
             })
-        def populate(candidate, *, additional=False):
+        def populate(candidate, *, additional=False, lhs=lhs, rhs=rhs):
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
             candidate["target_selection"] = select
+            if additional and procedural_constants:
+                # Resolve only lexically visible elaborated parameters.
+                lhs=normalize_positions(lhs,procedural_constants)
+                rhs=normalize_positions(rhs,procedural_constants)
+                dest,select,dest_width=_selection(lhs,known[path],path,resolver)
+                assert dest==target
+                candidate["target_selection"]=select
             if additional:
                 candidate["bit_graph_eligible"]=(_bit_graph_positions_valid(lhs)
                     and _bit_graph_positions_valid(rhs,allow_literals=True))
@@ -571,8 +579,11 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 if actual_width!=width:
                     a=integral_shape(rhs.get("type"))
                     b=integral_shape(lhs.get("type"))
-                    if (a is None or b is None or shape_width(a)!=width
+                    assignment_shape=integral_shape(node.get("type"))
+                    if (a is None or b is None or assignment_shape is None
+                            or assignment_shape!=b or shape_width(a)!=width
                             or shape_width(b)!=actual_width
+                            or any("_value_transform" in sel for _,sel,_ in parts)
                             or node.get("op") is not None or node.get("timingControl") is not None):
                         raise _Partial("target_rhs_width_mismatch")
                     parts,mode=resize_constant_state(parts,a,b)
@@ -605,6 +616,9 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     seg["target_msb"] = start + rhs_lsb + span - 1
                 positioned.append(seg)
                 rhs_lsb += span
+            if additional and procedural_constants and width_events is not None:
+                if lhs!=node.get("left") or rhs!=node.get("right"):
+                    width_events.append({"mode":"scoped_procedural_selectors"})
             if width_events:
                 candidate["width_conversions"]=width_events
             candidate["source_segments"] = list(reversed(positioned))
@@ -683,7 +697,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                    guards: tuple[dict[str, Any], ...] = (),
                    events: tuple[dict[str, str], ...] = (),
                    timing_scope: str = "no_explicit_timing",
-                   partial: bool = False, depth: int = 0) -> None:
+                   partial: bool = False, depth: int = 0,
+                   procedural_constants: dict | None = None) -> None:
         if counts["truncated"]:
             return
         statement_budget[0] += 1
@@ -696,7 +711,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 statements(path, child, procedure_kind=procedure_kind,
                            guards=guards, events=events,
                            timing_scope=timing_scope,
-                           partial=partial, depth=depth + 1)
+                           partial=partial, depth=depth + 1,procedural_constants=procedural_constants)
             return
         if not isinstance(node, dict):
             if node is not None:
@@ -710,7 +725,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 return
             extract(path, assignment, procedure_kind=procedure_kind,
                     guards=guards, events=events, timing_scope=timing_scope,
-                    context_partial=partial)
+                    context_partial=partial,procedural_constants=procedural_constants)
             return
         if kind in ("List", "StatementList", "Block"):
             field = {"List": "list", "StatementList": "statements",
@@ -721,7 +736,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 return
             statements(path, children, procedure_kind=procedure_kind,
                        guards=guards, events=events, timing_scope=timing_scope,
-                       partial=partial, depth=depth + 1)
+                       partial=partial, depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Timed":
             timed_events, timing, timing_partial = _timing(path, node.get("timing"))
@@ -737,7 +752,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             statements(path, child, procedure_kind=procedure_kind,
                        guards=guards, events=events + timed_events,
                        timing_scope=timing, partial=partial or timing_partial,
-                       depth=depth + 1)
+                       depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Conditional":
             conds = node.get("conditions")
@@ -764,7 +779,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                            events=events, timing_scope=timing_scope,
                            partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
-                           depth=depth + 1)
+                           depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Case":
             mode = node.get("condition")
@@ -792,7 +807,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                                guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                                events=events, timing_scope=timing_scope,
                                partial=partial or not valid_entry or not labels
-                                       or len(guards) >= MAX_PROC_GUARDS, depth=depth + 1)
+                                       or len(guards) >= MAX_PROC_GUARDS, depth=depth + 1,procedural_constants=procedural_constants)
                 elif child is not None:
                     counts["unsupported_statements"] += 1
             default = node.get("defaultCase")
@@ -807,7 +822,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                                guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                                events=events, timing_scope=timing_scope,
                                partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
-                               depth=depth + 1)
+                               depth=depth + 1,procedural_constants=procedural_constants)
                 else:
                     counts["unsupported_statements"] += 1
             return
@@ -848,7 +863,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 if procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
                     counts["procedural_blocks_visited"] += 1
                     statements(parent, node.get("body"),
-                               procedure_kind=procedure_kind)
+                               procedure_kind=procedure_kind,
+                               procedural_constants=local_constants)
                 else:
                     counts["procedural_blocks_skipped"] += 1
 
