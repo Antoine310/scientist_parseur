@@ -30,7 +30,7 @@ def has_operator(expr):
         node,depth=pending.pop()
         visited+=1
         if visited>MAX_NODES or depth>MAX_DEPTH:
-            return True  # record an explicit partial on ambiguous budget
+            raise Unsupported("operator_scan_budget")
         if not isinstance(node,dict):
             continue
         kind=node.get("kind")
@@ -43,7 +43,7 @@ def has_operator(expr):
                 pending.append((value,depth+1))
             elif isinstance(value,list):
                 if len(value)>MAX_NODES:
-                    return True
+                    raise Unsupported("operator_scan_budget")
                 pending.extend((v,depth+1) for v in value)
     return False
 
@@ -182,8 +182,14 @@ def build_bitwise_dependencies(ast,index,captured,flat,*,enabled=True):
         resolver=SignalResolver(ast,index)
         declared=layouts(index)
         for ordinal,access,node,owner,constants,context_partial in captured:
-            if flat["items"][ordinal]["coverage"]!="partial" or not has_operator(node.get("right")):
+            if flat["items"][ordinal]["coverage"]!="partial":
                 continue
+            scan_error=None
+            try:
+                if not has_operator(node.get("right")):
+                    continue
+            except Unsupported as exc:
+                scan_error=str(exc)
             if len(items)>=MAX_ROWS:
                 truncated=True
                 break
@@ -195,6 +201,8 @@ def build_bitwise_dependencies(ast,index,captured,flat,*,enabled=True):
                  "timing_scope":access.get("timing_scope")}
             items.append(row)
             try:
+                if scan_error:
+                    raise Unsupported(scan_error)
                 if context_partial:
                     raise Unsupported("unsupported_procedural_context")
                 local,fixed,ops=expand(node,lambda e:resolver.resolve(owner,e),declared,constants)
@@ -205,7 +213,7 @@ def build_bitwise_dependencies(ast,index,captured,flat,*,enabled=True):
             except Unsupported as exc:
                 row["reason"]=str(exc)
                 if str(exc) in ("edge_budget_exceeded","expression_traversal_budget",
-                                "row_pair_budget","concat_operand_budget","lane_budget_exceeded"):
+                                "row_pair_budget","concat_operand_budget","lane_budget_exceeded","operator_scan_budget"):
                     truncated=True
                 continue
             row.update(coverage="bitwise_influence_candidates",edge_count=len(local),
