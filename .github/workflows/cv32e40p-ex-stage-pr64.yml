@@ -1,0 +1,79 @@
+name: CV32E40P execution stage (real slang + Verilator + cocotb)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  cv32e40p-ex-stage-pr64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pinned compatible Verilator
+        uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089 # v2
+        with:
+          version: '5.040'
+
+      - name: Install reviewed cocotb runner and verify versions
+        run: |
+          python -m pip install -e '.[dev,simulation]'
+          python - <<'PY'
+          import re
+          import subprocess
+          import cocotb
+          assert cocotb.__version__ == "2.0.1", cocotb.__version__
+          version = subprocess.check_output(["verilator", "--version"], text=True)
+          match = re.search(r"Verilator (\d+)\.(\d+)", version)
+          assert match and tuple(map(int, match.groups())) >= (5, 36), version
+          print("PR64_EDA_VERSIONS", cocotb.__version__, version.strip())
+          PY
+
+      - name: Install pinned slang v12.1
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --silent --retry 3 https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+
+      - name: Unit tests
+        run: python -m pytest -q tests/test_cv32e40p_ex_stage_pr64.py
+
+      - name: Install pinned external RTL fixtures
+        run: python scripts/rtlprep_env.py --install-rtl-fixtures
+
+      - name: Real EX stage static and behavioral evaluation
+        run: python -m scripts.run_cv32e40p_ex_stage_pr64 --out reports/pr64
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cv32e40p-ex-stage-pr64
+          path: |
+            reports/pr64/**/ex_stage.result.json
+            reports/pr64/**/deps.result.json
+            reports/pr64/**/elaborated_ast.json
+            reports/pr64/**/rtl_dependencies.json
+            reports/pr64/**/simulation_results.xml
+            reports/pr64/**/analyze.stderr.log
