@@ -87,7 +87,8 @@ def _sign_cast_operand(expr: dict[str, Any]) -> dict[str, Any] | None:
 
 def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None,
-                           budget: AnalysisBudget = DEFAULT_BUDGET) -> dict[str, Any]:
+                           budget: AnalysisBudget = DEFAULT_BUDGET,
+                           enable_width_conversions: bool = True) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
@@ -840,7 +841,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "expressions": build_expression_index(ast, expected_top=expected_top, index=structural,
                                               row_limit=budget.expression_rows),
         "register_flow": build_register_flow(ast, expected_top=expected_top, index=structural),
-        "bit_accesses": build_bit_access_index(ast, expected_top=expected_top, index=structural),
+        "bit_accesses": build_bit_access_index(ast, expected_top=expected_top, index=structural,
+                                              enable_width_conversions=enable_width_conversions),
         "resolved_parameter_symbols": sorted(
             constant_declarations[addr][1] for addr in constant_refs_seen
             if constant_declarations[addr][0] == "Parameter"
