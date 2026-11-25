@@ -12,6 +12,7 @@ from .analysis import summarize_ast
 from .index import build_index
 from .dependencies import build_dependency_graph
 from .manifest import Design
+from .analysis_budgets import read_ast, AnalysisBudgetError
 
 TOOL_NAMES = ("slang", "verilator", "yosys", "sby", "eqy", "openroad")
 
@@ -120,12 +121,14 @@ def analyze(d: Design, out: Path, timeout: int) -> dict:
     result = run_command(cmd, "analyze", out, timeout)
     if result["status"] == "passed":
         try:
-            raw = json.loads(ast_path.read_text(encoding="utf-8"))
+            raw = read_ast(ast_path)
             summary = summarize_ast(raw, expected_top=d.top)
             summary["top"] = d.top
             summary["source_fingerprint"] = fingerprint(d)
             summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
             result["summary"] = str(summary_path)
+        except AnalysisBudgetError as exc:
+            result.update(status="failed", error=str(exc), analysis_budget_exceeded=exc.details)
         except (ValueError, OSError, TypeError) as exc:
             result["status"] = "failed"
             result["error"] = f"AST JSON inexploitable : {exc}"
@@ -198,13 +201,15 @@ def index_design(d: Design, out: Path, timeout: int) -> dict:
     result = analyze(d, out, timeout)
     if result["status"] == "passed":
         try:
-            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+            ast = read_ast(out / "elaborated_ast.json")
             index = build_index(ast, expected_top=d.top)
             index["source_fingerprint"] = fingerprint(d)
             index["manifest"] = str(d.manifest)
             index["sources"] = [str(x) for x in d.sources]
             index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
             result["index"] = str(index_path)
+        except AnalysisBudgetError as exc:
+            result.update(status="failed", error=str(exc), analysis_budget_exceeded=exc.details)
         except (OSError, ValueError, TypeError, KeyError) as exc:
             result["status"] = "failed"
             result["error"] = f"Index AST impossible : {exc}"
@@ -221,7 +226,7 @@ def dependency_design(d: Design, out: Path, timeout: int) -> dict:
     result = index_design(d, out, timeout)
     if result["status"] == "passed":
         try:
-            ast = json.loads((out / "elaborated_ast.json").read_text(encoding="utf-8"))
+            ast = read_ast(out / "elaborated_ast.json")
             idx = json.loads((out / "rtl_index.json").read_text(encoding="utf-8"))
             graph = build_dependency_graph(ast, expected_top=d.top, index=idx)
             graph["source_fingerprint"] = fingerprint(d)
@@ -229,6 +234,12 @@ def dependency_design(d: Design, out: Path, timeout: int) -> dict:
             result["dependencies"] = str(graph_path)
             result["edges"] = graph["counts"]["edges"]
             result["graph_warnings"] = graph["counts"]["warnings"]
+            limits = graph["analysis_limits"]
+            result["analysis_limits"] = {k: limits[k] for k in (
+                "assessment", "truncated_analyzers", "limited_analyzers",
+                "coverage_findings_truncated", "design_coverage")}
+        except AnalysisBudgetError as exc:
+            result.update(status="failed", error=str(exc), analysis_budget_exceeded=exc.details)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             result["status"] = "failed"
             result["error"] = f"Graphe RTL impossible : {exc}"
