@@ -8,6 +8,7 @@ reconnus sont signalés, jamais inférés à partir de texte source.
 from __future__ import annotations
 
 from collections import deque
+import re
 from typing import Any
 
 from .index import build_index
@@ -47,6 +48,41 @@ def _symbol_name(node: dict[str, Any]) -> str | None:
         return None
     parts = value.split(maxsplit=1)
     return parts[1] if len(parts) == 2 and parts[1] else None
+
+
+def _integral_cast_type(raw: Any) -> tuple[int, bool, bool] | None:
+    """Explicit integral width, signedness, four-state flag; no alias inference."""
+    if not isinstance(raw, str) or len(raw) > 128:
+        return None
+    fixed = re.fullmatch(r"(byte|shortint|int|integer|longint)(?: (signed|unsigned))?", raw)
+    if fixed:
+        base, sign = fixed.groups()
+        return ({"byte": 8, "shortint": 16, "int": 32, "integer": 32, "longint": 64}[base],
+                sign != "unsigned", base == "integer")
+    vector = re.fullmatch(r"(logic|bit|reg)(?: (signed|unsigned))?(?:\[(-?\d{1,5}):(-?\d{1,5})\])?", raw)
+    if vector:
+        base, sign, left, right = vector.groups()
+        width = abs(int(left)-int(right))+1 if left is not None else 1
+        if width <= 1024:
+            return width, sign == "signed", base != "bit"
+    return None
+
+
+def _sign_cast_operand(expr: dict[str, Any]) -> dict[str, Any] | None:
+    """Slang emits builtin names directly, but user calls as address/name links."""
+    if expr.get("kind") != "Call" or expr.get("subroutine") not in ("$signed", "$unsigned"):
+        return None
+    if any(k in expr for k in ("thisClass", "iterExpr", "iterVar", "inlineConstraints", "randConstraintRestrictions")):
+        return None
+    args = expr.get("arguments")
+    if not isinstance(args, list) or len(args) != 1 or not isinstance(args[0], dict):
+        return None
+    operand = args[0]
+    a = _integral_cast_type(operand.get("type"))
+    b = _integral_cast_type(expr.get("type"))
+    if a is None or b is None or a[0] != b[0] or a[2] != b[2] or b[1] != (expr["subroutine"] == "$signed"):
+        return None
+    return operand
 
 
 def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
@@ -385,6 +421,10 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                 data.update(operand_data)
                 control.update(operand_control)
             return data, control
+        if kind == "Call":
+            operand = _sign_cast_operand(expr)
+            if operand is not None:
+                return reads(path, operand)
         if kind == "ConditionalOp":
             cond_refs: set[str] = set()
             for condition in expr.get("conditions", []):
@@ -813,7 +853,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
             "Initialisations constantes recensées séparément, sans arêtes d'exécution",
             "Sélections statiques décrites en métadonnées, sans arêtes bit-à-bit",
             "Case normal, concaténations, sélections et generate if simples seulement",
-            "Pas de résolution des fonctions, tâches, casez/casex, generate complexes",
+            "Appels système $signed/$unsigned intégraux de largeur identique : références signal uniquement ; autres fonctions, tâches, casez/casex et generate complexes non résolus",
             "Événements toujours classés event : horloge versus reset non inférés",
             "Le graphe peut être incomplet si des avertissements sont présents",
             "Pas de preuve fonctionnelle, timing ou CDC",
