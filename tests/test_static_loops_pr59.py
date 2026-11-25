@@ -1,6 +1,8 @@
 import copy
 import pytest
-from rtlprep.static_loops import for_values, expand_loop, Unsupported, declared_loop
+from rtlprep.static_loops import (
+    for_values, expand_loop, Unsupported, declared_loop, local_blocks, block_link,
+)
 
 def lit(n):
     return {"kind":"IntegerLiteral","type":"int","value":str(n)}
@@ -101,3 +103,27 @@ def test_reject(mode):
         n["body"]["expr"]["right"]["selector"]=named("99 idx")
     with pytest.raises(Unsupported):
         expand_loop(n,d,resolve,bounds)
+
+
+def test_anonymous_statement_block_link():
+    d=decl()
+    n=loop()
+    body={"kind":"List","list":[{"kind":"VariableDeclaration","symbol":"12 i"},n]}
+    outer={"kind":"StatementBlock","addr":100,"name":"","members":[
+        {"kind":"StatementBlock","addr":101,"name":"","members":[d]}]}
+    blocks=local_blocks([outer])
+    assert block_link("101 ")==("101","")
+    assert declared_loop(body,blocks[block_link("101 ")])==(n,d)
+    assert declared_loop(body,blocks[block_link("100 ")]) is None
+    assert blocks.get(block_link("101 other")) is None
+
+
+def test_ambiguous_anonymous_block_identity_rejected():
+    first={"kind":"StatementBlock","addr":101,"name":"","members":[decl()]}
+    second=copy.deepcopy(first)
+    assert local_blocks([first,second])[block_link("101 ")] is None
+
+
+@pytest.mark.parametrize("raw",["101","i","x ","",None])
+def test_malformed_block_link_rejected(raw):
+    assert block_link(raw) is None
