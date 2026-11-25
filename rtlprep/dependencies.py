@@ -22,6 +22,7 @@ from .bitgraph import build_bit_dependency_graph
 from .function_dependencies import build_function_dependencies
 from .static_loops import build_static_loop_expansion
 from .array_dependencies import build_array_dependencies
+from .analysis_budgets import DEFAULT_BUDGET, AnalysisBudget, inspect_ast, build_analysis_limits
 from .symbols import SignalResolver, member_name
 
 GRAPH_SCHEMA_VERSION = 1
@@ -49,12 +50,14 @@ def _symbol_name(node: dict[str, Any]) -> str | None:
 
 
 def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
-                           index: dict[str, Any] | None = None) -> dict[str, Any]:
+                           index: dict[str, Any] | None = None,
+                           budget: AnalysisBudget = DEFAULT_BUDGET) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
     non reconnues ne sont pas déduits. Les avertissements explicitent ces limites.
     """
+    ast_metrics = inspect_ast(ast, budget)
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
         raise ValueError("Index RTL v1 / top incohérent avec le graphe demandé")
@@ -828,6 +831,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "schema_version": 1, "scope": "direct_scalar_input_port_candidates",
         "items": sorted(direct_scalar_inputs, key=lambda x: (x["target"], x["source"])),
     }
+    graph["analysis_limits"] = build_analysis_limits(graph, ast_metrics, budget)
     return graph
 
 
