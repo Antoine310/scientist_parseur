@@ -5,7 +5,7 @@ The existing signal and flat bit graphs are deliberately unchanged.
 """
 from collections import Counter, defaultdict
 import re
-from .constant_indices import evaluate, scope_constants
+from .constant_indices import evaluate, scope_constants, integer_value
 from .symbols import SignalResolver
 from .complex_constructs import location, reference_summary
 
@@ -181,6 +181,64 @@ def coordinates(expr,resolve,declared,constants,*,allow_conversion=False):
             raise Unsupported("indexed_part_select_not_supported")
     return signal,indices[:len(unpacked)],indices[len(unpacked):],bits
 
+def unsigned_width(raw):
+    if raw in ("int unsigned","integer unsigned"):
+        return 32
+    typ=layout(raw)
+    if typ is None or typ[2] or len(typ[1])>1:
+        return None
+    return abs(typ[1][0][0]-typ[1][0][1])+1 if typ[1] else 1
+
+def constant_unsigned_conversion(expr,constants):
+    """Bounded nonnegative constant conversion; never trust folded tags alone."""
+    if not isinstance(expr,dict) or expr.get("kind")!="Conversion":
+        return None
+    width=unsigned_width(expr.get("type"))
+    operand=expr.get("operand")
+    if width is None or not isinstance(operand,dict):
+        return None
+    input_width=unsigned_width(operand.get("type"))
+    if input_width is None:
+        return None
+    if operand.get("kind")=="Call" and operand.get("subroutine")=="$unsigned":
+        args=operand.get("arguments")
+        if (not isinstance(args,list) or len(args)!=1 or not isinstance(args[0],dict)
+                or "thisClass" in operand or "iterExpr" in operand
+                or "iterVar" in operand or "inlineConstraints" in operand):
+            return None
+        arg=args[0]
+        arg_width=32 if arg.get("type") in ("int","integer","int signed","integer signed") else unsigned_width(arg.get("type"))
+        if arg_width!=input_width:
+            return None
+        value=evaluate(arg,constants)
+        if value is None or ("constant" in operand and integer_value(operand["constant"])!=value):
+            return None
+    else:
+        value=evaluate(operand,constants)
+        if value is None:
+            return None
+    value &= (1<<width)-1
+    if "constant" in expr and integer_value(expr["constant"])!=value:
+        return None
+    return width,value
+
+def constant_assignment(assignment,resolve,declared,constants):
+    """Return explicit constant destination coordinates, or None if unproven."""
+    if (not isinstance(assignment,dict) or assignment.get("kind")!="Assignment"
+            or assignment.get("isNonBlocking") is not False
+            or "op" in assignment or "timingControl" in assignment):
+        return None
+    result=constant_unsigned_conversion(assignment.get("right"),constants)
+    if result is None:
+        return None
+    width,value=result
+    dest=coordinates(assignment.get("left"),resolve,declared,constants)
+    if width!=len(dest[3]):
+        raise Unsupported("constant_conversion_width_mismatch")
+    return [{"target":dest[0],"target_unpacked_indices":dest[1],
+             "target_packed_indices":dest[2],"target_bit":bit,"value":(value>>i)&1}
+            for i,bit in enumerate(dest[3])]
+
 def expand_assignment(assignment,resolve,declared,constants):
     if (not isinstance(assignment,dict) or assignment.get("kind")!="Assignment"
             or assignment.get("isNonBlocking") is not False
@@ -200,6 +258,7 @@ def build_array_dependencies(ast,*,index):
     declared=layouts(index)
     items=[]
     edges=[]
+    constant_positions=0
     visited=0
     truncated=False
     pending=[(ast.get("design",{}).get("members",[]),None,{},0,False)]
@@ -247,8 +306,16 @@ def build_array_dependencies(ast,*,index):
                         row[side]=None
                 items.append(row)
                 try:
+                    fixed=constant_assignment(assignment,resolve,declared,constants)
+                    if fixed is not None:
+                        if len(edges)+constant_positions+len(fixed)>MAX_EDGES:
+                            truncated=True
+                            raise Unsupported("edge_budget_exceeded")
+                        row.update(coverage="array_position_candidates",constant_target_coordinates=fixed)
+                        constant_positions+=len(fixed)
+                        continue
                     local=expand_assignment(assignment,resolve,declared,constants)
-                    if len(edges)+len(local)>MAX_EDGES:
+                    if len(edges)+constant_positions+len(local)>MAX_EDGES:
                         truncated=True
                         raise Unsupported("edge_budget_exceeded")
                     edges.extend({**e,"assignment_id":len(items)-1} for e in local)
