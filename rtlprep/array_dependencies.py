@@ -401,7 +401,7 @@ def build_array_dependencies(ast,*,index,captured_assignments=None):
             "items":items,"edges":edges,"counts":{"captured":len(items),
             "supported":counts["array_position_candidates"],"partial":counts["partial"],
             "edges":len(edges),"truncated":truncated},
-            "caveat":"Separate unpacked and outer packed coordinates, not flattened offsets. "
+            "caveat":"Separate unpacked and outer packed coordinates, not flattened offsets. " +
                      ("No arbitrary expressions, procedural priority, global writers, functional influence or proof."
                       if extension else "No arbitrary expressions, procedural arrays, global writers, functional influence or proof.")}
     if extension:
