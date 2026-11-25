@@ -15,6 +15,8 @@ from .index import build_index
 from .symbols import SignalResolver
 from .constant_indices import normalize_positions, scope_constants
 from .bit_widths import integral_shape, width as shape_width, resize_parts
+from .bit_width_literals import literal_width as elaborated_literal_width, resize_constant_state
+from .bitgraph import declared_bounds, selected_bounds, source_positions, expand_assignment
 
 BIT_ACCESS_SCHEMA_VERSION = 1
 MAX_RECORDS = 2000
@@ -223,7 +225,9 @@ def _semantic_constant_ids(ast: dict[str, Any]) -> set[tuple[str, str]]:
 def _segments(node: Any, known: set[str], path: str, depth: int = 0,
               resolver: SignalResolver | None = None,
               constant_ids: frozenset[tuple[str, str]] = frozenset(),
-              width_events: list[dict[str, Any]] | None = None
+              width_events: list[dict[str, Any]] | None = None,
+              allow_literals: bool = False,
+              trial_bounds: dict | None = None
               ) -> list[tuple[str | None, dict[str, Any], int]]:
     if depth > MAX_DEPTH or not isinstance(node, dict):
         raise _Partial("rhs_depth_or_shape")
@@ -231,6 +235,8 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
     if kind in ("RangeSelect", "ElementSelect"):
         source, selected, width = _selection(node, known, path, resolver)
         assert width is not None
+        if trial_bounds is not None:
+            source_positions(selected,trial_bounds.get(source),width)
         return [(source, selected, width)]
     if kind == "Concatenation":
         operands = node.get("operands")
@@ -238,12 +244,17 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             raise _Partial("malformed_or_large_concatenation")
         output: list[tuple[str | None, dict[str, Any], int]] = []
         for operand in operands:
-            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids, width_events))
+            output.extend(_segments(operand, known, path, depth + 1, resolver, constant_ids, width_events, allow_literals, trial_bounds))
             if len(output) > MAX_SEGMENTS:
                 raise _Partial("too_many_segments")
         return output
-    if kind == "IntegerLiteral":
-        width = _literal_width(node)
+    if kind == "IntegerLiteral" or (allow_literals and kind == "UnbasedUnsizedIntegerLiteral"):
+        width = _literal_width(node) if kind == "IntegerLiteral" else None
+        if width is None and allow_literals and width_events is not None:
+            width=elaborated_literal_width(node)
+            if width is not None:
+                width_events.append({"mode":"elaborated_literal","destination_width":width,
+                                     "literal_kind":kind})
         if width is None:
             raise _Partial("literal_width_unknown")
         return [(None, {"kind": "literal", "width": width}, width)]
@@ -251,6 +262,11 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         # A runtime source's 'constant' field does not prove it is a
         # compile-time value. Require an exact semantic declaration.
         width = _packed_width(node.get("type"))
+        if width is None and allow_literals and width_events is not None:
+            shape=integral_shape(node.get("type"))
+            if shape is not None:
+                width=shape_width(shape)
+                width_events.append({"mode":"explicit_source_width","source_width":width})
         if width is None:
             raise _Partial("source_width_unknown")
         raw = node.get("symbol")
@@ -261,6 +277,8 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
             return [(None, {"kind": "constant_reference", "width": width}, width)]
         source = _base(node, known, path, resolver)
         # This is deliberately opaque: no source sub-lane offsets inferred.
+        if trial_bounds is not None:
+            source_positions({"kind":"whole"},trial_bounds.get(source),width)
         return [(source, {"kind": "whole"}, width)]
     if kind == "Replication":
         count_node, concat = node.get("count"), node.get("concat")
@@ -273,7 +291,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if count is None or count < 1 or count > MAX_SEGMENTS:
             raise _Partial("replication_count_out_of_bounds")
         unit = _segments(concat, known, path, depth + 1,
-                         resolver, constant_ids, width_events)
+                         resolver, constant_ids, width_events, allow_literals, trial_bounds)
         if not unit or len(unit) * count > MAX_SEGMENTS:
             raise _Partial("replication_segments_exceed_limit")
         if sum(part[2] for part in unit) * count > MAX_WIDTH:
@@ -296,7 +314,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         if output_width is None or input_width is None or output_width != input_width:
             raise _Partial("bitwise_not_width_unproven_or_changed")
         parts = _segments(operand, known, path, depth + 1,
-                          resolver, constant_ids, width_events)
+                          resolver, constant_ids, width_events, allow_literals, trial_bounds)
         if sum(part[2] for part in parts) != output_width:
             raise _Partial("bitwise_not_segment_width_mismatch")
         # Do not guess how nested transforms compose or simplify.
@@ -313,7 +331,7 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         source_width = _packed_width(operand.get("type"))
         if dest_width is not None and dest_width == source_width:
             segments = _segments(operand, known, path, depth + 1,
-                                 resolver, constant_ids, width_events)
+                                 resolver, constant_ids, width_events, allow_literals, trial_bounds)
             if sum(part[2] for part in segments) != dest_width:
                 raise _Partial("conversion_width_mismatch")
             return segments
@@ -335,11 +353,14 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
                 segments=[(None,{"kind":"constant_reference","width":n},n)]
             else:
                 source=_base(operand,known,path,resolver)
+                if trial_bounds is not None:
+                    source_positions({"kind":"whole"},trial_bounds.get(source),n)
                 segments=[(source,{"kind":"whole"},n)]
         else:
-            segments=_segments(operand,known,path,depth+1,resolver,constant_ids,width_events)
+            segments=_segments(operand,known,path,depth+1,resolver,constant_ids,width_events,allow_literals,trial_bounds)
         try:
-            result,mode=resize_parts(segments,a,b)
+            result,mode=(resize_constant_state(segments,a,b) if allow_literals
+                         else resize_parts(segments,a,b))
         except ValueError as exc:
             raise _Partial(str(exc)) from exc
         width_events.append({"mode":mode,"source_width":shape_width(a),
@@ -406,7 +427,8 @@ def _graph_literal_position(node: Any) -> bool:
 
 
 def _bit_graph_positions_valid(node: Any, depth: int = 0,
-                               budget: list[int] | None = None) -> bool:
+                               budget: list[int] | None = None, *,
+                               allow_literals: bool = False) -> bool:
     """Stricter gate for bit graph than the legacy position metadata.
 
     In particular an indexed part select's right operand is a width,
@@ -421,6 +443,8 @@ def _bit_graph_positions_valid(node: Any, depth: int = 0,
     kind = node.get("kind")
     if kind in ("NamedValue", "IntegerLiteral"):
         return True
+    if allow_literals and kind == "UnbasedUnsizedIntegerLiteral":
+        return elaborated_literal_width(node) is not None
     if kind in ("ElementSelect", "RangeSelect"):
         base = node.get("value")
         if not isinstance(base, dict) or base.get("kind") != "NamedValue":
@@ -433,19 +457,20 @@ def _bit_graph_positions_valid(node: Any, depth: int = 0,
     if kind == "Concatenation":
         parts = node.get("operands")
         return (isinstance(parts, list) and 1 <= len(parts) <= MAX_SEGMENTS
-                and all(_bit_graph_positions_valid(p, depth + 1, budget) for p in parts))
+                and all(_bit_graph_positions_valid(p, depth + 1, budget, allow_literals=allow_literals) for p in parts))
     if kind == "Replication":
         return (_graph_literal_position(node.get("count"))
-                and _bit_graph_positions_valid(node.get("concat"), depth + 1, budget))
+                and _bit_graph_positions_valid(node.get("concat"), depth + 1, budget, allow_literals=allow_literals))
     if kind in ("Conversion", "SignedConversion") or (
             kind == "UnaryOp" and node.get("op") == "BitwiseNot"):
-        return _bit_graph_positions_valid(node.get("operand"), depth + 1, budget)
+        return _bit_graph_positions_valid(node.get("operand"), depth + 1, budget, allow_literals=allow_literals)
     return False
 
 
 def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None,
-                           enable_width_conversions: bool = True) -> dict[str, Any]:
+                           enable_width_conversions: bool = True,
+                           enable_width_literals: bool = True) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
@@ -468,6 +493,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
               "procedural_blocks_visited": 0, "procedural_blocks_skipped": 0,
               "unsupported_statements": 0}
     statement_budget = [0]
+    basic_bounds=declared_bounds(structural)
+    extended_bounds=declared_bounds(structural,extended=True)
 
     def extract(path: str, node: Any, *,
                 procedure_kind: str | None = None,
@@ -475,7 +502,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 events: tuple[dict[str, str], ...] = (),
                 timing_scope: str = "not_procedural",
                 context_partial: bool = False,
-                selector_constants: dict | None = None) -> None:
+                selector_constants: dict | None = None,
+                procedural_constants: dict | None = None) -> None:
         counts["assignments_seen"] += 1
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
             return
@@ -516,16 +544,53 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 "guards": list(guards), "events": list(events),
                 "timing_scope": timing_scope,
             })
-        try:
+        def populate(candidate, *, additional=False, lhs=lhs, rhs=rhs):
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
-            item["target_selection"] = select
-            width_events=[] if enable_width_conversions and item["bit_graph_eligible"] else None
+            candidate["target_selection"] = select
+            if additional and procedural_constants:
+                # Resolve only lexically visible elaborated parameters.
+                lhs=normalize_positions(lhs,procedural_constants)
+                rhs=normalize_positions(rhs,procedural_constants)
+                dest,select,dest_width=_selection(lhs,known[path],path,resolver)
+                assert dest==target
+                candidate["target_selection"]=select
+            if additional:
+                candidate["bit_graph_eligible"]=(_bit_graph_positions_valid(lhs)
+                    and _bit_graph_positions_valid(rhs,allow_literals=True))
+                if not candidate["bit_graph_eligible"]:
+                    raise _Partial("unvalidated_ast_positions")
+            width_events=[] if enable_width_conversions and candidate["bit_graph_eligible"] else None
             parts = _segments(rhs, known[path], path, resolver=resolver,
-                              constant_ids=constant_ids,width_events=width_events)
+                              constant_ids=constant_ids,width_events=width_events,
+                              allow_literals=additional,
+                              trial_bounds=extended_bounds if additional else None)
             width = sum(part[2] for part in parts)
             if width > MAX_WIDTH:
                 raise _Partial("rhs_too_wide")
+            if additional:
+                # Validate complete source segments before dropping any
+                # high positions. An array element is not a flat bit.
+                for source,selection,span in parts:
+                    if source is not None:
+                        source_positions(selection,extended_bounds.get(source),span)
+                hi,lo=selected_bounds(select,extended_bounds.get(target))
+                actual_width=hi-lo+1
+                if actual_width!=width:
+                    a=integral_shape(rhs.get("type"))
+                    b=integral_shape(lhs.get("type"))
+                    assignment_shape=integral_shape(node.get("type"))
+                    if (a is None or b is None or assignment_shape is None
+                            or assignment_shape!=b or shape_width(a)!=width
+                            or shape_width(b)!=actual_width
+                            or any("_value_transform" in sel for _,sel,_ in parts)
+                            or node.get("op") is not None or node.get("timingControl") is not None):
+                        raise _Partial("target_rhs_width_mismatch")
+                    parts,mode=resize_constant_state(parts,a,b)
+                    width_events.append({"mode":"assignment_"+mode,"source_width":width,
+                                         "destination_width":actual_width,
+                                         "source_signed":a[2],"destination_signed":b[2]})
+                    width=actual_width
             if dest_width is not None and dest_width != width:
                 raise _Partial("target_rhs_width_mismatch")
             rhs_lsb = 0
@@ -551,26 +616,54 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     seg["target_msb"] = start + rhs_lsb + span - 1
                 positioned.append(seg)
                 rhs_lsb += span
+            if additional and procedural_constants and width_events is not None:
+                if lhs!=node.get("left") or rhs!=node.get("right"):
+                    width_events.append({"mode":"scoped_procedural_selectors"})
             if width_events:
-                item["width_conversions"]=width_events
-            item["source_segments"] = list(reversed(positioned))
-            item["rhs_width"] = width
-            item["coverage"] = (
+                candidate["width_conversions"]=width_events
+            candidate["source_segments"] = list(reversed(positioned))
+            candidate["rhs_width"] = width
+            candidate["coverage"] = (
                 "explicit_target_lanes"
                 if dest_width is not None and select["kind"] in ("bit", "range")
                 else "rhs_lanes_only"
             )
             if context_partial:
-                # Position metadata may be syntactically useful, but a
-                # malformed/unsupported guard or event cannot be complete.
-                item["coverage"] = "partial"
-                item["reason"] = "unsupported_procedural_context"
-                counts["partial"] += 1
-            else:
-                counts["precise"] += 1
+                candidate["coverage"]="partial"
+                candidate["reason"]="unsupported_procedural_context"
+
+        try:
+            populate(item)
         except _Partial as exc:
-            item["reason"] = str(exc)
-            counts["partial"] += 1
+            item["reason"]=str(exc)
+
+        # Preserve the PR69 mapping verbatim whenever it already expands.
+        # Retry only selected width/literal failures; never broaden the
+        # assignment eligibility or reinterpret an opaque target.
+        if (enable_width_conversions and enable_width_literals and not context_partial
+                and node.get("op") is None and node.get("timingControl") is None):
+            reason=item.get("reason")
+            if item["coverage"]!="partial":
+                try:
+                    expand_assignment(item,extended_bounds if item.get("width_conversions") else basic_bounds)
+                except (ValueError,KeyError,TypeError,AttributeError) as exc:
+                    reason=str(exc)
+            if reason in ("conversion_state_change_unmodeled","conversion_width_unproven_or_changed",
+                          "target_rhs_width_mismatch","unsupported_rhs_UnbasedUnsizedIntegerLiteral",
+                          "literal_width_unknown","source_width_unknown"):
+                trial={**item,"coverage":"partial","rhs_width":None,"source_segments":[]}
+                trial.pop("reason",None)
+                trial.pop("width_conversions",None)
+                try:
+                    populate(trial,additional=True)
+                    if not trial.get("width_conversions"):
+                        raise _Partial("no_additional_width_evidence")
+                    expand_assignment(trial,extended_bounds)
+                except (_Partial,ValueError,KeyError,TypeError,AttributeError):
+                    pass
+                else:
+                    item=trial
+        counts["partial" if item["coverage"]=="partial" else "precise"]+=1
         rows.append(item)
 
     def _timing(path: str, node: Any
@@ -604,7 +697,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                    guards: tuple[dict[str, Any], ...] = (),
                    events: tuple[dict[str, str], ...] = (),
                    timing_scope: str = "no_explicit_timing",
-                   partial: bool = False, depth: int = 0) -> None:
+                   partial: bool = False, depth: int = 0,
+                   procedural_constants: dict | None = None) -> None:
         if counts["truncated"]:
             return
         statement_budget[0] += 1
@@ -617,7 +711,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 statements(path, child, procedure_kind=procedure_kind,
                            guards=guards, events=events,
                            timing_scope=timing_scope,
-                           partial=partial, depth=depth + 1)
+                           partial=partial, depth=depth + 1,procedural_constants=procedural_constants)
             return
         if not isinstance(node, dict):
             if node is not None:
@@ -631,7 +725,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 return
             extract(path, assignment, procedure_kind=procedure_kind,
                     guards=guards, events=events, timing_scope=timing_scope,
-                    context_partial=partial)
+                    context_partial=partial,procedural_constants=procedural_constants)
             return
         if kind in ("List", "StatementList", "Block"):
             field = {"List": "list", "StatementList": "statements",
@@ -642,7 +736,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 return
             statements(path, children, procedure_kind=procedure_kind,
                        guards=guards, events=events, timing_scope=timing_scope,
-                       partial=partial, depth=depth + 1)
+                       partial=partial, depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Timed":
             timed_events, timing, timing_partial = _timing(path, node.get("timing"))
@@ -658,7 +752,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             statements(path, child, procedure_kind=procedure_kind,
                        guards=guards, events=events + timed_events,
                        timing_scope=timing, partial=partial or timing_partial,
-                       depth=depth + 1)
+                       depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Conditional":
             conds = node.get("conditions")
@@ -685,7 +779,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                            events=events, timing_scope=timing_scope,
                            partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
-                           depth=depth + 1)
+                           depth=depth + 1,procedural_constants=procedural_constants)
             return
         if kind == "Case":
             mode = node.get("condition")
@@ -713,7 +807,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                                guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                                events=events, timing_scope=timing_scope,
                                partial=partial or not valid_entry or not labels
-                                       or len(guards) >= MAX_PROC_GUARDS, depth=depth + 1)
+                                       or len(guards) >= MAX_PROC_GUARDS, depth=depth + 1,procedural_constants=procedural_constants)
                 elif child is not None:
                     counts["unsupported_statements"] += 1
             default = node.get("defaultCase")
@@ -728,7 +822,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                                guards=guards + (spec,) if len(guards) < MAX_PROC_GUARDS else guards,
                                events=events, timing_scope=timing_scope,
                                partial=partial or not valid or len(guards) >= MAX_PROC_GUARDS,
-                               depth=depth + 1)
+                               depth=depth + 1,procedural_constants=procedural_constants)
                 else:
                     counts["unsupported_statements"] += 1
             return
@@ -769,7 +863,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 if procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
                     counts["procedural_blocks_visited"] += 1
                     statements(parent, node.get("body"),
-                               procedure_kind=procedure_kind)
+                               procedure_kind=procedure_kind,
+                               procedural_constants=local_constants)
                 else:
                     counts["procedural_blocks_skipped"] += 1
 
