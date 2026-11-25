@@ -142,19 +142,31 @@ def build_complex_construct_index(ast,*,index):
     pending=[(ast.get("design",{}).get("members",[]),None,0,None)]
     visited=0
     truncated=False
+    cap_events={}
+    first={}
+    def hit(reason,owner,depth):
+        cap_events[reason]=cap_events.get(reason,0)+1
+        first.setdefault(reason,{"instance":owner,"depth":depth,"visited":visited,
+                                 "pending":len(pending),"captured":len(items)})
     while pending:
         obj,owner,depth,context=pending.pop()
         visited+=1
         if visited>MAX_NODES or len(items)>=MAX_ROWS:
+            if visited>MAX_NODES:
+                hit("node_cap",owner,depth)
+            if len(items)>=MAX_ROWS:
+                hit("row_cap",owner,depth)
             truncated=True
             break
         if depth>MAX_DEPTH:
+            hit("depth_cap",owner,depth)
             truncated=True
             continue
         if isinstance(obj,list):
             # Limit traversal queue growth as well as visited work.
             available=max(0,MAX_NODES-visited-len(pending))
             if len(obj)>available:
+                hit("list_queue_cap",owner,depth)
                 truncated=True
             pending.extend((x,owner,depth+1,context) for x in reversed(obj[:available]))
             continue
@@ -197,11 +209,13 @@ def build_complex_construct_index(ast,*,index):
         for key,child in reversed(list(obj.items())):
             if key not in METADATA and isinstance(child,(dict,list)):
                 if len(pending)+visited>=MAX_NODES:
+                    hit("child_queue_cap",owner,depth)
                     truncated=True
                     break
                 pending.append((child,owner,depth+1,context))
     counts=Counter(r["kind"] for r in items)
     return {"schema_version":1,"scope":"procedural_and_continuous_ast_constructs",
+            "truncation_events":{"hits":cap_events,"first":first,"visited":visited,"pending_at_stop":len(pending)},
             "items":items,"counts":{"captured":len(items),"calls":counts["call"],
                 "selections":counts["selection"],"loops":counts["loop"],"truncated":truncated},
             "caveat":"Observed argument and selector references only; no function return influence, "
