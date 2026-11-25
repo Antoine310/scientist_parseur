@@ -259,6 +259,11 @@ def _segments(node: Any, known: set[str], path: str, depth: int = 0,
         # A runtime source's 'constant' field does not prove it is a
         # compile-time value. Require an exact semantic declaration.
         width = _packed_width(node.get("type"))
+        if width is None and allow_literals and width_events is not None:
+            shape=integral_shape(node.get("type"))
+            if shape is not None:
+                width=shape_width(shape)
+                width_events.append({"mode":"explicit_source_width","source_width":width})
         if width is None:
             raise _Partial("source_width_unknown")
         raw = node.get("symbol")
@@ -613,7 +618,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
         # Preserve the PR69 mapping verbatim whenever it already expands.
         # Retry only selected width/literal failures; never broaden the
         # assignment eligibility or reinterpret an opaque target.
-        if enable_width_conversions and enable_width_literals and not context_partial:
+        if (enable_width_conversions and enable_width_literals and not context_partial
+                and node.get("op") is None and node.get("timingControl") is None):
             reason=item.get("reason")
             if item["coverage"]!="partial":
                 try:
