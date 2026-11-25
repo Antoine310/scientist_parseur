@@ -3,6 +3,15 @@
 **Statut : prototype évolutif avec index structurel et graphe de dépendances MVP.** Ce projet fournit un socle Python pour analyser et valider des circuits SystemVerilog dans un environnement de test autorisé. Il ne nécessite aucun LLM ni clé API.
 
 
+## Registre de dette technique et feuille de route
+
+Consulter le [registre vivant RTLPrep](docs/rtlprep-backlog.md) avant de
+commencer une nouvelle PR. Il conserve les limites par PR d'origine,
+les identifiants stables, les mesures de référence, les critères de
+clôture et l'ordre proposé des prochains travaux. Le mettre à jour dans
+chaque PR concernée ; une fusion n'implique pas que toutes les limites
+de la fonctionnalité sont résolues.
+
 ## Préparer et mettre à jour les dépendances (Debian / WSL2)
 
 Un **programme d'installation et de diagnostic** est fourni dans
