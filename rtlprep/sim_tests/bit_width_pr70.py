@@ -9,3 +9,4 @@ async def literal_fill_and_concat(dut):
         assert int(dut.ones.value)==255
         assert int(dut.zeroes.value)==0
         assert int(dut.mixed.value)==((value&15)<<2)|2
+        assert int(dut.flags.value)==7
