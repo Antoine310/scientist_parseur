@@ -85,6 +85,8 @@ def summarize_rows(graph,index):
     limits=graph["analysis_limits"]["analyzers"]
     result={}
     for name,(_,counter,_) in ANALYZERS.items():
+        if name=="bitwise_dependencies" and name not in graph:
+            continue
         data=graph[name]
         rows=data["items"]
         if len(rows)!=data["counts"][counter] or len(rows)!=limits[name]["captured"]:
