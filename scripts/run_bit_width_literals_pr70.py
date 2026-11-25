@@ -90,15 +90,16 @@ def execute(out):
             if name=="core":
                 # Independent expected positions read from the pinned source
                 # and actual elaboration: mcountinhibit_q scalar vector,
-                # disabled/reserved counters at indices 0, 2, 3.
+                # implemented counters inhibited on reset at indices 0, 2, 3.
                 csr=[r for r in delta["recovered"]
                      if r["target"]=="cv32e40p_core.cs_registers_i.mcountinhibit_q"
                      and r["source"] and r["source"].get("line")==1529]
                 expected=[[0],[2],[3]]
-                assert sorted(r["constant_target_bits"] for r in csr)==expected,csr
+                observed=sorted(r["constant_target_bits"] for r in csr)
+                assert observed==expected,csr
                 assert all(r["new_edges"]==0 and any(m["mode"]=="scoped_procedural_selectors"
                            for m in r["modes"]) for r in csr),csr
-                case["csr_genvar_oracle"]={"expected":expected,"observed":expected,"status":"passed"}
+                case["csr_genvar_oracle"]={"expected":expected,"observed":observed,"status":"passed"}
             report["cases"].append(case)
             save()
             print(json.dumps({k:v for k,v in case.items() if k!="recovered"},indent=2),flush=True)
