@@ -79,6 +79,11 @@ def single_assignment(body):
     raise Unsupported("not_single_blocking_assignment")
 
 def bit_position(expr,constants,resolve,bounds):
+    if isinstance(expr,dict) and expr.get("kind")=="NamedValue":
+        signal=resolve(expr)
+        if signal is None or bounds.get(signal)!=(0,0):
+            raise Unsupported("not_proven_scalar")
+        return signal,0
     if not isinstance(expr,dict) or expr.get("kind")!="ElementSelect":
         raise Unsupported("not_direct_bit_select")
     base=expr.get("value")
