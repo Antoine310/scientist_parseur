@@ -1,6 +1,7 @@
 """Assignment-local bit dependency candidates from validated bit-access rows."""
 from collections import defaultdict
 import re
+from .bit_widths import integral_shape
 
 MAX_EDGES = 16384
 MAX_WIDTH = 1024
@@ -21,14 +22,19 @@ def packed_bounds(type_string):
     return hi,lo
 
 
-def declared_bounds(index):
+def declared_bounds(index, *, extended=False):
+    def parse(raw):
+        if not extended:
+            return packed_bounds(raw)
+        shape=integral_shape(raw)
+        return shape[:2] if shape is not None else None
     candidates=defaultdict(set)
     for instance in index["instances"]:
         for port in instance["ports"]:
-            candidates[instance["path"]+"."+port["name"]].add(packed_bounds(port.get("type")))
+            candidates[instance["path"]+"."+port["name"]].add(parse(port.get("type")))
     for signal in index["signals"]:
         name=signal.get("path") or signal["instance_path"]+"."+signal["name"]
-        candidates[name].add(packed_bounds(signal.get("type")))
+        candidates[name].add(parse(signal.get("type")))
     return {name:next(iter(values)) for name,values in candidates.items()
             if len(values)==1 and None not in values}
 
@@ -49,6 +55,26 @@ def selected_bounds(selection,bounds):
     if type(start) is not int or type(end) is not int or not lo<=start<=end<=hi:
         raise ValueError("selection_outside_declared_bounds")
     return end,start
+
+
+def source_positions(selection,bounds,lanes,depth=0):
+    if depth>12 or not isinstance(selection,dict):
+        raise ValueError("invalid_conversion_view")
+    if selection.get("kind")!="conversion_view":
+        hi,lo=selected_bounds(selection,bounds)
+        if hi-lo+1!=lanes:
+            raise ValueError("source_width_mismatch")
+        return list(range(lo,hi+1))
+    span=selection.get("base_width")
+    offset=selection.get("offset")
+    repeat=selection.get("repeat")
+    if (type(span) is not int or not 1<=span<=MAX_WIDTH
+            or type(offset) is not int or not 0<=offset<span
+            or type(repeat) is not bool or selection.get("width")!=lanes
+            or (not repeat and offset+lanes>span)):
+        raise ValueError("invalid_conversion_view")
+    base=source_positions(selection.get("base"),bounds,span,depth+1)
+    return [base[offset]]*lanes if repeat else base[offset:offset+lanes]
 
 
 def expand_assignment(row,bounds):
@@ -92,11 +118,11 @@ def expand_assignment(row,bounds):
                 raise ValueError("unknown_source")
             constant_lanes.extend(lo+k for k in sorted(lanes))
             continue
-        shi,slo=selected_bounds(seg["selection"],bounds.get(source))
-        if shi-slo+1!=len(lanes):
-            raise ValueError("source_width_mismatch")
-        for offset in range(len(lanes)):
-            edges.append({"source":source,"source_bit":slo+offset,
+        if seg["selection"].get("kind")=="conversion_view" and not row.get("width_conversions"):
+            raise ValueError("unvalidated_conversion_view")
+        positions=source_positions(seg["selection"],bounds.get(source),len(lanes))
+        for offset,source_bit in enumerate(positions):
+            edges.append({"source":source,"source_bit":source_bit,
                           "target":target,"target_bit":lo+start+offset,
                           "value_transform":transform})
     if len(occupied)!=width:
@@ -108,6 +134,7 @@ def build_bit_dependency_graph(access,index):
     if access.get("schema_version")!=1 or index.get("schema_version")!=1:
         raise ValueError("bit access and index v1 required")
     bounds=declared_bounds(index)
+    extended_bounds=declared_bounds(index,extended=True)
     edges=[]
     items=[]
     truncated=bool(access["counts"]["truncated"])
@@ -119,7 +146,7 @@ def build_bit_dependency_graph(access,index):
               "coverage":"partial","edge_count":0,"constant_target_bits":[]}
         items.append(item)
         try:
-            local,constants=expand_assignment(row,bounds)
+            local,constants=expand_assignment(row,extended_bounds if row.get("width_conversions") else bounds)
         except (ValueError,KeyError,TypeError,AttributeError) as exc:
             item["reason"]=str(exc)
             continue
