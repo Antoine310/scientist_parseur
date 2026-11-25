@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 import json
 
+from .row_budgets import effective_row_limit, MAX_CONFIGURABLE_ROWS
 from . import expressions, flow, bitaccess, bitgraph, sequential, intercycle
 from . import complex_constructs, function_dependencies, static_loops, array_dependencies
 
@@ -17,9 +18,14 @@ class AnalysisBudget:
     max_ast_depth: int = 128
     max_graph_values: int = 5_000_000
     max_graph_depth: int = 128
+    expression_rows: int | None = None
+    complex_rows: int | None = None
 
     def __post_init__(self):
         for name,value in asdict(self).items():
+            if name in ("expression_rows", "complex_rows"):
+                effective_row_limit(value, 4096)
+                continue
             if type(value) is not int or value < 1:
                 raise ValueError("invalid analysis budget: "+name)
         if self.max_ast_depth>256 or self.max_graph_depth>256:
@@ -151,6 +157,14 @@ def analyzer_summary(graph):
         exclusions={k:natural(counts[k],name+"."+k) for k in EXCLUSION_FIELDS if k in counts}
         upstream=INHERITED_FROM.get(name)
         inherited=bool(upstream and graph[upstream]["counts"]["truncated"])
+        configured={k:getattr(module,k) for k in limit_names}
+        row_key={"expressions":"MAX_EXPRESSIONS","complex_constructs":"MAX_ROWS"}.get(name)
+        if row_key is not None and "row_limit" in data:
+            if data["row_limit"] is None:
+                raise ValueError("missing effective row limit: "+name)
+            configured[row_key]=effective_row_limit(data["row_limit"],configured[row_key])
+            if captured>configured[row_key]:
+                raise ValueError("captured rows exceed effective limit: "+name)
         reports[name]={"scope":data.get("scope"),"captured":captured,
                        "status_counts":dict(sorted(status.items())),
                        "partial_reasons":dict(sorted(reasons.items())),
@@ -158,7 +172,7 @@ def analyzer_summary(graph):
                        "rows_with_nested_truncation":nested,
                        "upstream_truncation":upstream if inherited else None,
                        "exclusion_counts":exclusions,
-                       "configured_limits":{k:getattr(module,k) for k in limit_names}}
+                       "configured_limits":configured}
     truncated=[name for name,r in reports.items() if r["truncated"] or
                r["rows_with_nested_truncation"] or r["upstream_truncation"]]
     limited=[name for name,r in reports.items() if name in truncated or
