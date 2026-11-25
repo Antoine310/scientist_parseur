@@ -18,6 +18,7 @@ import sys
 import tempfile
 import time
 
+from rtlprep.analysis_budgets import read_ast
 from rtlprep.index import build_index
 from rtlprep.dependencies import build_dependency_graph
 from rtlprep.manifest import load_design
@@ -123,7 +124,7 @@ def worker(manifest,out,timeout,stages):
     # A fresh worker has executed only the slang subprocess at this point.
     slang_peak=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     t=time.perf_counter()
-    ast=json.loads((out/"elaborated_ast.json").read_text(encoding="utf-8"))
+    ast=read_ast(out/"elaborated_ast.json")
     load_seconds=time.perf_counter()-t
     t=time.perf_counter()
     idx=build_index(ast,expected_top=design.top)
