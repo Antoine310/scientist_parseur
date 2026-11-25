@@ -271,6 +271,8 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
             current = current.get("value")
         return None, selected
 
+    cap_events = {"row_cap_hits": 0, "first": None}
+
     def add_assignment(path: str, node: Any, *, procedure_kind: str | None = None,
                        guards: tuple[dict[str, Any], ...] = (),
                        events: tuple[dict[str, Any], ...] = (),
@@ -278,6 +280,9 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
                        source_fallback: dict[str, Any] | None = None) -> None:
         if len(results) >= MAX_EXPRESSIONS:
             stats["truncated"] = True
+            cap_events["row_cap_hits"] += 1
+            if cap_events["first"] is None:
+                cap_events["first"] = {"instance": path, "source": _source(node) if isinstance(node, dict) else None}
             return
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
             stats["unsupported_statements"] += 1
@@ -522,6 +527,7 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         "schema_version": EXPRESSION_SCHEMA_VERSION,
         "scope": "continuous_and_supported_procedural_assignments",
         "items": results,
+        "truncation_events": cap_events,
         "counts": {"captured": len(results), **stats},
         "caveat": (
             "AST syntaxique, chemins de branche et événements potentiels ; "
