@@ -13,6 +13,7 @@ from typing import Any
 
 from .index import build_index
 from .symbols import SignalResolver
+from .constant_indices import normalize_positions, scope_constants
 
 BIT_ACCESS_SCHEMA_VERSION = 1
 MAX_RECORDS = 2000
@@ -442,7 +443,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 guards: tuple[dict[str, Any], ...] = (),
                 events: tuple[dict[str, str], ...] = (),
                 timing_scope: str = "not_procedural",
-                context_partial: bool = False) -> None:
+                context_partial: bool = False,
+                selector_constants: dict | None = None) -> None:
         counts["assignments_seen"] += 1
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
             return
@@ -456,6 +458,15 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
         if len(rows) >= MAX_RECORDS:
             counts["truncated"] = True
             return
+        # Only continuous assignments use lexical constant normalization in
+        # this phase. Keep the legacy extraction untouched if the strict
+        # bit-position gate still rejects either side.
+        if selector_constants:
+            normalized_lhs = normalize_positions(lhs, selector_constants)
+            normalized_rhs = normalize_positions(rhs, selector_constants)
+            if (_bit_graph_positions_valid(normalized_lhs)
+                    and _bit_graph_positions_valid(normalized_rhs)):
+                lhs, rhs = normalized_lhs, normalized_rhs
         item: dict[str, Any] = {
             "target": target, "source": _location(node),
             "coverage": "partial", "target_selection": None,
@@ -692,16 +703,18 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             # analyzed by descending through their children.
             counts["unsupported_statements"] += 1
 
-    def visit(members: Any, parent: str | None = None) -> None:
+    def visit(members: Any, parent: str | None = None,
+              inherited_constants: dict | None = None) -> None:
         if not isinstance(members, list):
             return
+        local_constants = scope_constants(members, inherited_constants)
         for node in members:
             if not isinstance(node, dict):
                 continue
             kind = node.get("kind")
             if kind in ("GenerateBlock", "GenerateBlockArray", "Scope"):
                 if node.get("isUninstantiated") is not True:
-                    visit(node.get("members"), parent)
+                    visit(node.get("members"), parent, local_constants)
             elif kind == "Instance":
                 name = node.get("name")
                 if not isinstance(name, str):
@@ -714,7 +727,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     raise ValueError("Instance sans corps dans bit_accesses")
                 visit(body.get("members"), path)
             elif kind == "ContinuousAssign" and parent is not None:
-                extract(parent, node.get("assignment"))
+                extract(parent, node.get("assignment"), selector_constants=local_constants)
             elif kind == "ProceduralBlock" and parent is not None:
                 procedure_kind = node.get("procedureKind")
                 if procedure_kind in ("AlwaysFF", "AlwaysComb", "AlwaysLatch", "Always"):
