@@ -202,25 +202,25 @@ def build_array_dependencies(ast,*,index):
     edges=[]
     visited=0
     truncated=False
-    pending=[(ast.get("design",{}).get("members",[]),None,{},0)]
+    pending=[(ast.get("design",{}).get("members",[]),None,{},0,False)]
     while pending:
-        members,owner,inherited,depth=pending.pop()
+        members,owner,inherited,depth,instance_parameters=pending.pop()
         if not isinstance(members,list):
             continue
         if depth>MAX_DEPTH or visited+len(members)>MAX_SCAN:
             truncated=True
             continue
         visited+=len(members)
-        constants=scope_constants(members,inherited)
+        constants=scope_constants(members,inherited,instance_parameters=instance_parameters)
         for node in members:
             if not isinstance(node,dict):
                 continue
             kind=node.get("kind")
             if kind=="Instance" and isinstance(node.get("body"),dict) and isinstance(node.get("name"),str):
                 child=f"{owner}.{node['name']}" if owner else node["name"]
-                pending.append((node["body"].get("members",[]),child,{},depth+1))
+                pending.append((node["body"].get("members",[]),child,{},depth+1,True))
             elif kind in ("GenerateBlock","GenerateBlockArray","Scope") and node.get("isUninstantiated") is not True:
-                pending.append((node.get("members",[]),owner,constants,depth+1))
+                pending.append((node.get("members",[]),owner,constants,depth+1,False))
             elif kind=="ContinuousAssign" and owner is not None:
                 assignment=node.get("assignment")
                 if not isinstance(assignment,dict):
