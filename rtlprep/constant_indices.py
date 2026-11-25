@@ -1,6 +1,6 @@
 """Conservative normalization of elaborated constant selector expressions.
 
-Only local Parameter declarations in the active lexical scope are accepted.
+Local parameters and explicitly opted-in instance parameter ports are accepted.
 Arithmetic is bounded, typed and nonnegative; no wrap, sign changes of
 negative values, unknown bits or runtime constant tags are inferred.
 """
@@ -52,8 +52,8 @@ def fits(value,type_string):
     return 1<=width<=1024 and value < (1 << (width-(m[1]=="signed")))
 
 
-def scope_constants(members,parent=None):
-    """Collect only direct lexical localparams, rejecting duplicate addresses.
+def scope_constants(members,parent=None,*,instance_parameters=False):
+    """Collect lexical localparams and optionally direct elaborated parameter ports.
 
     Caller resets the map at instance boundaries and never enters inactive
     generate blocks. No global name lookup, even when names are unique.
@@ -73,7 +73,11 @@ def scope_constants(members,parent=None):
         if addr in result:
             result[addr]=None
             continue
-        if node.get("kind")!="Parameter" or node.get("isLocal") is not True:
+        if node.get("kind")!="Parameter":
+            continue
+        if node.get("isLocal") is not True and not (
+                instance_parameters and node.get("isLocal") is False
+                and node.get("isPort") is True):
             continue
         name=node.get("name")
         v=integer_value(node.get("value"))
