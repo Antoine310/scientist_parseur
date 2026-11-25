@@ -66,6 +66,7 @@ jobs:
           path: |
             reports/pr59/**/loops.result.json
             reports/pr59/**/loops.diagnostic.json
+            reports/pr59/**/elaborated_ast.json
             reports/pr59/**/rtl_dependencies.json
             reports/pr59/**/simulation_results.xml
             reports/pr59/**/analyze.stderr.log
