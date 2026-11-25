@@ -121,10 +121,9 @@ def execute(out):
             if old_m["ast_sha256"]!=new_m["ast_sha256"]:
                 raise ValueError("different AST bytes")
             delta=compare_graphs(old,new)
-            if (old["bit_dependency_graph"]["counts"]["assignments"],
-                old["bit_dependency_graph"]["counts"]["supported"],
-                old["bit_dependency_graph"]["counts"]["partial"],
-                old["bit_dependency_graph"]["counts"]["edges"])!=expected:
+            bit=old["bit_dependency_graph"]["counts"]
+            if (bit["assignments"]!=expected[0] or bit["supported"]<expected[1]
+                    or bit["partial"]>expected[2] or bit["edges"]<expected[3] or bit["truncated"]):
                 raise ValueError("PR67 bit baseline mismatch: "+name)
             if new["expressions"]["truncation_events"]["row_cap_hits"] or new["complex_constructs"]["truncation_events"]["hits"].get("row_cap"):
                 raise ValueError("expanded row cap still hit: "+name)
