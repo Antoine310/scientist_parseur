@@ -102,3 +102,18 @@ def test_row_pair_budget(monkeypatch):
     g=build_dependency_graph(ast(assignment()),expected_top="top")
     assert not g["bitwise_dependencies"]["edges"]
     assert g["bitwise_dependencies"]["items"][0]["reason"]=="row_pair_budget"
+
+
+def test_constant_state_domain_without_dynamic_leaf():
+    rhs=binary("BinaryAnd",right=n("IntegerLiteral",type="bit[3:0]",value="4'b0000"))
+    edges,fixed,_=expand(assignment(rhs))
+    assert len(edges)==4 and not fixed
+    assert all(e["source"]=="top.a" for e in edges)
+
+def test_historical_graph_without_bitwise_channel_readable():
+    from rtlprep.analysis_budgets import analyzer_summary
+    g=build_dependency_graph(ast(assignment()),expected_top="top",enable_bitwise=False)
+    g.pop("bitwise_dependencies")
+    report=analyzer_summary(g)
+    assert "bitwise_dependencies" not in report["analyzers"]
+    assert len(report["analyzers"])==10
