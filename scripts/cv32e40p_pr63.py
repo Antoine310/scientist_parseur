@@ -29,7 +29,7 @@ MAX_BLOB_BYTES=2*1024*1024
 def blob_bytes(data):
     return hashlib.sha1(f"blob {len(data)}\0".encode()+data).hexdigest()
 
-def materialize(upstream,destination,entry):
+def materialize(upstream,destination,entry,*,additional_pins=None):
     """Copy exact Git blob bytes into a fresh report-local snapshot.
 
     No checkout, fetch, sparse-checkout changes, or text normalization.
@@ -41,6 +41,18 @@ def materialize(upstream,destination,entry):
     if set(pins)&set(EXTRA_BLOBS):
         raise FixtureError("PR63 extra pins overlap existing lock")
     pins.update(EXTRA_BLOBS)
+    if additional_pins:
+        if set(pins)&set(additional_pins):
+            raise FixtureError("additional pins overlap existing pins")
+        import re
+        from pathlib import PurePosixPath
+        for name,sha in additional_pins.items():
+            p=PurePosixPath(name)
+            if (p.is_absolute() or str(p)!=name or not p.parts or
+                    any(not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", part) for part in p.parts)
+                    or not re.fullmatch(r"[0-9a-f]{40}",sha)):
+                raise FixtureError("unsafe additional pin")
+        pins.update(additional_pins)
     destination.mkdir(parents=False,exist_ok=False)
     env=dict(os.environ,GIT_OPTIONAL_LOCKS="0",GIT_TERMINAL_PROMPT="0",GIT_NO_LAZY_FETCH="1")
     for key in ("GIT_DIR","GIT_WORK_TREE","GIT_INDEX_FILE","GIT_COMMON_DIR"):
