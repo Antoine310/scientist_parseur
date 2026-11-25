@@ -9,7 +9,7 @@ import json
 
 from .row_budgets import effective_row_limit
 from . import expressions, flow, bitaccess, bitgraph, sequential, intercycle
-from . import complex_constructs, function_dependencies, static_loops, array_dependencies, bitwise_dependencies
+from . import complex_constructs, function_dependencies, static_loops, array_dependencies, bitwise_dependencies, mux_dependencies
 
 @dataclass(frozen=True)
 class AnalysisBudget:
@@ -100,6 +100,7 @@ ANALYZERS={
     "static_loop_expansion":(static_loops,"captured",("MAX_ITERATIONS","MAX_ROWS","MAX_EDGES","MAX_SCAN","MAX_DEPTH")),
     "array_dependencies":(array_dependencies,"captured",("MAX_DIMENSIONS","MAX_WIDTH","MAX_ROWS","MAX_EDGES","MAX_SCAN","MAX_DEPTH")),
     "bitwise_dependencies":(bitwise_dependencies,"captured",("MAX_ROWS","MAX_EDGES","MAX_WIDTH","MAX_DEPTH","MAX_NODES","MAX_ROW_PAIRS")),
+    "mux_dependencies":(mux_dependencies,"captured",("MAX_ROWS","MAX_EDGES","MAX_WIDTH","MAX_DEPTH","MAX_NODES","MAX_BRANCHES","MAX_ROW_PAIRS")),
     "sequential_candidates":(sequential,"captured",("MAX_PATHS_PER_TARGET","MAX_WRITES_PER_PATH")),
     "intercycle_dependencies":(intercycle,"captured",("MAX_ROWS","MAX_REFERENCES","MAX_DEPTH")),
 }
@@ -134,7 +135,7 @@ def analyzer_summary(graph):
     reports={}
     for name,(module,counter,limit_names) in ANALYZERS.items():
         # Stored graph v1 artifacts predating PR72 did not have this channel.
-        if name=="bitwise_dependencies" and name not in graph:
+        if name in ("bitwise_dependencies","mux_dependencies") and name not in graph:
             continue
         data=graph.get(name)
         if not isinstance(data,dict) or data.get("schema_version")!=1:
