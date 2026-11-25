@@ -9,7 +9,7 @@ import json
 
 from .row_budgets import effective_row_limit
 from . import expressions, flow, bitaccess, bitgraph, sequential, intercycle
-from . import complex_constructs, function_dependencies, static_loops, array_dependencies
+from . import complex_constructs, function_dependencies, static_loops, array_dependencies, bitwise_dependencies
 
 @dataclass(frozen=True)
 class AnalysisBudget:
@@ -99,6 +99,7 @@ ANALYZERS={
     "function_dependencies":(function_dependencies,"captured",("MAX_ARGS","MAX_NODES","MAX_DEPTH","MAX_ROWS","MAX_SCAN")),
     "static_loop_expansion":(static_loops,"captured",("MAX_ITERATIONS","MAX_ROWS","MAX_EDGES","MAX_SCAN","MAX_DEPTH")),
     "array_dependencies":(array_dependencies,"captured",("MAX_DIMENSIONS","MAX_WIDTH","MAX_ROWS","MAX_EDGES","MAX_SCAN","MAX_DEPTH")),
+    "bitwise_dependencies":(bitwise_dependencies,"captured",("MAX_ROWS","MAX_EDGES","MAX_WIDTH","MAX_DEPTH","MAX_NODES","MAX_ROW_PAIRS")),
     "sequential_candidates":(sequential,"captured",("MAX_PATHS_PER_TARGET","MAX_WRITES_PER_PATH")),
     "intercycle_dependencies":(intercycle,"captured",("MAX_ROWS","MAX_REFERENCES","MAX_DEPTH")),
 }
