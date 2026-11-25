@@ -88,7 +88,7 @@ def test_continuous_old_supported_not_duplicated():
     a=ast(assignment(),procedural=False)
     assert graph(a,False)["array_dependencies"]==graph(a)["array_dependencies"]
 def test_continuous_literal_retry():
-    a=ast(assignment(rhs=n("Conversion",type="logic[7:4]",operand=n("IntegerLiteral",type="bit[31:0]",value="32'd1"))),procedural=False)
+    a=ast(assignment(rhs=n("UnbasedUnsizedIntegerLiteral",type="logic[7:4]",value="4'b1111")),procedural=False)
     d=graph(a)["array_dependencies"]
     assert d["counts"]["captured"]==d["counts"]["supported"]==1
     assert len(d["items"][0]["constant_target_positions"])==4
@@ -113,3 +113,43 @@ def test_generated_selector_identity():
     members[-1]["members"][0]["addr"]=31
     d=graph(data)["array_dependencies"]
     assert d["counts"]["supported"]==0 and not d["edges"]
+
+
+def test_ascending_dimension_order():
+    a=assignment(word("q",20,1,"logic[1:2][4:7]","logic[4:7]"),
+                 word("p",10,2,"logic[1:2][4:7]","logic[4:7]"))
+    a["type"]="logic[4:7]"
+    typ=array_dependencies.layout("logic[1:2][4:7]")
+    edges,_=expand(a,resolve,{"top.p":typ,"top.q":typ},{})
+    assert [(e["source_bit"],e["target_bit"]) for e in edges]==[(b,b) for b in (7,6,5,4)]
+
+def test_final_range():
+    def sl(expr,left,right):
+        return n("RangeSelect",type=f"logic[{left}:{right}]",selectionKind="Simple",
+                 value=expr,left=num(left),right=num(right))
+    a=assignment(sl(word("q",20,1),6,5),sl(word("p",10,2),7,6))
+    a["type"]="logic[6:5]"
+    edges,_=evaluate(a)
+    assert [(e["source_bit"],e["target_bit"]) for e in edges]==[(6,5),(7,6)]
+
+def test_final_bit():
+    a=assignment(n("ElementSelect",type="logic",value=word("q",20,1),selector=num(5)),
+                 n("ElementSelect",type="logic",value=word("p",10,2),selector=num(7)))
+    a["type"]="logic"
+    edges,_=evaluate(a)
+    assert [(e["source_bit"],e["target_bit"]) for e in edges]==[(7,5)]
+
+def test_constant_positions_share_edge_budget(monkeypatch):
+    rhs=n("Conversion",type="logic[7:4]",operand=n("IntegerLiteral",type="bit[31:0]",value="32'd0"))
+    monkeypatch.setattr(array_dependencies,"MAX_EDGES",3)
+    d=graph(ast(assignment(rhs=rhs)))["array_dependencies"]
+    assert d["counts"]["truncated"] and d["counts"]["supported"]==0
+    assert not d["edges"] and "constant_target_positions" not in d["items"][0]
+
+def test_unsupported_timing_retains_partial():
+    data=ast(assignment())
+    proc=data["design"]["members"][0]["body"]["members"][-1]
+    proc["body"]=n("Timed",timing=n("Delay"),stmt=proc["body"])
+    d=graph(data)["array_dependencies"]
+    assert d["counts"]["partial"]==1 and not d["edges"]
+    assert d["items"][0]["reason"]=="unsupported_procedural_context"
