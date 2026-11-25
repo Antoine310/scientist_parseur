@@ -133,6 +133,9 @@ def nested_truncated(row):
 def analyzer_summary(graph):
     reports={}
     for name,(module,counter,limit_names) in ANALYZERS.items():
+        # Stored graph v1 artifacts predating PR72 did not have this channel.
+        if name=="bitwise_dependencies" and name not in graph:
+            continue
         data=graph.get(name)
         if not isinstance(data,dict) or data.get("schema_version")!=1:
             raise ValueError("missing analyzer v1: "+name)
