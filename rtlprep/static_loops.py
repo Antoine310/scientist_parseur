@@ -128,6 +128,25 @@ def expand_loop(loop,decl,resolve,bounds):
                       "source":source,"source_bit":sbit,"target":target,"target_bit":tbit})
     return {"iteration_count":len(values),"iterator":key[1] if key else None,"edges":edges}
 
+def block_identity(node):
+    """StatementBlock names may be empty in slang; retain exact address."""
+    if not isinstance(node,dict) or node.get("kind")!="StatementBlock":
+        return None
+    addr,name=node.get("addr"),node.get("name")
+    if type(addr) not in (str,int) or not str(addr).isdecimal() or not isinstance(name,str):
+        return None
+    return str(addr),name
+
+def block_link(raw):
+    # ASTSerializer::writeLink emits address + a space + symbol.name,
+    # including a trailing space for an anonymous statement block.
+    if not isinstance(raw,str) or len(raw)>192:
+        return None
+    addr,sep,name=raw.partition(" ")
+    if not sep or not addr.isdecimal():
+        return None
+    return addr,name
+
 def local_blocks(members):
     """Collect statement-block declarations within one instance only."""
     result={}
@@ -140,7 +159,7 @@ def local_blocks(members):
             return {}
         if not isinstance(node,dict) or node.get("kind")!="StatementBlock":
             continue
-        key=identity(node)
+        key=block_identity(node)
         if key is not None:
             result[key]=None if key in result else node
         children=node.get("members",[])
@@ -210,7 +229,7 @@ def build_static_loop_expansion(ast,*,index):
         kind=node.get("kind")
         if kind=="Block" and node.get("blockKind")=="Sequential":
             body=node.get("body")
-            pair=declared_loop(body,blocks.get(link(node.get("block"))))
+            pair=declared_loop(body,blocks.get(block_link(node.get("block"))))
             if pair is not None:
                 record(pair[0],owner,proc,pair[1])
             else:
