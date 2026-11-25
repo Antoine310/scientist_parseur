@@ -1,0 +1,60 @@
+name: Mux data and control candidates (Verilator + cocotb)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  mux-pr73:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: veryl-lang/setup-verilator@76aba8a3059d050453f35d4589e623ef60309089
+        with:
+          version: '5.040'
+      - name: Install dependencies and verify tools
+        run: |
+          python -m pip install -e '.[dev,simulation]'
+          python -c 'import cocotb; assert cocotb.__version__ == "2.0.1"'
+          verilator --version
+      - name: Install pinned slang v12.1
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --silent --retry 3 https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+      - name: Unit tests
+        run: python -m pytest -q tests/test_mux_pr73.py
+      - name: Install pinned official RTL
+        run: python scripts/rtlprep_env.py --install-rtl-fixtures
+      - name: Real slang and behavioral fixture
+        run: python -m scripts.run_mux_pr73 --out reports/pr73
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mux-pr73
+          path: |
+            reports/pr73/**/mux.result.json
+            reports/pr73/**/summary.json
+            reports/pr73/**/diagnostics.result.json
+            reports/pr73/**/elaborated_ast.json
+            reports/pr73/**/rtl_dependencies.json
+            reports/pr73/**/simulation_results.xml
+            reports/pr73/**/analyze.stderr.log
