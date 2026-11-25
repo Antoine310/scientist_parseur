@@ -97,9 +97,13 @@ def expression(expr,resolve,declared,constants,ops,budget,depth=0):
         return [set() for _ in range(n)]
     if kind=="Conversion":
         operand=expr.get("operand")
-        if shape(operand)!=(n,state):
+        m,operand_state=shape(operand)
+        if m!=n:
             raise Unsupported("conversion_width_or_state_change")
-        return checked(child(operand),n)
+        lanes=child(operand)
+        if operand_state!=state and any(lanes):
+            raise Unsupported("conversion_width_or_state_change")
+        return checked(lanes,n)
     if kind=="Concatenation":
         parts=expr.get("operands")
         if not isinstance(parts,list) or not 1<=len(parts)<=32:
