@@ -34,6 +34,10 @@ def compare_graphs(before,after):
     if b!=a:
         changed=sorted(k for k in set(b)|set(a) if b.get(k)!=a.get(k))
         raise ValueError("non-target graph changed: "+", ".join(changed))
+    old_reports=before["analysis_limits"]["analyzers"]
+    new_reports=after["analysis_limits"]["analyzers"]
+    if {k:v for k,v in old_reports.items() if k not in TARGETS}!={k:v for k,v in new_reports.items() if k not in TARGETS}:
+        raise ValueError("non-target analyzer diagnostics changed")
     result={}
     for name in TARGETS:
         old,new=before[name],after[name]
@@ -43,8 +47,8 @@ def compare_graphs(before,after):
             raise ValueError("previous rows lost or modified: "+name)
         if name=="complex_constructs" and new["items"][:len(old["items"])]!=old["items"]:
             raise ValueError("complex construct traversal order changed")
-        old_limit=before["analysis_limits"]["analyzers"][name]
-        new_limit=after["analysis_limits"]["analyzers"][name]
+        old_limit=old_reports[name]
+        new_limit=new_reports[name]
         if old_limit["captured"]!=len(old["items"]) or new_limit["captured"]!=len(new["items"]):
             raise ValueError("inventory mismatch: "+name)
         result[name]={"before":old_limit,"after":new_limit,
@@ -57,6 +61,8 @@ def worker(ast_path,top,out,rows):
         raise RuntimeError("Linux required for KiB RSS")
     budget=AnalysisBudget(expression_rows=rows,complex_rows=rows)
     out.mkdir(parents=True,exist_ok=False)
+    with ast_path.open("rb") as stream:
+        ast_sha256=hashlib.file_digest(stream,"sha256").hexdigest()
     start=time.perf_counter()
     ast=read_ast(ast_path,budget)
     after_read=time.perf_counter()
@@ -68,7 +74,7 @@ def worker(ast_path,top,out,rows):
     path.write_text(json.dumps(graph,indent=2,ensure_ascii=False),encoding="utf-8")
     end=time.perf_counter()
     report={"status":"passed","row_limit":rows,
-            "ast_sha256":hashlib.sha256(ast_path.read_bytes()).hexdigest(),
+            "ast_sha256":ast_sha256,
             "seconds":{"ast_read":after_read-start,"index":after_index-after_read,
                        "graph":after_graph-after_index,"serialization":end-after_graph,
                        "total_without_slang":end-start},
