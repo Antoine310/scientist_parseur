@@ -5,7 +5,7 @@ copy or literal-only conversion chain. No procedural priority or value
 proof. Legacy array coordinate functions remain unchanged.
 """
 from .array_dependencies import (Unsupported, layout, decompose, coordinates,
-    index_value, MAX_DIMENSIONS, MAX_WIDTH, contains_array)
+    index_value, MAX_DIMENSIONS, MAX_WIDTH)
 from .bit_widths import integral_shape, width
 from .bit_width_literals import literal_width
 
@@ -51,7 +51,6 @@ def selected(expr,resolve,declared,constants):
     result=coordinates(expr,resolve,declared,constants)
     if result[1] or not 1<=len(result[3])<=MAX_WIDTH:
         raise Unsupported("unsupported_packed_coordinate_width")
-    shape=integral_shape(expr.get("type"))
     # integral_shape rejects ascending types; coordinate order is
     # proven independently here, including ascending final dimensions.
     end=layout(expr.get("type"))
