@@ -127,7 +127,7 @@ LABELS=[
 PATHS=[
     ("id_stage_i.alu_operand_a_ex_o","id_stage_i.regfile_alu_wdata_fw_i"),
     ("id_stage_i.alu_operand_b_ex_o","id_stage_i.regfile_alu_wdata_fw_i"),
-    ("id_stage_i.alu_operand_a_ex_o","if_stage_i.jump_target_ex_i"),
+    ("id_stage_i.alu_operand_c_ex_o","if_stage_i.jump_target_ex_i"),
     ("data_rdata_i","ex_stage_i.lsu_rdata_i"),
     ("if_stage_i.prefetch_buffer_i.instruction_obi_i.obi_addr_o","instr_addr_o"),
     ("load_store_unit_i.data_obi_i.obi_addr_o","data_addr_o"),
