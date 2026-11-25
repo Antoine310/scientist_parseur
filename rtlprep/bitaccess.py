@@ -704,10 +704,12 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             counts["unsupported_statements"] += 1
 
     def visit(members: Any, parent: str | None = None,
-              inherited_constants: dict | None = None) -> None:
+              inherited_constants: dict | None = None, *,
+              instance_parameters: bool = False) -> None:
         if not isinstance(members, list):
             return
-        local_constants = scope_constants(members, inherited_constants)
+        local_constants = scope_constants(members, inherited_constants,
+                                          instance_parameters=instance_parameters)
         for node in members:
             if not isinstance(node, dict):
                 continue
@@ -725,7 +727,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 body = node.get("body")
                 if not isinstance(body, dict):
                     raise ValueError("Instance sans corps dans bit_accesses")
-                visit(body.get("members"), path)
+                visit(body.get("members"), path, instance_parameters=True)
             elif kind == "ContinuousAssign" and parent is not None:
                 extract(parent, node.get("assignment"), selector_constants=local_constants)
             elif kind == "ProceduralBlock" and parent is not None:
