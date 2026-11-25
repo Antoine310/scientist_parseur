@@ -89,7 +89,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None,
                            budget: AnalysisBudget = DEFAULT_BUDGET,
                            enable_width_conversions: bool = True,
-                           enable_width_literals: bool = True) -> dict[str, Any]:
+                           enable_width_literals: bool = True,
+                           enable_packed_coordinates: bool = True) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
@@ -832,6 +833,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         x["context"], x["role"], x["signal"], str(x["selection"])
     ))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
+    captured_assignments=[] if enable_packed_coordinates else None
     graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
@@ -844,7 +846,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "register_flow": build_register_flow(ast, expected_top=expected_top, index=structural),
         "bit_accesses": build_bit_access_index(ast, expected_top=expected_top, index=structural,
                                               enable_width_conversions=enable_width_conversions,
-                                              enable_width_literals=enable_width_literals),
+                                              enable_width_literals=enable_width_literals,
+                                              captured_assignments=captured_assignments),
         "resolved_parameter_symbols": sorted(
             constant_declarations[addr][1] for addr in constant_refs_seen
             if constant_declarations[addr][0] == "Parameter"
@@ -868,7 +871,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     graph["bit_dependency_graph"] = build_bit_dependency_graph(graph["bit_accesses"], structural)
     graph["function_dependencies"] = build_function_dependencies(ast, index=structural)
     graph["static_loop_expansion"] = build_static_loop_expansion(ast, index=structural)
-    graph["array_dependencies"] = build_array_dependencies(ast, index=structural)
+    graph["array_dependencies"] = build_array_dependencies(ast, index=structural, captured_assignments=captured_assignments)
     graph["coverage"] = build_coverage_summary(graph)
     graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     graph["intercycle_dependencies"] = build_intercycle_dependencies(graph["sequential_candidates"])
