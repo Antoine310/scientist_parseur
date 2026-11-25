@@ -253,7 +253,8 @@ def expand_assignment(assignment,resolve,declared,constants):
              "target_packed_indices":dest[2],"target_bit":db}
             for sb,db in zip(src[3],dest[3])]
 
-def build_array_dependencies(ast,*,index):
+def build_array_dependencies(ast,*,index,captured_assignments=None):
+    from .packed_coordinates import expand as expand_packed, multidimensional
     resolver=SignalResolver(ast,index)
     declared=layouts(index)
     items=[]
@@ -261,6 +262,49 @@ def build_array_dependencies(ast,*,index):
     constant_positions=0
     visited=0
     truncated=False
+    links={}
+    procedural=[]
+    for link in captured_assignments or ():
+        ordinal,flat,node,owner,constants,context_partial=link
+        if not (multidimensional(node.get("left")) or multidimensional(node.get("right"))):
+            continue
+        if flat.get("assignment_kind")=="procedural":
+            procedural.append(link)
+        elif id(node) in links:
+            links[id(node)]=None
+        else:
+            links[id(node)]=link
+    def packed_retry(row,link):
+        nonlocal constant_positions,truncated
+        ordinal,flat,node,owner,constants,context_partial=link
+        row.update(coordinate_evidence="pr71_fixed_packed",flat_assignment_id=ordinal)
+        if context_partial:
+            row["reason"]="unsupported_procedural_context"
+            return
+        if flat["target"]!=row["target"]:
+            row["reason"]="assignment_target_identity_mismatch"
+            return
+        try:
+            local,fixed=expand_packed(node,lambda n:resolver.resolve(owner,n),declared,constants)
+            if len(edges)+constant_positions+len(local)+len(fixed)>MAX_EDGES:
+                truncated=True
+                raise Unsupported("edge_budget_exceeded")
+            if not local and not fixed:
+                raise Unsupported("empty_coordinate_assignment")
+            if local:
+                if any(e["target"]!=row["target"] for e in local):
+                    raise Unsupported("assignment_target_identity_mismatch")
+                row["source"]=local[0]["source"]
+            if fixed and any(e["target"]!=row["target"] for e in fixed):
+                raise Unsupported("assignment_target_identity_mismatch")
+            edges.extend({**e,"assignment_id":len(items)-1} for e in local)
+            constant_positions+=len(fixed)
+            row.pop("reason",None)
+            row.update(coverage="array_position_candidates",edge_count=len(local))
+            if fixed:
+                row["constant_target_positions"]=fixed
+        except Unsupported as exc:
+            row["reason"]=str(exc)
     pending=[(ast.get("design",{}).get("members",[]),None,{},0,False)]
     while pending:
         members,owner,inherited,depth,instance_parameters=pending.pop()
@@ -322,13 +366,50 @@ def build_array_dependencies(ast,*,index):
                     row.update(coverage="array_position_candidates",edge_count=len(local))
                 except Unsupported as exc:
                     row["reason"]=str(exc)
+                    # Retain the legacy supported rows exactly. Retry only
+                    # a linked continuous row that was already partial.
+                    link=links.get(id(assignment))
+                    if link is not None and not truncated:
+                        row["legacy_reason"]=row["reason"]
+                        packed_retry(row,link)
         if len(items)>=MAX_ROWS:
             truncated=True
             break
+    # Reuse the bounded procedural visitor and its exact lexical
+    # constants, guards, event metadata and artifact-local assignment ID.
+    # No procedural expansion outside the original captured population.
+    for link in procedural:
+        ordinal,flat,node,owner,constants,context_partial=link
+        if len(items)>=MAX_ROWS:
+            truncated=True
+            break
+        resolve=lambda n:resolver.resolve(owner,n)
+        lhs,rhs=node.get("left"),node.get("right")
+        row={"instance":owner,"target":flat["target"],"source":None,
+             "source_location":flat.get("source"),"coverage":"partial","edge_count":0,
+             "assignment_kind":"procedural","procedure_kind":flat.get("procedure_kind"),
+             "guards":flat.get("guards",[]),"events":flat.get("events",[]),
+             "nonblocking":flat.get("nonblocking"),"timing_scope":flat.get("timing_scope"),
+             "source_selector_references":selector_refs(rhs,resolve),
+             "target_selector_references":selector_refs(lhs,resolve)}
+        items.append(row)
+        packed_retry(row,link)
+    extension=[r for r in items if r.get("coordinate_evidence")=="pr71_fixed_packed"]
     counts=Counter(r["coverage"] for r in items)
-    return {"schema_version":1,"scope":"direct_continuous_fixed_array_copy_candidates",
+    result={"schema_version":1,"scope":("fixed_array_copy_and_captured_procedural_packed_candidates"
+            if extension else "direct_continuous_fixed_array_copy_candidates"),
             "items":items,"edges":edges,"counts":{"captured":len(items),
             "supported":counts["array_position_candidates"],"partial":counts["partial"],
             "edges":len(edges),"truncated":truncated},
             "caveat":"Separate unpacked and outer packed coordinates, not flattened offsets. "
-                     "No arbitrary expressions, procedural arrays, global writers, functional influence or proof."}
+                     ("No arbitrary expressions, procedural priority, global writers, functional influence or proof."
+                      if extension else "No arbitrary expressions, procedural arrays, global writers, functional influence or proof.")}
+    if extension:
+        result["packed_coordinate_extension"]={
+            "captured":len(extension),
+            "supported":sum(r["coverage"]!="partial" for r in extension),
+            "partial":sum(r["coverage"]=="partial" for r in extension),
+            "dynamic_edges":sum(r["edge_count"] for r in extension),
+            "constant_positions":sum(len(r.get("constant_target_positions",[])) for r in extension),
+            "scope":"artifact_local_flat_assignment_links_not_flat_bit_edges"}
+    return result
