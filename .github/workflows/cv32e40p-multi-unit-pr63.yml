@@ -1,0 +1,61 @@
+name: CV32E40P multi-unit evaluation (real slang + pinned RTL)
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  cv32e40p-multi-unit-pr63:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout RTLPrep
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install RTLPrep
+        run: python -m pip install -e '.[dev]'
+
+      - name: Install pinned slang v12.1
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --silent --retry 3 https://github.com/MikePopoloski/slang/releases/download/v12.1/slang-linux-x86_64.tar.gz -o "$RUNNER_TEMP/slang.tar.gz"
+          echo "8a6930d28b12f40ec64e511186f4064ec52d518bd40ed520db8843ae57877d1f  $RUNNER_TEMP/slang.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/slang-dist"
+          tar -xzf "$RUNNER_TEMP/slang.tar.gz" -C "$RUNNER_TEMP/slang-dist"
+          BIN="$(find "$RUNNER_TEMP/slang-dist" -type f -name slang -perm /111 -print -quit)"
+          sudo install -m 0755 "$BIN" /usr/local/bin/slang
+          slang --version
+
+      - name: Unit tests
+        run: python -m pytest -q tests/test_cv32e40p_multi_unit_pr63.py
+
+      - name: Install pinned external RTL fixtures
+        run: python scripts/rtlprep_env.py --install-rtl-fixtures
+
+      - name: Evaluate six pinned official units
+        run: python -m scripts.run_cv32e40p_multi_unit_pr63 --out reports/pr63
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cv32e40p-multi-unit-pr63
+          path: |
+            reports/pr63/**/multi_unit.result.json
+            reports/pr63/**/deps.result.json
+            reports/pr63/**/analyze.result.json
+            reports/pr63/**/analyze.stderr.log
