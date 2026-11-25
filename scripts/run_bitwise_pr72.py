@@ -144,8 +144,8 @@ def execute(out):
              (1199,531,668,2842),(378,245,133,2469),151,"cv32e40p_core.ex_stage_i.alu_i")]:
             ast=read_ast(folder/"elaborated_ast.json")
             idx=json.loads((folder/"rtl_index.json").read_text())
-            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_bitwise=False)
-            new=build_dependency_graph(ast,expected_top=top,index=idx)
+            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_bitwise=False,enable_mux=False)
+            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_mux=False)
             c=old["bit_dependency_graph"]["counts"]
             assert tuple(c[k] for k in ("assignments","supported","partial","edges"))==flat_baseline,c
             c=old["array_dependencies"]["counts"]
