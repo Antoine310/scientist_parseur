@@ -1,6 +1,7 @@
 """Assignment-local array bit coordinates from elaborated slang type strings.
 
-Only explicit fixed dimensions and direct continuous copy assignments.
+Explicit fixed dimensions; legacy continuous copies and, when linked
+from the bounded bit-access visitor, selected procedural packed rows.
 The existing signal and flat bit graphs are deliberately unchanged.
 """
 from collections import Counter, defaultdict
