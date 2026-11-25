@@ -7,7 +7,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 import json
 
-from .row_budgets import effective_row_limit, MAX_CONFIGURABLE_ROWS
+from .row_budgets import effective_row_limit
 from . import expressions, flow, bitaccess, bitgraph, sequential, intercycle
 from . import complex_constructs, function_dependencies, static_loops, array_dependencies
 
