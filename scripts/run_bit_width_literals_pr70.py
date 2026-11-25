@@ -32,8 +32,12 @@ def check_fixture(graph):
         assert sorted((e["source"],e["source_bit"],e["target_bit"]) for e in edges)==sorted(
             (TOP+".u",a,b) for a,b in pairs),edges
         assert rows[0]["constant_target_bits"]==constants,rows
-    return {"reviewed_edges":4,"constant_lanes":18,"behavioral_vectors":256,
-            "behavioral_checks":768}
+    flags=[r for r in bits["items"] if r["target"]==TOP+".flags"]
+    assert len(flags)==3,flags
+    assert all(r["coverage"]!="partial" and r["edge_count"]==0 for r in flags),flags
+    assert sorted(r["constant_target_bits"] for r in flags)==[[0],[1],[2]],flags
+    return {"reviewed_edges":4,"constant_lanes":21,"behavioral_vectors":256,
+            "behavioral_checks":1024,"generated_constant_assignments":3}
 
 def recovery_summary(delta,instances):
     rows=delta["recovered"]
@@ -83,6 +87,18 @@ def execute(out):
             case={"name":name,**delta,"pr69_recovery_summary":recovery_summary(original,instances),
                   "pr70_recovery_summary":recovery_summary(delta,instances),
                   "truncated_analyzers":new["analysis_limits"]["truncated_analyzers"]}
+            if name=="core":
+                # Independent expected positions read from the pinned source
+                # and actual elaboration: mcountinhibit_q scalar vector,
+                # disabled/reserved counters at indices 0, 2, 3.
+                csr=[r for r in delta["recovered"]
+                     if r["target"]=="cv32e40p_core.cs_registers_i.mcountinhibit_q"
+                     and r["source"] and r["source"].get("line")==1529]
+                expected=[[0],[2],[3]]
+                assert sorted(r["constant_target_bits"] for r in csr)==expected,csr
+                assert all(r["new_edges"]==0 and any(m["mode"]=="scoped_procedural_selectors"
+                           for m in r["modes"]) for r in csr),csr
+                case["csr_genvar_oracle"]={"expected":expected,"observed":expected,"status":"passed"}
             report["cases"].append(case)
             save()
             print(json.dumps({k:v for k,v in case.items() if k!="recovered"},indent=2),flush=True)
