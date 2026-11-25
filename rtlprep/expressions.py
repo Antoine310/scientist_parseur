@@ -12,7 +12,7 @@ from .index import build_index
 from .symbols import SignalResolver, member_name
 
 EXPRESSION_SCHEMA_VERSION = 1
-MAX_EXPRESSIONS = 2000
+MAX_EXPRESSIONS = 4096
 # Elaborated generate-index formulas can contain several dozen nested AST
 # operations; 160 remains a hard per-expression budget.
 MAX_TREE_NODES = 160
@@ -48,13 +48,16 @@ def _source(node: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def build_expression_index(ast: dict[str, Any], *, expected_top: str,
-                           index: dict[str, Any] | None = None) -> dict[str, Any]:
+                           index: dict[str, Any] | None = None,
+                           row_limit: int | None = None) -> dict[str, Any]:
     """Extraire RHS, gardes et événements d'affectations RTL élaborées.
 
     Les gardes décrivent le chemin syntaxique de chaque affectation, pas
     l'équivalence logique, la priorité des nonblocking assignments ni
     la valeur calculée par un processus complet.
     """
+    from .row_budgets import effective_row_limit
+    limit = effective_row_limit(row_limit, MAX_EXPRESSIONS)
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
         raise ValueError("Index RTL v1 / top incohérent pour les expressions")
@@ -278,7 +281,7 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
                        events: tuple[dict[str, Any], ...] = (),
                        context_partial: bool = False,
                        source_fallback: dict[str, Any] | None = None) -> None:
-        if len(results) >= MAX_EXPRESSIONS:
+        if len(results) >= limit:
             stats["truncated"] = True
             cap_events["row_cap_hits"] += 1
             if cap_events["first"] is None:
@@ -528,6 +531,7 @@ def build_expression_index(ast: dict[str, Any], *, expected_top: str,
         "scope": "continuous_and_supported_procedural_assignments",
         "items": results,
         "truncation_events": cap_events,
+        "row_limit": limit,
         "counts": {"captured": len(results), **stats},
         "caveat": (
             "AST syntaxique, chemins de branche et événements potentiels ; "
