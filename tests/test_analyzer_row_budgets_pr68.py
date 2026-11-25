@@ -23,6 +23,13 @@ def test_valid_row_policy(value):
 
 def graphs():
     ast=ast_fixture()
+    # Make the two selection records distinguishable even if their
+    # operands are identical; the source belongs to the selection itself.
+    for m in ast["design"]["members"][0]["body"]["members"]:
+        if m.get("kind")=="ContinuousAssign":
+            rhs=m["assignment"]["right"]
+            rhs.update(source_file_start="fixture.sv",
+                       source_line_start=m["assignment"]["source_line_start"])
     idx=build_index(ast,expected_top="top")
     legacy=build_dependency_graph(ast,expected_top="top",index=idx,
                                   budget=AnalysisBudget(expression_rows=1,complex_rows=1))
