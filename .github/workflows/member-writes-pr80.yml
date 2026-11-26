@@ -58,6 +58,15 @@ jobs:
       - name: Real slang and independent behavioral fixture
         run: python -m scripts.run_member_writes_pr80 --out reports/pr80
 
+      - name: PR81 enum members (reuse fresh PR80 reference)
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_enum_member_writes_pr81.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_enum_member_writes_pr81 --out reports/pr81 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -70,3 +79,7 @@ jobs:
             reports/pr80/**/rtl_dependencies.json
             reports/pr80/**/simulation_results.xml
             reports/pr80/**/analyze.stderr.log
+            reports/pr81/**/enum_member_writes.result.json
+            reports/pr81/**/summary.json
+            reports/pr81/**/elaborated_ast.json
+            reports/pr81/**/simulation_results.xml
