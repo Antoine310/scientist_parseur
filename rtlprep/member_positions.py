@@ -113,6 +113,10 @@ def compare_history(items,graph):
 
 def build_member_positions(ast,index,graph):
     envelope,_,linked=collect_linked(ast,index)
+    return _build_member_positions(ast,index,graph,envelope,linked)
+
+
+def _build_member_positions(ast,index,graph,envelope,linked):
     if any(linked["counts"][k] for k in ("duplicate_records","candidate_disagreement_groups","mixed_coordinate_groups")):
         raise Unsupported("unresolved_member_candidate_overlap")
     types=Types(ast)
