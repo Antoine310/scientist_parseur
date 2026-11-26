@@ -214,11 +214,16 @@ jobs:
     needs: unit-tests
     uses: ./.github/workflows/unknown-rtl-validation.yml
 
+  aggregate-pr78:
+    needs: unit-tests
+    uses: ./.github/workflows/aggregate-pr78.yml
+
   full-validation:
     name: RTLPrep full validation
     if: ${{ always() }}
     needs:
       - unit-tests
+      - aggregate-pr78
       - analysis-budgets-pr62
       - analyzer-row-budgets-pr68
       - annotated-pr56
@@ -273,4 +278,4 @@ jobs:
         run: |
           set -euo pipefail
           jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS_JSON"
-          jq -e 'length == 46 and all(.[]; .result == "success")' <<< "$NEEDS_JSON"
+          jq -e 'length == 47 and all(.[]; .result == "success")' <<< "$NEEDS_JSON"

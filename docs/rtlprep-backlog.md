@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.11 — 26 novembre 2026 (fusion #76 et chantier #77)**  
+**Version : 1.12 — 26 novembre 2026 (fusion #77 et chantier #78)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #76** (`fa5a797a8044d4680bb8ed216115c7283bfc4fb4`). 46/46 CI PR sur `f0a52453528faa8b1567206329e4447bae940ceb`, 39/39 push sur le même head.
-**PR en cours : #77**, orchestration CI ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #77** (`4f894c0f70adf9bd72ed13cc6346f8ef2b305af3`). 47/47 jobs PR sur `331a39c6eaff812f59951df70bba99bf1fbab14f`.
+**PR en cours : #78**, inventaire des agrégats et concaténations directes ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -486,11 +486,18 @@ Résultats #76 : [preuve locale](https://github.com/Antoine310/scientist_parseur
 
 - [x] **PR76-REG-01** — Deux correctifs avant validation : SyntaxError ligne 235 typed_layout.py (56 erreurs de collecte, corrigé be3b3a0), argument types manquant dans build_typed_layout → expand (19 échecs CI, corrigé f0a5245). Aucun changement des oracles ; nouveau head 1106/1106 et 46/46, fusion effective. Sources : [commentaire 1](https://github.com/Antoine310/scientist_parseur/pull/76#issuecomment-7188096119), [commentaire 2](https://github.com/Antoine310/scientist_parseur/pull/76#issuecomment-7188108110).
 
-### PR #77 — Orchestration CI (en cours)
+### PR #77 — Orchestration CI (fusionnée)
 
-- [~] **PR77-ORCH-01 · P2** — Baseline mesurée sur head #76 : 46 PR + 39 push = 85 runs success, 1068 s fenêtre PR (17 min 48 s, attente incluse). Proposition : un orchestrateur, gate Python, annulation PR obsolète, 45 workflows spécialisés inchangés dans jobs, verdict final exigeant 46 succès. Voir [audit et matrice](ci-pr77.md). Reste : CI réelle, contrôle annulation/échec, noms checks requis et mesures comparables. PR62-CI-01 et PR05-CI-01 restent ouvertes (mutualisation/cache non validés). Aucun test historique retiré, aucun changement moteur.
-- [ ] **PR77-CAP-01 · P2** — 45 appels réutilisables sur limite GitHub de 50. Prévoir regroupement par familles / recette commune, sans perte de jobs ni oracles. Clôture : capacité d'extension et mesure avant/après, pas de cache non vérifié.
+- [~] **PR77-ORCH-01 · P2** — Baseline mesurée sur head #76 : 46 PR + 39 push = 85 runs success, 1068 s fenêtre PR (17 min 48 s, attente incluse). Proposition : un orchestrateur, gate Python, annulation PR obsolète, 45 workflows spécialisés inchangés dans jobs, verdict final exigeant 46 succès. Voir [audit et matrice](ci-pr77.md). Résultat : 47/47 jobs (46 suites historiques + verdict) dans un seul run PR en 227 s contre 1068 s sur #76. Un seul échantillon avant/après, attente incluse. Reste : contrôle annulation/échec, noms checks requis, mesures répétées et CI post-fusion. PR62-CI-01 et PR05-CI-01 restent ouvertes (mutualisation/cache non validés). Aucun test historique retiré, aucun changement moteur.
+- [ ] **PR77-CAP-01 · P2** — 45 appels réutilisables à #77, 46 proposés à #78, sur limite GitHub de 50. Prévoir regroupement par familles / recette commune, sans perte de jobs ni oracles. Clôture : capacité d'extension et mesure avant/après, pas de cache non vérifié.
 - [ ] **PR77-LOCAL-01 · P3** — Agent de validation sur PC Linux différé par décision utilisateur ; réévaluer après plusieurs PR CI optimisées. Si nécessaire, opérations prédéfinies, environnement isolé, autorisation explicite, rapport par SHA via GitHub, aucun accès root/commande arbitraire/API OpenAI payante ni contournement des quotas. Aucun merge automatique.
+
+Résultats #77 : [run 45799218988](https://github.com/Antoine310/scientist_parseur/actions/runs/45799218988), head 331a39c, 47/47 succès. 10:12:56–10:16:43 UTC, 227 s, baisse observée 78,7 % par rapport à #76 (1068 s). 1 déclenchement PR au lieu de 85 PR+push. Fusion 4f894c0 autorisée et effective. CI push main 45799854470 encore queued au contrôle de reprise ; ne pas déclarer réussite. Les installations/caches et l'annulation en conditions réelles ne sont pas validés.
+
+### PR #78 — Agrégats : inventaire et concaténations directes (en cours)
+
+- [~] **PR78-CONCAT-01 · P1** — Rapport expérimental séparé des graphes historiques : census syntaxique actif, concat LHS continue uniquement, NamedValue de type logic/bit scalaire ou vecteur non signé déclaré et identité sémantique exacte, largeur/état égaux, ordre LSB, cibles distinctes, aucun fallback par nom. Rejet atomique des conversions, sélections, agrégats, NBA et concat imbriquées. Oracle fixture indépendant et simulation 256 vecteurs prévus ; aucun gain officiel déclaré avant mesure.
+- [ ] **PR78-CENSUS-01 · P1** — Inventorier MemberAccess LHS/RHS et concat LHS du vrai ALU et cœur, types observés et provenance ; dénominateur AST distinct de 1199, catégories recouvrantes. Clôture : rapports réconciliés et audit des identités/offsets avant extension struct/union. PR76-STRUCT-01, PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01 et PR75-TYPE-01 restent ouvertes. Aucun layout de membre déduit du texte ou du nom ; aucune modification du graphe historique.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -512,7 +519,7 @@ Le document est introduit par une PR exclusivement documentaire, envisagée #66.
 | #75 | Sélecteurs constants élaborés : Power et preuve lexicale | PR57-IDX-01, PR74-IDX-02, PR75-IDX-01 | Oracle arbre ff_one, réutilisation bitwise/mux, aucune supposition runtime |
 | #76 | Types de package : typedef/enum, constantes et coordonnées | PR76-TYPE-01, PR74-IDX-02 | Identité exacte, oracles debug et CSR |
 | #77 | Orchestration CI, audit et gate Python | PR62-CI-01, PR05-CI-01, PR77-ORCH-01 | 46 validations historiques conservées, mesure avant/après, checks requis |
-| Prochain chantier moteur (initialement #77) | Structures/unions et concaténations LHS (à découper), composition des sélections | PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01, PR61-BIT-05/06, PR74-IDX-02 | Types et coordonnées prouvés, sans inférence de layout |
+| #78 (première étape, initialement #77) | Structures/unions et concaténations LHS : inventaire et concat directes, puis layout et composition des sélections | PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01, PR61-BIT-05/06, PR74-IDX-02 | Types et coordonnées prouvés, sans inférence de layout |
 | #78 | Addition/soustraction, retenues, comparaison, shifts et multiplication (à découper) | PR61-BIT-03 (arithmétique), PR54-BUDGET-01 | Modèles justifiés de dépendances potentielles, bornes et oracle indépendant |
 | #79 | Fonctions et appels | PR58-FUNC-01, PR10-ALU-01 | Identités, branches, actuals, effets de bord et appels non supportés explicités |
 | #80 | Boucles et constructions procédurales complexes | PR59-LOOP-01, PR38-PBIT-01, PR20-PROC-01, PR29-GEN-01, PR33-INIT-01 | Bornes, exécution locale et cibles ; aucune expansion non bornée |

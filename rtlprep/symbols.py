@@ -144,3 +144,18 @@ class SignalResolver:
             return None
         candidates = self._by_name.get((instance, name), set())
         return next(iter(candidates)) if len(candidates) == 1 else None
+
+    def resolve_exact(self, instance: str, node: Any) -> str | None:
+        """Resolve only an explicit semantic declaration address, never a fallback."""
+        if not isinstance(node, dict) or node.get("kind") != "NamedValue":
+            return None
+        raw = node.get("symbol")
+        parts = raw.split(maxsplit=1) if isinstance(raw, str) else []
+        if len(parts) != 2 or not parts[0].isascii() or not parts[0].isdecimal():
+            return None
+        address, name = parts
+        key = (instance, address)
+        if key in self._ambiguous:
+            return None
+        entry = self._by_id.get(key)
+        return entry[1] if entry is not None and entry[0] == name else None
