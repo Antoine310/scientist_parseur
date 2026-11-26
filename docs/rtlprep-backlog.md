@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.14 — 26 novembre 2026 (fusion #78, #79 et #80 empilées)**  
+**Version : 1.15 — 26 novembre 2026 (fusion #79/#80, chantier #81)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #78** (`945c19dd6c788b801928d271811b7fc9af6416a6`). 48/48 jobs PR sur `a6c6975e9d29a8314aae41afa8215e1038151620`, 48/48 post-fusion.
-**PR en cours : #79**, CI 49/49, validation locale et fusion à confirmer ; **#80** empilée sur son head cc5c677, validation à effectuer.
+**Dernière PR fusionnée confirmée : #80** (`9b01304103917c3609db2564c0eaf158e11a67f9`). #79 et #80 fusionnées après CI 49/49 et 50/50, post-fusion à relever.
+**PR en cours : #81**, constantes enum de package vers champs packed ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -503,20 +503,27 @@ Résultats #77 : [run 45799218988](https://github.com/Antoine310/scientist_parse
 
 Résultats #78 : [preuve locale](https://github.com/Antoine310/scientist_parseur/pull/78#issuecomment-7189306539), head a6c6975, `reports/pr78/run-jrsfby5s/summary.json` passed. Fixture 6 occurrences, 5 sites, 1 supporté/4 partiels/8 candidats ; simulation 1/1 à 512 ns. ALU 612 occurrences/0 site, cœur 3811 occurrences/30 sites, 20 LHS/12 RHS (2 communs), 0 concat LHS, 30 partiels member_layout_not_proven. Graphe plat ALU 479/254/225/477, cœur 1199/531/668/2842 ; 24 instances, 1597 nœuds, 3566 arêtes, 15 warnings, 39 TP/8 TN, 7/7 chemins, aucune troncature. Pipeline 3,21334 s, graph build 1,37843 s, RSS Python/slang 284304/232136 Kio (pics séparés), AST 47778002, graphe 33322406 octets (un échantillon). 48/48 CI PR et main ; fusion 945c19d. Durées dans ci-history.md.
 
-### PR #79 — Structures packed de package (en cours)
+### PR #79 — Structures packed de package (fusionnée)
 
 Audit artefact #78 15106804167, run 45800487135 : les 30 sites sont dans cs_registers_i, types Status_t/Dcsr_t/Pmp_t. TypeAlias.target exporte l'ordre des champs sans adresses de déclaration de champs ; les MemberAccess portent un token adresse/nom. L'identité exacte du typedef, le nom de champ unique et l'accord du type d'expression sont exigés ; cohérence des tokens observés, sans prétendre à une preuve indépendante de leur liaison aux déclarations. Layouts locaux Pmp_t et multidimensionnels, unions, conversions, sélections, opérateurs, constantes enum non signal, gardes et NBA hors périmètre.
 
 - [~] **PR79-MEMBER-01 · P1** — Rapport distinct : candidats positionnels de copies directes continues/AlwaysComb avec membre simple de struct packed unsigned de package, layout homogène et borné, enum de package explicite via #76 ; rejet atomique des cas non prouvés. Oracle fixture 4 sites/16 candidats et simulation 256/768 ; oracle officiel attendu 7 sites/10 candidats (1055,1059,1068,1076,1128–1130). Mesures à effectuer, ne pas additionner au dénominateur historique.
 - [ ] **PR79-IDENT-01 · P1** — Vérifier l'export détaillé de slang ou autre preuve indépendante d'identité de champ, puis étendre aux structures locales/multidimensionnelles, unions et composition. PR76-STRUCT-01, PR78-CENSUS-01, PR36-TYPE-01, PR37-LVALUE-01 et PR75-TYPE-01 restent ouverts.
 
-CI #79 vérifiée : [run 45803933566](https://github.com/Antoine310/scientist_parseur/actions/runs/45803933566), head cc5c677, 49/49, 208 s, 1 tentative. Validation locale et fusion non confirmées ; ne pas clôturer PR79-MEMBER-01 avant preuve locale.
+CI #79 vérifiée : [run 45803933566](https://github.com/Antoine310/scientist_parseur/actions/runs/45803933566), head cc5c677, 49/49, 208 s, 1 tentative. Rapport local 1140/1140 et oracle 7/30, confirmé également par les 1156/1156 et l'oracle #80 sur descendant exact inchangé pour le code #79. Fusion 292fb83. Limites restantes ouvertes.
 
-### PR #80 — Écritures de champs scalaires (empilée sur #79)
+### PR #80 — Écritures de champs scalaires (fusionnée)
 
 - [~] **PR80-WRITE-01 · P1** — Rapport expérimental distinct, écritures directes de champs logic scalaires de package, sélection constante littérale d'un bit de vecteur logic ou conversion littérale 1'b0/1'b1 exactement exportée. Identité/type de base et cohérence des tokens #79, largeur/état, bornes et tag constant concordants ; aucune arête pour les constantes. Oracle attendu : 3 arêtes (999,1002,1006), 7 positions constantes (1000,1001,1003,1004,1005,1060,1070) dans cs_registers_i. Comparaison disjointe des sept sites #79. Fixture 4 sites/2 arêtes/2 constantes, 16 vecteurs/16 checks. Mesures à effectuer.
 - [ ] **PR80-RESIDUAL-01 · P1** — Enum constants, Pmp_t local multidimensionnel, concat RHS, logique et NBA restent à traiter. Aucun ajout au 815/1199. Pas de preuve de valeur globale ni de priorité. Garder PR79-IDENT-01 et toutes les dettes agrégats ouvertes.
 - Séquence de fusion : valider #79 séparément, fusion autorisée #79 puis retarget #80 sur main, vérifier le diff et relancer/contrôler le head exact #80. Pas de fusion #80 dans #79 par erreur.
+
+Résultats #79 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/79#issuecomment-7193611455) ; 1140/1140 6,90 s, fixture 4 sites/16 candidats, 256 vecteurs/768 checks, core 7/30 sites/10 arêtes. Pipeline 4,472456 s (environnement Python 3.13.0rc1), graph build 2,250070 s, RSS Python/slang 184136/219632 Kio. #80 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/80#issuecomment-7193612334), head exact 698da07, 1156/1156 5,85 s, fixture 4 sites/2 arêtes/2 constantes, 16 vecteurs/16 checks, core 10/10 sites ciblés, 3 arêtes/7 constantes, disjoints #79. Cumul 17/30 sites, 13 arêtes/7 constantes, 13 résiduels. Pipeline 4,251796 s, graph build 2,284978 s, RSS Python/slang 184072/217548 Kio. Compteurs historiques inchangés ALU 479/254/225/477, cœur 1199/531/668/2842, 24 instances, 1597 nœuds, 3566 arêtes, 15 warnings, 39 TP/8 TN/0 FP/FN, 7 chemins, 0 troncature, AST 47778002, graphe 33322406 octets. Mesures ponctuelles. #79 fusion 292fb83, #80 retarget main puis fusion 9b01304, arbres fusionnés identiques aux heads CI. Pas de nouvelle CI PR observée après retarget ; CI main à relever.
+
+### PR #81 — Constantes enum dans champs packed (en cours)
+
+- [~] **PR81-ENUM-01 · P1** — Artefact #80 15115756390 : quatre sites CSR 1007/1054 (dcsr_n.prv), 1061/1071 (mstatus_n.mpp), RHS PRIV_LVL_M. TypeAlias de PrivLvl_t pointe exactement vers EnumType homonyme qualifié ; valeur EnumValue explicite adresse+nom et initialiseur binaire converti, type et encodage vérifiés, offsets #79 ; aucun fallback, aucune arête pour constantes. Oracle attendu 4 sites/8 positions constantes, cumul 21/30 sites disjoints ; pas de conclusion temporelle, de priorité, de reachability, ni de preuve indépendante de liaison des champs. Fixture deux écritures conditionnelles, 4 constantes, 4 vecteurs.
+- [ ] **PR81-RESIDUAL-01 · P1** — Pmp_t multidimensionnel local (5 sites), concat RHS, logique (2 sites), StructuredAssignmentPattern (1 site) : 9 résiduels si #81 validée. Toutes les dettes agrégats restent ouvertes. CI #81 mutualisée dans job #80 avec référence fraîche #80, aucune suppression de validation, 50 jobs attendus ; conserver mesures et vérifier le gain, sans en présumer.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
