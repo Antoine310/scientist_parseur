@@ -21,8 +21,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 82 | PR finale | 5bb98e8 | [45838435614](https://github.com/Antoine310/scientist_parseur/actions/runs/45838435614) | 50/50 | 167 | 12 | 141 | 4 | 2075 | cva6-lane-evidence 89 s |
 | 82 | main | 951e006 | [45840400411](https://github.com/Antoine310/scientist_parseur/actions/runs/45840400411) | 50/50 | 173 | 13 | 145 | 3 | 1942 | bitwise-pr72 82 s |
 | 83 | PR | 21b7675 | [45840761119](https://github.com/Antoine310/scientist_parseur/actions/runs/45840761119) | 50/50 | 184 | 11 | 162 | 2 | 2138 | packed-coordinates-pr71 87 s |
+| 83 | main | e4389dc | [45842233390](https://github.com/Antoine310/scientist_parseur/actions/runs/45842233390) | 50/50 | 182 | 10 | 145 | 2 | 2042 | rtl-security-lab 86 s |
+| 84 | PR | 6401827 | [45842554660](https://github.com/Antoine310/scientist_parseur/actions/runs/45842554660) | 50/50 | 209 | 12 | 183 | 4 | 2054 | rtl-security-lab 105 s |
 
-#83 : 14:36:44→14:39:48 UTC, une tentative, job partagé 65 s, local 1226/1226 6,31 s, fusion e4389dc ; main à relever. #82 main 14:34:37→14:37:30 UTC, 50/50, job partagé 79 s. #84 conserve 50 jobs attendus.
+#84 : 14:47:34→14:51:03 UTC, une tentative, job partagé 86 s, 1250/1250 local 7,14 s ; fusion d26fc18, main à relever. #83 main 14:45:39→14:48:41 UTC, partagé 53 s. #85 conserve 50 jobs attendus.
+
+#83 : 14:36:44→14:39:48 UTC, une tentative, job partagé 65 s, local 1226/1226 6,31 s, fusion e4389dc ; main réussi (voir tableau). #82 main 14:34:37→14:37:30 UTC, 50/50, job partagé 79 s. #84 conserve 50 jobs attendus.
 
 #82 finale : 14:22:58→14:25:45 UTC, tentative 1 sur deuxième head, job partagé 77 s, 1210/1210 local 5,63 s, oracle passed. Deux runs cumulés 368 s ; fenêtre premier départ→fin finale 535 s. Fusion 951e006, main réussi (voir tableau). #83 ajoute validation au même job (50 jobs attendus).
 
