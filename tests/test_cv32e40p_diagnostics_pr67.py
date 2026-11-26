@@ -56,7 +56,7 @@ def test_census_excludes_inactive_generate(fixture):
 def test_diagnostics_reconciles_all_ten(fixture):
     a,i,g=fixture
     result=diagnose(g,i,a)
-    assert len(result["analyzers"])==12
+    assert len(result["analyzers"])==13
     assert result["design_coverage"]=="not_measured"
     assert result["bit_inventory"]["counts"]==g["bit_dependency_graph"]["counts"]
     assert "top | top | 2" in markdown([result])
