@@ -100,7 +100,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                            enable_mux: bool = True,
                            enable_dynamic: bool = True,
                            enable_selector_recovery: bool = True,
-                           enable_typed_layout: bool = True) -> dict[str, Any]:
+                           enable_typed_layout: bool = True,
+                           enable_member_positions: bool = False) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
@@ -899,6 +900,9 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         "schema_version": 1, "scope": "direct_scalar_input_port_candidates",
         "items": sorted(direct_scalar_inputs, key=lambda x: (x["target"], x["source"])),
     }
+    if enable_member_positions:
+        from .member_positions import build_member_positions
+        graph["member_position_candidates"] = build_member_positions(ast, structural, graph)
     graph["analysis_limits"] = build_analysis_limits(graph, ast_metrics, budget)
     return graph
 
