@@ -19,8 +19,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 81 | main | b8e79f6 | [45837014585](https://github.com/Antoine310/scientist_parseur/actions/runs/45837014585) | 50/50 | 205 | 14 | 165 | 3 | 2340 | typed-layout-pr76 108 s |
 | 82 | PR intermédiaire (échec) | 3d8a06a | [45837398777](https://github.com/Antoine310/scientist_parseur/actions/runs/45837398777) | 48/50 (2 échecs) | 201 | 19 | 171 | 3 | 2360 | cva6-lane-evidence 88 s |
 | 82 | PR finale | 5bb98e8 | [45838435614](https://github.com/Antoine310/scientist_parseur/actions/runs/45838435614) | 50/50 | 167 | 12 | 141 | 4 | 2075 | cva6-lane-evidence 89 s |
+| 82 | main | 951e006 | [45840400411](https://github.com/Antoine310/scientist_parseur/actions/runs/45840400411) | 50/50 | 173 | 13 | 145 | 3 | 1942 | bitwise-pr72 82 s |
+| 83 | PR | 21b7675 | [45840761119](https://github.com/Antoine310/scientist_parseur/actions/runs/45840761119) | 50/50 | 184 | 11 | 162 | 2 | 2138 | packed-coordinates-pr71 87 s |
 
-#82 finale : 14:22:58→14:25:45 UTC, tentative 1 sur deuxième head, job partagé 77 s, 1210/1210 local 5,63 s, oracle passed. Deux runs cumulés 368 s ; fenêtre premier départ→fin finale 535 s. Fusion 951e006, main à relever. #83 ajoute validation au même job (50 jobs attendus).
+#83 : 14:36:44→14:39:48 UTC, une tentative, job partagé 65 s, local 1226/1226 6,31 s, fusion e4389dc ; main à relever. #82 main 14:34:37→14:37:30 UTC, 50/50, job partagé 79 s. #84 conserve 50 jobs attendus.
+
+#82 finale : 14:22:58→14:25:45 UTC, tentative 1 sur deuxième head, job partagé 77 s, 1210/1210 local 5,63 s, oracle passed. Deux runs cumulés 368 s ; fenêtre premier départ→fin finale 535 s. Fusion 951e006, main réussi (voir tableau). #83 ajoute validation au même job (50 jobs attendus).
 
 #82 : premier head 14:16:50→14:20:11 UTC, tentative 1, job partagé 82 s (échec fixture #82), verdict final échec 3 s. Local 1198/1198 en 6,40 s, rapport fixture failed (2/4 sites, 12 arêtes, 0 constante). Artefact 15126866660 : correction du format zéro, nouvelle CI réussie (voir tableau). #81 main 14:14:36→14:18:01 UTC, 50/50, job partagé 46 s.
 
