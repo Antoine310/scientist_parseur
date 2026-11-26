@@ -243,7 +243,7 @@ def build_typed_layout(ast,index,captured,flat,dynamic,*,enabled=True):
                     raise Unsupported("unsupported_procedural_context")
                 if types.truncated:
                     raise Unsupported("package_inventory_budget")
-                local,detail,proofs=expand(node,lambda e:resolver.resolve(owner,e),raw,constants)
+                local,detail,proofs=expand(node,types,lambda e:resolver.resolve(owner,e),raw,constants)
                 if any(e["target"]!=row["target"] for e in local):
                     raise Unsupported("assignment_target_identity_mismatch")
                 if len(edges)+len(local)>MAX_EDGES:
