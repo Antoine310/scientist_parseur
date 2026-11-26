@@ -118,7 +118,7 @@ def expand(node, resolve, declared, types, observations):
             for i, bit in enumerate(bits)]
 
 
-def audit_enum_writes(ast, index):
+def audit_enum_writes(ast, index, *, include_occurrence=False):
     inspect_ast(ast)
     types = Types(ast)
     if types.truncated:
@@ -128,7 +128,7 @@ def audit_enum_writes(ast, index):
     declared = raw_layouts(index)
     instances = {i["path"] for i in index["instances"]}
     rows, constants = [], []
-    for owner, context, node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         lhs, rhs = node.get("left"), node.get("right")
         if (not isinstance(lhs, dict) or lhs.get("kind") != "MemberAccess"
                 or enum_for(lhs.get("type"), types) is None
@@ -140,6 +140,8 @@ def audit_enum_writes(ast, index):
                "source": {"file": node.get("source_file_start") or node.get("source_file"),
                           "line": node.get("source_line_start") or node.get("source_line")},
                "coverage": "partial", "constant_count": 0}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if owner not in instances or context not in ("continuous", "AlwaysComb"):

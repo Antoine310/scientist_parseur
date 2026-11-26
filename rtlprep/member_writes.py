@@ -83,7 +83,7 @@ def expand(node, resolve, declared, types, observations):
     raise Unsupported("unsupported_rhs")
 
 
-def audit_writes(ast, index):
+def audit_writes(ast, index, *, include_occurrence=False):
     inspect_ast(ast)
     types = Types(ast)
     if types.truncated:
@@ -93,7 +93,7 @@ def audit_writes(ast, index):
     declared = raw_layouts(index)
     instances = {i["path"] for i in index["instances"]}
     rows, edges, constants = [], [], []
-    for owner, context, node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         lhs, rhs = node.get("left"), node.get("right")
         if not isinstance(lhs, dict) or lhs.get("kind") != "MemberAccess":
             continue
@@ -105,6 +105,8 @@ def audit_writes(ast, index):
                "source": {"file": node.get("source_file_start") or node.get("source_file"),
                           "line": node.get("source_line_start") or node.get("source_line")},
                "coverage": "partial"}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if owner not in instances or context not in ("continuous", "AlwaysComb"):

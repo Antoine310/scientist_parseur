@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.20 — 26 novembre 2026 (fusion #85, chantier #86)**  
+**Version : 1.21 — 26 novembre 2026 (fusion #86, chantier #87)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #85** (`fdba6469e83482b7c52ccbb2fcdd017081fea822`). #85 50/50 CI sur 3a5077a, 1270/1270 locaux ; post-fusion à relever. #84 main 50/50 en 241 s.
-**PR en cours : #86**, enveloppe commune de preuves expérimentales ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #86** (`c70d6b8655945b4b7ffcde759dc133f30d8a5d2f`). #86 50/50 CI sur bfc663b, 1295/1295 locaux ; post-fusion à relever. #85 main 50/50 en 199 s.
+**PR en cours : #87**, liaison exacte des occurrences et audit des recouvrements ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -558,10 +558,18 @@ Résultats #84 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #85 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/85#issuecomment-7197654522), SHA exact 3a5077a, 20/20 ciblés 0,09 s, 1270/1270 6,79 s ; fixture 1 résolu/1 partiel, 2 constantes, 8 vecteurs/16 checks ; core 1 site, 2/2 opérandes, 3 constantes (13,14,31, FPU=0/ZFINX=0). Partition 7+22+3=32, cumul 30/30 sites au niveau instruction locale, 660 positions, 6 références logiques, 2 NBA, 813 constantes. Pipeline 4,570594 s, graph build 2,267613 s, RSS Python/slang 184052/219676 Kio, compteurs historiques et tailles inchangés, 0 troncature. CI 50/50 195 s, fusion fdba646. #84 main 50/50 241 s. Mesures ponctuelles.
 
-### PR #86 — Enveloppe commune des preuves expérimentales (en cours)
+### PR #86 — Enveloppe commune des preuves expérimentales (fusionnée)
 
 - [~] **PR86-ENVELOPE-01 · P1** — Recalcul des 7 audits #79–85 sur le même AST/index, empreintes SHA256 des fichiers dans runner, conservation sans perte des payloads lignes/candidats et métadonnées. Identifiants locaux producteur:site et producteur:collection:ordinal, pas de rapprochement par ligne ni dédoublonnage inter-producteurs. Liste fermée de 12 relations, distinction stricte des 6 catégories, contrôle des références aux lignes, des constantes sans source et des coordonnées multidimensionnelles. Oracle de reconstruction exacte de chaque rapport ; core attendu 56 lignes producteur (pas 56 occurrences), 1481 enregistrements : 660 positions, 6 références logiques, 2 NBA, 805 constantes locales, 5 constantes NBA, 3 constantes de configuration. Fixture #85 réutilisée pour 4 positions/2 constantes ; validations comportementales antérieures conservées. 25 tests ciblés attendus. CI même job, référence fraîche.
 - [ ] **PR86-LINK-01 · P1** — Lier les occurrences par identité structurelle de parcours AST, non par localisation seule, analyser conflits et doublons avant promotion ; les identifiants producteur ne sont pas persistants entre élaborations. Contrat de provenance/coordonnées à auditer, aucune intégration aux graphes historiques ni ajout au 815/1199. PR79-IDENT-01, PR85-INTEGRATE-01 et toutes limites scientifiques précédentes restent ouvertes.
+
+Résultats #86 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/86#issuecomment-7198085107), SHA exact bfc663b, 25/25 ciblés 0,12 s, 1295/1295 6,64 s ; fixture 8 lignes/6 records, ALU 0/0, core 56 lignes/1481 records, reconstruction exacte 7 rapports. Pipeline historique 4,910083 s, graph build 2,462214 s, RSS Python/slang 183840/213340 Kio, compteurs inchangés, 0 troncature. Coût total audits non mesuré. CI 50/50 201 s, fusion c70d6b8 ; #85 main 50/50 199 s.
+
+### PR #87 — Liaison des occurrences et audit des recouvrements (en cours)
+
+- [~] **PR87-OCC-01 · P1** — Ajouter un ordinal de parcours `assignment_sites` complet avant filtrage aux sept producteurs, optionnel (sorties historiques par défaut inchangées). Liaison fraîche au même AST, contrôle scope/contexte/source, census PR79, unicité producteur+ordinal, aucune jointure par ligne. Fixture réelle deux affectations même ligne, deux identités et positions ; test compatibilité sans champ optionnel. Core attendu 56 lignes → 30 occurrences distinctes, 1481 records conservés. Ordinal local à extraction et version du parcours, jamais stable entre élaborations.
+- [~] **PR87-OVERLAP-01 · P1** — Groupes de doublons exacts (payload sans site_id, catégorie et occurrence), audit des recouvrements et désaccords candidats au même destinataire/position ; références logiques multiples non conflictuelles seules. Aucun aplatissement entre coordonnées déclarées et packed, systèmes mixtes signalés. Oracle attendu 1481 records exacts distincts, 0 doublon/recouvrement/désaccord/mixte, partition CSR 32 et NBA 7 ; conserver originaux même si doublons. Pas de preuve de conflit fonctionnel, ni promotion graphe. 16 nouveaux tests, CI même job.
+- [ ] **PR87-PROMOTE-01 · P1** — Contrat d'intégration au moteur, validation des unités de coordonnées et du lien indépendant des champs, vérifier recouvrement avec graphe plat existant, distinguer toutes catégories, pas d'addition au 815/1199 sans rapprochement justifié. PR79-IDENT-01 et limites précédentes restent ouvertes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -608,6 +616,7 @@ Le document est introduit par une PR exclusivement documentaire, envisagée #66.
 | FUT-CVA6-01 | Sous-hiérarchie CPU CVA6 puis cœur complet, autre configuration reproductible | Manifest et sources épinglés, métriques, annotations et validations ciblées |
 | FUT-OT-01 | Première IP OpenTitan autonome et autorisée | Elaborer, indexer, annoter, tests positifs/négatifs ; dépendances et paramètres documentés |
 | FUT-FORMAL-01 | Catalogue de propriétés matérielles de sécurité (CSR, verrouillage, non-interférence, équivalence) | SBY/Yosys/Z3/EQY, hypothèses, contre-exemples, mutants, portée exacte |
+| FUT-EVIDENCE-BRIDGE-01 | P3 — Relier automatiquement graphes de dépendances statiques, preuves SBY/EQY/Z3 et observations dynamiques Verilator/cocotb VCD/FST | Correspondance exacte hiérarchie/signaux/bits/configuration et provenance des sources ; reconstruire cycles par fronts d'horloge et phases explicites, traces bornées, témoins et contre-exemples, distinguer observation, corrélation, preuve et inconclusif ; oracle indépendant et mutants ; aucune preuve d'influence déduite de la seule corrélation, absence de trace non assimilée à absence de signal. Étudier après l'intégration actuelle, sans changement de priorité. |
 | FUT-MCP-01 | Investigation agent : source → écriture → gardes → chemins → evidence | MCP lecture seule, traces sourcées et limites, tests stdio et requêtes bornées |
 | FUT-AGENT-01 | Benchmark agent contrôlé A=RTL brut, B=index, C=hybride RTLPrep | Questions/références gelées, mêmes conditions, exactitude, abstention, contexte, latence/coût, répétitions ; aucune affirmation de gain avant mesure |
 | FUT-DEMO-01 | Démonstration GhostGate / HOST 2027, outil restant généraliste | Scénarios autorisés, résultats reproductibles, limites et validation scientifique ; ne pas présumer règlement/acceptation du concours |

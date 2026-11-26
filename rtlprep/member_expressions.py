@@ -119,7 +119,7 @@ def expand(node, resolve, declared, types, observed):
     return [edge(lane,0,"logical_member_reference_candidate") for lane in sorted(set(lanes))], []
 
 
-def audit_member_expressions(ast,index):
+def audit_member_expressions(ast,index, *, include_occurrence=False):
     inspect_ast(ast)
     types=Types(ast)
     if types.truncated:
@@ -129,7 +129,7 @@ def audit_member_expressions(ast,index):
     declared=raw_layouts(index)
     instances={i["path"] for i in index["instances"]}
     rows,edges=[],[]
-    for owner,context,node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         rhs=node.get("right")
         if not isinstance(rhs,dict) or rhs.get("kind") not in (
             "Concatenation","BinaryOp","UnaryOp","StructuredAssignmentPattern"):
@@ -142,6 +142,8 @@ def audit_member_expressions(ast,index):
              "source":{"file":node.get("source_file_start") or node.get("source_file"),
                        "line":node.get("source_line_start") or node.get("source_line")},
              "coverage":"partial","edge_count":0}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if rhs["kind"]=="StructuredAssignmentPattern":

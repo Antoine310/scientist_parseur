@@ -147,7 +147,7 @@ def expand(node, resolve, declared, types, observations):
             for (s, sb, sf), (t, tb, tf) in zip(src, dst)]
 
 
-def audit_members(ast, index):
+def audit_members(ast, index, *, include_occurrence=False):
     inspect_ast(ast)
     types = Types(ast)
     if types.truncated:
@@ -157,7 +157,7 @@ def audit_members(ast, index):
     declared = raw_layouts(index)
     rows, edges = [], []
     instances = {i["path"] for i in index["instances"]}
-    for owner, context, node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         lhs, rhs = node.get("left"), node.get("right")
         if not (member_sites(lhs) or member_sites(rhs)):
             continue
@@ -167,6 +167,8 @@ def audit_members(ast, index):
                "source": {"file": node.get("source_file_start") or node.get("source_file"),
                           "line": node.get("source_line_start") or node.get("source_line")},
                "coverage": "partial", "edge_count": 0}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if context not in ("continuous", "AlwaysComb") or owner not in instances:

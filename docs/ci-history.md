@@ -25,8 +25,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 84 | PR | 6401827 | [45842554660](https://github.com/Antoine310/scientist_parseur/actions/runs/45842554660) | 50/50 | 209 | 12 | 183 | 4 | 2054 | rtl-security-lab 105 s |
 | 84 | main | d26fc18 | [45844465723](https://github.com/Antoine310/scientist_parseur/actions/runs/45844465723) | 50/50 | 241 | 19 | 159 | 4 | 2166 | member-writes-pr80 91 s |
 | 85 | PR | 3a5077a | [45844844996](https://github.com/Antoine310/scientist_parseur/actions/runs/45844844996) | 50/50 | 195 | 11 | 170 | 3 | 2142 | typed-layout-pr76 86 s |
+| 85 | main | fdba646 | [45861088191](https://github.com/Antoine310/scientist_parseur/actions/runs/45861088191) | 50/50 | 199 | 15 | 167 | 3 | 2167 | packed-coordinates-pr71 96 s |
+| 86 | PR | bfc663b | [45861326731](https://github.com/Antoine310/scientist_parseur/actions/runs/45861326731) | 50/50 | 201 | 17 | 153 | 4 | 2016 | member-writes-pr80 82 s |
 
-#85 : 15:01:23→15:04:38 UTC, une tentative, partagé 63 s, local 1270/1270 6,79 s, fusion fdba646, main à relever. #84 main 14:59:10→15:03:11 UTC, partagé 91 s. #86 conserve 50 jobs attendus.
+#86 : 16:43:08→16:46:29 UTC, tentative 1, partagé 82 s, local 1295/1295 6,64 s, fusion c70d6b8, main à relever. #85 main 16:41:31→16:44:50 UTC, partagé 64 s. #87 conserve 50 jobs attendus.
+
+#85 : 15:01:23→15:04:38 UTC, une tentative, partagé 63 s, local 1270/1270 6,79 s, fusion fdba646, main réussi (voir tableau). #84 main 14:59:10→15:03:11 UTC, partagé 91 s. #86 conserve 50 jobs attendus.
 
 #84 : 14:47:34→14:51:03 UTC, une tentative, job partagé 86 s, 1250/1250 local 7,14 s ; fusion d26fc18, main réussi (voir tableau). #83 main 14:45:39→14:48:41 UTC, partagé 53 s. #85 conserve 50 jobs attendus.
 
