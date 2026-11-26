@@ -22,3 +22,6 @@ include = ["rtlprep*"]
 
 [tool.setuptools.package-data]
 "rtlprep.formal_specs" = ["*.sv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

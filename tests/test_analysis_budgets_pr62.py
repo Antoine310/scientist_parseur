@@ -79,7 +79,7 @@ def test_graph_admission_precedes_index():
 def test_all_analyzers_reported_without_claiming_coverage():
     g=empty_graph()
     result=build_analysis_limits(g,{"json_values":1,"json_depth":0})
-    assert len(result["analyzers"])==12
+    assert set(result["analyzers"])==set(ANALYZERS)
     assert result["assessment"]=="no_reported_limits_within_observed_scopes"
     assert result["design_coverage"]=="not_measured"
     assert result["analyzers"]["register_flow"]["configured_limits"]["MAX_PROCESSES"]==512

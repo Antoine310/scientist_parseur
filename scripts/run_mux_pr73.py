@@ -194,8 +194,8 @@ def execute(out):
              (1199,531,668,2842),(378,245,133,2469),(66,24,42,375),175,"cv32e40p_core.ex_stage_i.alu_i")]:
             ast=read_ast(folder/"elaborated_ast.json")
             idx=json.loads((folder/"rtl_index.json").read_text())
-            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_mux=False)
-            new=build_dependency_graph(ast,expected_top=top,index=idx)
+            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_mux=False)
+            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False)
             for channel,expected in (("bit_dependency_graph",flat_baseline),
                     ("array_dependencies",array_baseline),("bitwise_dependencies",bw_baseline)):
                 c=old[channel]["counts"]
