@@ -1,11 +1,7 @@
 name: Real OpenHW CVA6 compressed decoder (pinned slang and RTL)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

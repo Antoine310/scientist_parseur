@@ -1,11 +1,7 @@
 name: Static procedural loop expansion (Verilator + cocotb)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

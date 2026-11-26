@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.10 — 26 novembre 2026 (fusion #75 et chantier #76)**  
+**Version : 1.11 — 26 novembre 2026 (fusion #76 et chantier #77)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #75** (`c6e4cc03a796e920753a7ed42038b460d8b6b1be`). 45/45 CI sur `c5c3129f1843765ca48d671de69dd6a622a9d810`.
-**PR en cours : #76**, layouts de typedef/enum de package et constantes lexicales ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #76** (`fa5a797a8044d4680bb8ed216115c7283bfc4fb4`). 46/46 CI PR sur `f0a52453528faa8b1567206329e4447bae940ceb`, 39/39 push sur le même head.
+**PR en cours : #77**, orchestration CI ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -474,13 +474,23 @@ Audit de l'artefact #74 : les 63 résidus ALU unproven_selector_type sont tous d
 
 Résultats #75 : [preuve locale](https://github.com/Antoine310/scientist_parseur/pull/75#issuecomment-7187352073), head c5c3129f1843765ca48d671de69dd6a622a9d810 ; artefact CI 15101889262, run 45787214945, `run-hb2q_lsp/summary.json`. 34 ciblés (0,07 s), 1074 suite (3,41 s), fixture 5 lignes/28 candidats/1 constante, 1024 vecteurs/3072 checks, simulation 2048 ns. Cœur et ALU selector_recovery 63/63/0/527, 63 nouveaux liens uniques, 31 OR (62), 31 mux (310 données/155 contrôle), 1 position constante ; oracle ff_one LEN=32 passé, aucun recouvrement. Minimum combiné cœur 809/1199 (67,47 %), 390 sans support lié ; ALU 381/479, 98 sans support lié. Anciens graphes exacts, 47/47 annotations signal, 7/7 chemins, zéro troncature sur 14. Pipeline 2,8071338 s, graph build 1,1932325 s, RSS Python 238752 KiB, slang 205196 KiB, AST 47778002 octets, graphe 24863676 octets (un échantillon). 45/45 CI sur head exact, fusion c6e4cc0. PR75-IDX-01/EVAL-01 clôturées. PR75-TYPE-01, six autres résidus PR74 et dettes générales ouvertes.
 
-### PR #76 — Résolution des types de package (en cours)
+### PR #76 — Résolution des types de package (fusionnée)
 
 Audit de l'artefact #75 : les six autres résidus PR74 sont trois lectures de debug_fsm_cs (controller lignes 1544–1546, enum debug_state_e et paramètres HAVERESET_INDEX/RUNNING_INDEX/HALTED_INDEX) et trois sélections CSR (lignes 549,583,1405, enum csr_num_e, csr_addr_i[4:0]). TypeAlias.target contient un token adresse + nom qualifié ou un layout explicite ; EnumType.baseType donne le type de base. Les structs apparaissent sous une autre représentation textuelle et ne sont pas résolus par cette PR.
 
 - [~] **PR76-TYPE-01 · P1** — Inventaire borné des packages directs, unicité des identités, résolution exacte des chaînes TypeAlias/EnumType vers layouts logic/bit non signés ; accord type de l'expression/déclaration indexée, identité du signal ; paramètres locaux de package vérifiés par adresse/nom/type et valeur, sans tag constant seul. Réécriture privée des copies et sélections directes, délégation PR74 pour indices numériques runtime. Nouveau canal typed_layout limité aux six résidus de layout, candidats fixes ou alternatifs, aucune preuve de faisabilité des valeurs d'enum. Aucun addr ajouté aux preuves. Anciennes sorties inchangées, budgets atomiques.
-- [ ] **PR76-EVAL-01 · P1** — Oracle indépendant à partir des six lignes officielles : trois bits debug (0/1/2), trois accès CSR à 32 alternatives de 32 bits, 3072 candidats données, 15360 contrôle, 3 fixes (18435 total). Objectif non mesuré 815/1199 et 381/479 ; ne pas confondre arêtes conditionnelles et dépendances fonctionnelles. Fixture 3 lignes/97 candidats, 1024 vecteurs/3072 checks ; comparaison même AST, déduplication PR71–75, summary.json. Validation locale et CI à effectuer.
-- [ ] **PR76-STRUCT-01 · P1** — Structures/unions packed, types locaux/anonymes/signés, concaténations LHS, accès membres et conversions nécessitent preuve distincte ; garder ouverts PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01 et PR75-TYPE-01 (partiellement traité seulement). Ne pas déduire le layout d'un nom non qualifié ou d'un champ sans identité. Proposer chantier #77 structures et concat LHS avant arithmétique.
+- [x] **PR76-EVAL-01** — Oracle indépendant à partir des six lignes officielles : trois bits debug (0/1/2), trois accès CSR à 32 alternatives de 32 bits, 3072 candidats données, 15360 contrôle, 3 fixes (18435 total). Résultat mesuré 815/1199 et 381/479 ; ne pas confondre arêtes conditionnelles et dépendances fonctionnelles. Fixture 3 lignes/97 candidats, 1024 vecteurs/3072 checks ; comparaison même AST, déduplication PR71–75, summary.json. Validation locale 1106/1106, 46/46 CI et fusion confirmées.
+- [ ] **PR76-STRUCT-01 · P1** — Structures/unions packed, types locaux/anonymes/signés, concaténations LHS, accès membres et conversions nécessitent preuve distincte ; garder ouverts PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01 et PR75-TYPE-01 (partiellement traité seulement). Ne pas déduire le layout d'un nom non qualifié ou d'un champ sans identité. Proposer le prochain chantier moteur après #77 CI : structures et concat LHS avant arithmétique.
+
+Résultats #76 : [preuve locale](https://github.com/Antoine310/scientist_parseur/pull/76#issuecomment-7188181211), head f0a52453528faa8b1567206329e4447bae940ceb, `reports/pr76/run-x6s1nkn8/summary.json` status passed. 32/32 ciblés (0,06 s), 1106/1106 suite (3,46 s) ; fixture 3 lignes/97 candidats (1 fixe,32 données,64 contrôle), 1024 vecteurs/3072 checks, simulation 1/1 à 2048 ns. Core typed_layout 6/6/0/18435 (3 fixes debug,3 accès CSR : 3072 données,15360 contrôle), 6 liens uniques, zéro recouvrement ; oracle type passé. Minimum combiné 815/1199, 384 sans support lié ; ALU 381/479 inchangée. Anciens graphes exacts, 24 instances, 1597 signaux, 3566 arêtes, 15 warnings, 39 TP/8 TN/0 FP/FN, 7/7 chemins, 0/15 troncature. Pipeline 3,212731 s, graph build 1,370971 s, RSS Python/slang 284848/229804 Kio (pics séparés), AST 47778002 octets, graphe 33322406 octets (mesures ponctuelles). 46/46 CI PR, fusion fa5a797 le 26/11. Candidats syntaxiques, pas preuve fonctionnelle. PR76-TYPE-01 reste partielle au-delà du périmètre prouvé ; PR76-STRUCT-01 et PR75-TYPE-01 restent ouvertes.
+
+- [x] **PR76-REG-01** — Deux correctifs avant validation : SyntaxError ligne 235 typed_layout.py (56 erreurs de collecte, corrigé be3b3a0), argument types manquant dans build_typed_layout → expand (19 échecs CI, corrigé f0a5245). Aucun changement des oracles ; nouveau head 1106/1106 et 46/46, fusion effective. Sources : [commentaire 1](https://github.com/Antoine310/scientist_parseur/pull/76#issuecomment-7188096119), [commentaire 2](https://github.com/Antoine310/scientist_parseur/pull/76#issuecomment-7188108110).
+
+### PR #77 — Orchestration CI (en cours)
+
+- [~] **PR77-ORCH-01 · P2** — Baseline mesurée sur head #76 : 46 PR + 39 push = 85 runs success, 1068 s fenêtre PR (17 min 48 s, attente incluse). Proposition : un orchestrateur, gate Python, annulation PR obsolète, 45 workflows spécialisés inchangés dans jobs, verdict final exigeant 46 succès. Voir [audit et matrice](ci-pr77.md). Reste : CI réelle, contrôle annulation/échec, noms checks requis et mesures comparables. PR62-CI-01 et PR05-CI-01 restent ouvertes (mutualisation/cache non validés). Aucun test historique retiré, aucun changement moteur.
+- [ ] **PR77-CAP-01 · P2** — 45 appels réutilisables sur limite GitHub de 50. Prévoir regroupement par familles / recette commune, sans perte de jobs ni oracles. Clôture : capacité d'extension et mesure avant/après, pas de cache non vérifié.
+- [ ] **PR77-LOCAL-01 · P3** — Agent de validation sur PC Linux différé par décision utilisateur ; réévaluer après plusieurs PR CI optimisées. Si nécessaire, opérations prédéfinies, environnement isolé, autorisation explicite, rapport par SHA via GitHub, aucun accès root/commande arbitraire/API OpenAI payante ni contournement des quotas. Aucun merge automatique.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -501,7 +511,8 @@ Le document est introduit par une PR exclusivement documentaire, envisagée #66.
 | #74 | Indices dynamiques et tableaux : alternatives bornées | PR57-IDX-01, PR60-ARRAY-01/02, PR74-IDX-01 | Coordonnées et rôles exacts, oracles FIFO/fixture, aucune fausse arête |
 | #75 | Sélecteurs constants élaborés : Power et preuve lexicale | PR57-IDX-01, PR74-IDX-02, PR75-IDX-01 | Oracle arbre ff_one, réutilisation bitwise/mux, aucune supposition runtime |
 | #76 | Types de package : typedef/enum, constantes et coordonnées | PR76-TYPE-01, PR74-IDX-02 | Identité exacte, oracles debug et CSR |
-| #77 | Structures/unions et concaténations LHS (à découper), composition des sélections | PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01, PR61-BIT-05/06, PR74-IDX-02 | Types et coordonnées prouvés, sans inférence de layout |
+| #77 | Orchestration CI, audit et gate Python | PR62-CI-01, PR05-CI-01, PR77-ORCH-01 | 46 validations historiques conservées, mesure avant/après, checks requis |
+| Prochain chantier moteur (initialement #77) | Structures/unions et concaténations LHS (à découper), composition des sélections | PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01, PR61-BIT-05/06, PR74-IDX-02 | Types et coordonnées prouvés, sans inférence de layout |
 | #78 | Addition/soustraction, retenues, comparaison, shifts et multiplication (à découper) | PR61-BIT-03 (arithmétique), PR54-BUDGET-01 | Modèles justifiés de dépendances potentielles, bornes et oracle indépendant |
 | #79 | Fonctions et appels | PR58-FUNC-01, PR10-ALU-01 | Identités, branches, actuals, effets de bord et appels non supportés explicités |
 | #80 | Boucles et constructions procédurales complexes | PR59-LOOP-01, PR38-PBIT-01, PR20-PROC-01, PR29-GEN-01, PR33-INIT-01 | Bornes, exécution locale et cibles ; aucune expansion non bornée |

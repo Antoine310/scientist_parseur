@@ -1,11 +1,7 @@
 name: Hardware-security CSR regression lab (real EDA)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

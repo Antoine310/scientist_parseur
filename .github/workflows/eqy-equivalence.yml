@@ -1,11 +1,7 @@
 name: EQY RTL equivalence and non-equivalence regression
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

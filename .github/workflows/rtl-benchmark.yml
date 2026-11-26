@@ -1,11 +1,7 @@
 name: RTLPrep Phase G reproducible benchmarks (real slang)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

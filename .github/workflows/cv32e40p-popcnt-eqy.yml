@@ -1,11 +1,7 @@
 name: Real CV32E40P popcount EQY equivalence
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
