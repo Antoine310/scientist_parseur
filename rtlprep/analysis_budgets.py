@@ -9,7 +9,7 @@ import json
 
 from .row_budgets import effective_row_limit
 from . import expressions, flow, bitaccess, bitgraph, sequential, intercycle
-from . import complex_constructs, function_dependencies, static_loops, array_dependencies, bitwise_dependencies, mux_dependencies, dynamic_dependencies, selector_recovery
+from . import complex_constructs, function_dependencies, static_loops, array_dependencies, bitwise_dependencies, mux_dependencies, dynamic_dependencies, selector_recovery, typed_layout
 
 @dataclass(frozen=True)
 class AnalysisBudget:
@@ -103,6 +103,7 @@ ANALYZERS={
     "mux_dependencies":(mux_dependencies,"captured",("MAX_ROWS","MAX_EDGES","MAX_WIDTH","MAX_DEPTH","MAX_NODES","MAX_BRANCHES","MAX_ROW_PAIRS")),
     "dynamic_dependencies":(dynamic_dependencies,"captured",("MAX_ROWS","MAX_EDGES","MAX_WIDTH","MAX_CHOICES","MAX_INDEX_WIDTH","MAX_NODES","MAX_ROW_PAIRS")),
     "selector_recovery":(selector_recovery,"captured",("MAX_ROWS","MAX_EDGES","MAX_DEPTH","MAX_NODES","MAX_PROOFS","MAX_POWER_EXPONENT","MAX_VALUE")),
+    "typed_layout":(typed_layout,"captured",("MAX_ROWS","MAX_EDGES","MAX_DEPTH","MAX_NODES","MAX_TYPES","MAX_PACKAGE_MEMBERS","MAX_PROOFS")),
     "sequential_candidates":(sequential,"captured",("MAX_PATHS_PER_TARGET","MAX_WRITES_PER_PATH")),
     "intercycle_dependencies":(intercycle,"captured",("MAX_ROWS","MAX_REFERENCES","MAX_DEPTH")),
 }
@@ -137,7 +138,7 @@ def analyzer_summary(graph):
     reports={}
     for name,(module,counter,limit_names) in ANALYZERS.items():
         # Stored graph v1 artifacts predating PR72 did not have this channel.
-        if name in ("bitwise_dependencies","mux_dependencies","dynamic_dependencies","selector_recovery") and name not in graph:
+        if name in ("bitwise_dependencies","mux_dependencies","dynamic_dependencies","selector_recovery","typed_layout") and name not in graph:
             continue
         data=graph.get(name)
         if not isinstance(data,dict) or data.get("schema_version")!=1:
