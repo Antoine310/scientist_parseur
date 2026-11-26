@@ -76,9 +76,9 @@ def execute(out):
             ast=read_ast(folder/"elaborated_ast.json")
             idx=json.loads((folder/"rtl_index.json").read_text())
             instances={i["path"]:i["module"] for i in idx["instances"]}
-            first=build_dependency_graph(ast,expected_top=top,index=idx,enable_mux=False,enable_bitwise=False,enable_width_conversions=False)
-            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_mux=False,enable_bitwise=False,enable_width_literals=False)
-            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_mux=False,enable_bitwise=False)
+            first=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_mux=False,enable_bitwise=False,enable_width_conversions=False)
+            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_mux=False,enable_bitwise=False,enable_width_literals=False)
+            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_mux=False,enable_bitwise=False)
             for graph,expected in ((first,legacy),(old,baseline)):
                 c=graph["bit_dependency_graph"]["counts"]
                 assert tuple(c[k] for k in ("assignments","supported","partial","edges"))==expected,c
