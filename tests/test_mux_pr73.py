@@ -129,4 +129,5 @@ def test_legacy_graph_inventory_readable():
     g=graph(assignment())
     g.pop("mux_dependencies")
     g.pop("dynamic_dependencies")
+    g.pop("selector_recovery")
     assert len(analyzer_summary(g)["analyzers"])==11
