@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.13 — 26 novembre 2026 (fusion #78 et chantier #79)**  
+**Version : 1.14 — 26 novembre 2026 (fusion #78, #79 et #80 empilées)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
 **Dernière PR fusionnée confirmée : #78** (`945c19dd6c788b801928d271811b7fc9af6416a6`). 48/48 jobs PR sur `a6c6975e9d29a8314aae41afa8215e1038151620`, 48/48 post-fusion.
-**PR en cours : #79**, positions des membres de structures packed de package ; validation à effectuer.
+**PR en cours : #79**, CI 49/49, validation locale et fusion à confirmer ; **#80** empilée sur son head cc5c677, validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -509,6 +509,14 @@ Audit artefact #78 15106804167, run 45800487135 : les 30 sites sont dans cs_regi
 
 - [~] **PR79-MEMBER-01 · P1** — Rapport distinct : candidats positionnels de copies directes continues/AlwaysComb avec membre simple de struct packed unsigned de package, layout homogène et borné, enum de package explicite via #76 ; rejet atomique des cas non prouvés. Oracle fixture 4 sites/16 candidats et simulation 256/768 ; oracle officiel attendu 7 sites/10 candidats (1055,1059,1068,1076,1128–1130). Mesures à effectuer, ne pas additionner au dénominateur historique.
 - [ ] **PR79-IDENT-01 · P1** — Vérifier l'export détaillé de slang ou autre preuve indépendante d'identité de champ, puis étendre aux structures locales/multidimensionnelles, unions et composition. PR76-STRUCT-01, PR78-CENSUS-01, PR36-TYPE-01, PR37-LVALUE-01 et PR75-TYPE-01 restent ouverts.
+
+CI #79 vérifiée : [run 45803933566](https://github.com/Antoine310/scientist_parseur/actions/runs/45803933566), head cc5c677, 49/49, 208 s, 1 tentative. Validation locale et fusion non confirmées ; ne pas clôturer PR79-MEMBER-01 avant preuve locale.
+
+### PR #80 — Écritures de champs scalaires (empilée sur #79)
+
+- [~] **PR80-WRITE-01 · P1** — Rapport expérimental distinct, écritures directes de champs logic scalaires de package, sélection constante littérale d'un bit de vecteur logic ou conversion littérale 1'b0/1'b1 exactement exportée. Identité/type de base et cohérence des tokens #79, largeur/état, bornes et tag constant concordants ; aucune arête pour les constantes. Oracle attendu : 3 arêtes (999,1002,1006), 7 positions constantes (1000,1001,1003,1004,1005,1060,1070) dans cs_registers_i. Comparaison disjointe des sept sites #79. Fixture 4 sites/2 arêtes/2 constantes, 16 vecteurs/16 checks. Mesures à effectuer.
+- [ ] **PR80-RESIDUAL-01 · P1** — Enum constants, Pmp_t local multidimensionnel, concat RHS, logique et NBA restent à traiter. Aucun ajout au 815/1199. Pas de preuve de valeur globale ni de priorité. Garder PR79-IDENT-01 et toutes les dettes agrégats ouvertes.
+- Séquence de fusion : valider #79 séparément, fusion autorisée #79 puis retarget #80 sur main, vérifier le diff et relancer/contrôler le head exact #80. Pas de fusion #80 dans #79 par erreur.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
