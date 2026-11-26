@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.18 — 26 novembre 2026 (fusion #83, chantier #84)**  
+**Version : 1.19 — 26 novembre 2026 (fusion #84, chantier #85)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #83** (`e4389dc97aa93093e1dfd3bb837bbbf3d46eaf3a`). #83 50/50 CI sur 21b7675, 1226/1226 locaux ; post-fusion à relever. #82 main 50/50 en 173 s.
-**PR en cours : #84**, setters NBA et littéraux concat RHS ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #84** (`d26fc1832eec8becbedcef4c1173765621b838cd`). #84 50/50 CI sur 6401827, 1250/1250 locaux ; post-fusion à relever. #83 main 50/50 en 182 s.
+**PR en cours : #85**, constantes conditionnelles spécifiques à la configuration élaborée ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -543,11 +543,18 @@ Résultats #82 corrigée : [preuve locale/CI](https://github.com/Antoine310/scie
 
 Résultats #83 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/83#issuecomment-7195281660), head exact 21b7675, 16/16 ciblés 0,09 s, 1226/1226 6,31 s ; fixture 1 supporté/1 partiel, 3 références logiques/3 positions, 32 vecteurs/64 checks ; core 2 supportés, 1 partiel enrichi, 1 refusé, 6 références logiques/7 positions. Cumul 28/30 sites traités, 660 candidats positionnels, 6 références logiques, 783 constantes. Pipeline 3,925766 s, graph build 1,909055 s, RSS 184212/231812 Kio ; graphes historiques inchangés, 0 troncature. CI 50/50 184 s ; fusion e4389dc. #82 main 50/50 173 s.
 
-### PR #84 — Setters NBA et littéraux concat (en cours)
+### PR #84 — Setters NBA et littéraux concat (fusionnée)
 
 - [~] **PR84-PATTERN-01 · P1** — Artefact #83 15128720344, ligne 1223 : StructuredAssignmentPattern de Status_t dans AlwaysFF, setters explicites complets sans doublon, token concordant avec MemberAccess observés (pas preuve indépendante de liaison), types exacts, deux copies depuis mstatus_n (offsets 3,5) et cinq bits constants (uie,upie,mpp,mprv). Candidats échantillonnés uniquement lors de l'exécution de cette instruction NBA ; pas de graphe combinatoire ni de transition globale, guard/last-writer/clock-domain non prouvés. Fixture vérifie maintien avant front et mise à jour après front, 32 vecteurs/65 checks.
 - [~] **PR84-LITERAL-01 · P1** — Ligne 467 : 22 bits littéraux exacts, encodages non signés b/d/h, largeur et type concordants, aucune arête. Sept positions #83 conservées, disjointes des 22 constantes. Trois positions 13,14,31 restent conditionnelles et non modélisées ; 29/32 positions locales attendues pour ce site, toujours partiel.
 - [ ] **PR84-RESIDUAL-01 · P1** — Conditions FPU/ZFINX, FS_t, égalités et sélection conditionnelle (dont état quatre valeurs), pas de pliage depuis tags seuls. Prouver gardes/priorité/temporalité et identité indépendante des champs avant intégration. Objectif #84 : 29/30 sites avec candidats complets au niveau instruction locale, 1 partiel ; ne pas confondre avec 29 transitions prouvées. Aucun ajout au dénominateur historique. CI mutualisée, 50 jobs.
+
+Résultats #84 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/84#issuecomment-7195611773), SHA exact 6401827, 24/24 ciblés 0,09 s, 1250/1250 7,14 s ; fixture 2 sites, 2 candidats NBA/3 constantes NBA/2 constantes concat, simulation 32 vecteurs/65 checks, 132 ns. Core 2 sites, 2 candidats NBA/5 constantes NBA/22 constantes concat. Cumul 29/30 sites au niveau instruction locale, 1 partiel, 660 positions combinatoires, 6 références logiques, 2 candidats NBA, 810 constantes. Pipeline 3,726537 s, graph build 1,865346 s, RSS Python/slang 183952/213552 Kio, AST/graphe 47778002/33322406 octets, compteurs historiques inchangés et 0 troncature. CI 50/50 209 s, fusion d26fc18. #83 main 50/50 182 s.
+
+### PR #85 — Constantes conditionnelles selon configuration élaborée (en cours)
+
+- [~] **PR85-CONFIG-01 · P1** — Artefact #84 15128767123, ligne 467 : FPU/ZFINX dans le corps CSR sont des paramètres logic signed[31:0] liés aux paramètres du parent, initialisés à 0. Vérifier adresses/noms/scopes, chaînes d'initialisation explicites, type/valeur et tags concordants ; pas de pliage depuis tags seuls. Égalités et LogicalAnd sur valeurs connues 0/1, une seule condition, branche sélectionnée constante (littéral converti exact ou enum exact FS_OFF). Résultat attendu bits 13,14,31 à 0 uniquement pour la configuration épinglée FPU=0/ZFINX=0. Oracle partition exacte 7 positions #83 +22 constantes #84 +3 constantes #85 =32 sans recouvrement. Fixture activée/désactivée : branche runtime non pliée lorsque activée, simulation 8 vecteurs/16 checks. Rapport distinct ; 30/30 sites avec candidats au niveau instruction locale dans cette configuration si validation. Ne pas assimiler à couverture globale ni preuve de valeurs en exécution.
+- [ ] **PR85-INTEGRATE-01 · P1** — Auditer le contrat d'intégration et les clés de liaison des 30 occurrences, distinguer arêtes de copie, références logiques, constantes locales, NBA, contrôles de configuration ; provenance, portée, limites et tests de non-régression. PR79-IDENT-01 et toutes les dettes d'identité champ, unions, gardes runtime, X/Z, priorité/temporalité, couverture multi-config restent ouvertes. Aucun ajout au dénominateur 815/1199, ni modification des graphes historiques. CI même job, 50 attendus.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
