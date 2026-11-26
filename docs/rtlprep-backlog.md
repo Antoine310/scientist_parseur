@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.17 — 26 novembre 2026 (fusion #82, chantier #83)**  
+**Version : 1.18 — 26 novembre 2026 (fusion #83, chantier #84)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #82** (`951e006352f43e665c76972775968318a1b41f6c`). #82 50/50 CI sur 5bb98e8, 1210/1210 locaux ; post-fusion à relever.
-**PR en cours : #83**, expressions logiques et positions de membres dans concat RHS ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #83** (`e4389dc97aa93093e1dfd3bb837bbbf3d46eaf3a`). #83 50/50 CI sur 21b7675, 1226/1226 locaux ; post-fusion à relever. #82 main 50/50 en 173 s.
+**PR en cours : #84**, setters NBA et littéraux concat RHS ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -536,10 +536,18 @@ Première validation #82 sur 3d8a06a : 1198/1198 locaux (6,40 s), rapport `repor
 
 Résultats #82 corrigée : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/82#issuecomment-7194926735), 1210/1210 5,63 s, fixture 4/4 sites, 12 arêtes/12 constantes, simulation 4096 vecteurs/12288 checks à 8192 ns ; ALU 0, core 5/5, 640 arêtes/768 constantes, cumul 26/30 sites, 653 arêtes candidates/783 constantes. Pipeline 3,799949 s, graph build 1,928846 s, RSS Python/slang 183928/219532 Kio, AST 47778002, graphe 33322406 octets ; compteurs historiques inchangés, 0 troncature. SHA local non visible dans extrait, résultats correspondant au correctif validé sur CI exacte 5bb98e8 ; fusion explicitement autorisée 951e006. CI finale 50/50 167 s, première 48/50 201 s, 368 s cumulés, cycle 535 s. CI main à relever.
 
-### PR #83 — Expressions membres et concat RHS (en cours)
+### PR #83 — Expressions membres et concat RHS (fusionnée)
 
 - [~] **PR83-EXPR-01 · P1** — Artefact #82 15127347670, quatre sites résiduels exacts : 1104/1105 LogicalAnd/LogicalNot imbriqués (6 références structurales, distinctes des arêtes de copie), 467 concat RHS 32 bits (7 positions directes de membres, 25 bits d'opérandes opaques réservés par largeur vérifiée, site reste partiel), 1223 StructuredAssignmentPattern non bloquant AlwaysFF (refus explicite). Pas de preuve d'influence fonctionnelle ni de valeur globale. Oracle fixture deux sites, 3 références logiques/3 positions concat, deux bits opaques, 32 vecteurs/64 checks ; oracle core 2 sites supportés/1 partiel avec positions/1 partiel sans positions, 13 candidats. Cumul attendu 28/30 sites traités sur périmètre local et 1 site partiellement enrichi ; distinguer les relations logiques des positions. Rapport expérimental séparé, aucune addition au 815/1199.
 - [ ] **PR83-RESIDUAL-01 · P1** — Concat ligne 467 : modéliser opérandes conditionnels/constantes sans déduire de branches depuis tags constant seuls. Ligne 1223 : affectation structurée NBA AlwaysFF, identité des setters, évaluation RHS avant mise à jour et preuve temporelle dédiée. Ne pas déclarer 30/30 avant preuve. PR79-IDENT-01, PR76-STRUCT-01, PR78-CENSUS-01 et autres dettes agrégats restent ouvertes. Mutualisation CI dans job #80–82, aucune validation supprimée.
+
+Résultats #83 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/83#issuecomment-7195281660), head exact 21b7675, 16/16 ciblés 0,09 s, 1226/1226 6,31 s ; fixture 1 supporté/1 partiel, 3 références logiques/3 positions, 32 vecteurs/64 checks ; core 2 supportés, 1 partiel enrichi, 1 refusé, 6 références logiques/7 positions. Cumul 28/30 sites traités, 660 candidats positionnels, 6 références logiques, 783 constantes. Pipeline 3,925766 s, graph build 1,909055 s, RSS 184212/231812 Kio ; graphes historiques inchangés, 0 troncature. CI 50/50 184 s ; fusion e4389dc. #82 main 50/50 173 s.
+
+### PR #84 — Setters NBA et littéraux concat (en cours)
+
+- [~] **PR84-PATTERN-01 · P1** — Artefact #83 15128720344, ligne 1223 : StructuredAssignmentPattern de Status_t dans AlwaysFF, setters explicites complets sans doublon, token concordant avec MemberAccess observés (pas preuve indépendante de liaison), types exacts, deux copies depuis mstatus_n (offsets 3,5) et cinq bits constants (uie,upie,mpp,mprv). Candidats échantillonnés uniquement lors de l'exécution de cette instruction NBA ; pas de graphe combinatoire ni de transition globale, guard/last-writer/clock-domain non prouvés. Fixture vérifie maintien avant front et mise à jour après front, 32 vecteurs/65 checks.
+- [~] **PR84-LITERAL-01 · P1** — Ligne 467 : 22 bits littéraux exacts, encodages non signés b/d/h, largeur et type concordants, aucune arête. Sept positions #83 conservées, disjointes des 22 constantes. Trois positions 13,14,31 restent conditionnelles et non modélisées ; 29/32 positions locales attendues pour ce site, toujours partiel.
+- [ ] **PR84-RESIDUAL-01 · P1** — Conditions FPU/ZFINX, FS_t, égalités et sélection conditionnelle (dont état quatre valeurs), pas de pliage depuis tags seuls. Prouver gardes/priorité/temporalité et identité indépendante des champs avant intégration. Objectif #84 : 29/30 sites avec candidats complets au niveau instruction locale, 1 partiel ; ne pas confondre avec 29 transitions prouvées. Aucun ajout au dénominateur historique. CI mutualisée, 50 jobs.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
