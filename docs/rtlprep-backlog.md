@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.19 — 26 novembre 2026 (fusion #84, chantier #85)**  
+**Version : 1.20 — 26 novembre 2026 (fusion #85, chantier #86)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #84** (`d26fc1832eec8becbedcef4c1173765621b838cd`). #84 50/50 CI sur 6401827, 1250/1250 locaux ; post-fusion à relever. #83 main 50/50 en 182 s.
-**PR en cours : #85**, constantes conditionnelles spécifiques à la configuration élaborée ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #85** (`fdba6469e83482b7c52ccbb2fcdd017081fea822`). #85 50/50 CI sur 3a5077a, 1270/1270 locaux ; post-fusion à relever. #84 main 50/50 en 241 s.
+**PR en cours : #86**, enveloppe commune de preuves expérimentales ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -551,10 +551,17 @@ Résultats #83 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #84 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/84#issuecomment-7195611773), SHA exact 6401827, 24/24 ciblés 0,09 s, 1250/1250 7,14 s ; fixture 2 sites, 2 candidats NBA/3 constantes NBA/2 constantes concat, simulation 32 vecteurs/65 checks, 132 ns. Core 2 sites, 2 candidats NBA/5 constantes NBA/22 constantes concat. Cumul 29/30 sites au niveau instruction locale, 1 partiel, 660 positions combinatoires, 6 références logiques, 2 candidats NBA, 810 constantes. Pipeline 3,726537 s, graph build 1,865346 s, RSS Python/slang 183952/213552 Kio, AST/graphe 47778002/33322406 octets, compteurs historiques inchangés et 0 troncature. CI 50/50 209 s, fusion d26fc18. #83 main 50/50 182 s.
 
-### PR #85 — Constantes conditionnelles selon configuration élaborée (en cours)
+### PR #85 — Constantes conditionnelles selon configuration élaborée (fusionnée)
 
 - [~] **PR85-CONFIG-01 · P1** — Artefact #84 15128767123, ligne 467 : FPU/ZFINX dans le corps CSR sont des paramètres logic signed[31:0] liés aux paramètres du parent, initialisés à 0. Vérifier adresses/noms/scopes, chaînes d'initialisation explicites, type/valeur et tags concordants ; pas de pliage depuis tags seuls. Égalités et LogicalAnd sur valeurs connues 0/1, une seule condition, branche sélectionnée constante (littéral converti exact ou enum exact FS_OFF). Résultat attendu bits 13,14,31 à 0 uniquement pour la configuration épinglée FPU=0/ZFINX=0. Oracle partition exacte 7 positions #83 +22 constantes #84 +3 constantes #85 =32 sans recouvrement. Fixture activée/désactivée : branche runtime non pliée lorsque activée, simulation 8 vecteurs/16 checks. Rapport distinct ; 30/30 sites avec candidats au niveau instruction locale dans cette configuration si validation. Ne pas assimiler à couverture globale ni preuve de valeurs en exécution.
 - [ ] **PR85-INTEGRATE-01 · P1** — Auditer le contrat d'intégration et les clés de liaison des 30 occurrences, distinguer arêtes de copie, références logiques, constantes locales, NBA, contrôles de configuration ; provenance, portée, limites et tests de non-régression. PR79-IDENT-01 et toutes les dettes d'identité champ, unions, gardes runtime, X/Z, priorité/temporalité, couverture multi-config restent ouvertes. Aucun ajout au dénominateur 815/1199, ni modification des graphes historiques. CI même job, 50 attendus.
+
+Résultats #85 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/85#issuecomment-7197654522), SHA exact 3a5077a, 20/20 ciblés 0,09 s, 1270/1270 6,79 s ; fixture 1 résolu/1 partiel, 2 constantes, 8 vecteurs/16 checks ; core 1 site, 2/2 opérandes, 3 constantes (13,14,31, FPU=0/ZFINX=0). Partition 7+22+3=32, cumul 30/30 sites au niveau instruction locale, 660 positions, 6 références logiques, 2 NBA, 813 constantes. Pipeline 4,570594 s, graph build 2,267613 s, RSS Python/slang 184052/219676 Kio, compteurs historiques et tailles inchangés, 0 troncature. CI 50/50 195 s, fusion fdba646. #84 main 50/50 241 s. Mesures ponctuelles.
+
+### PR #86 — Enveloppe commune des preuves expérimentales (en cours)
+
+- [~] **PR86-ENVELOPE-01 · P1** — Recalcul des 7 audits #79–85 sur le même AST/index, empreintes SHA256 des fichiers dans runner, conservation sans perte des payloads lignes/candidats et métadonnées. Identifiants locaux producteur:site et producteur:collection:ordinal, pas de rapprochement par ligne ni dédoublonnage inter-producteurs. Liste fermée de 12 relations, distinction stricte des 6 catégories, contrôle des références aux lignes, des constantes sans source et des coordonnées multidimensionnelles. Oracle de reconstruction exacte de chaque rapport ; core attendu 56 lignes producteur (pas 56 occurrences), 1481 enregistrements : 660 positions, 6 références logiques, 2 NBA, 805 constantes locales, 5 constantes NBA, 3 constantes de configuration. Fixture #85 réutilisée pour 4 positions/2 constantes ; validations comportementales antérieures conservées. 25 tests ciblés attendus. CI même job, référence fraîche.
+- [ ] **PR86-LINK-01 · P1** — Lier les occurrences par identité structurelle de parcours AST, non par localisation seule, analyser conflits et doublons avant promotion ; les identifiants producteur ne sont pas persistants entre élaborations. Contrat de provenance/coordonnées à auditer, aucune intégration aux graphes historiques ni ajout au 815/1199. PR79-IDENT-01, PR85-INTEGRATE-01 et toutes limites scientifiques précédentes restent ouvertes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
