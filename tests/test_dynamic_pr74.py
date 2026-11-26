@@ -142,4 +142,5 @@ def test_legacy_graph_inventory_readable():
     g=graph(assignment())
     g.pop("dynamic_dependencies")
     g.pop("selector_recovery")
+    g.pop("typed_layout")
     assert len(analyzer_summary(g)["analyzers"])==12
