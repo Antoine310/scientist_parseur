@@ -115,6 +115,7 @@ def test_historical_graph_without_bitwise_channel_readable():
     g=build_dependency_graph(ast(assignment()),expected_top="top",enable_bitwise=False)
     g.pop("bitwise_dependencies")
     g.pop("mux_dependencies")
+    g.pop("dynamic_dependencies")
     report=analyzer_summary(g)
     assert "bitwise_dependencies" not in report["analyzers"]
     assert len(report["analyzers"])==10
