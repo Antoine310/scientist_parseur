@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.21 — 26 novembre 2026 (fusion #86, chantier #87)**  
+**Version : 1.22 — 26 novembre 2026 (fusion #87, chantier #88)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #86** (`c70d6b8655945b4b7ffcde759dc133f30d8a5d2f`). #86 50/50 CI sur bfc663b, 1295/1295 locaux ; post-fusion à relever. #85 main 50/50 en 199 s.
-**PR en cours : #87**, liaison exacte des occurrences et audit des recouvrements ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #87** (`2da8fba04207a91738254c17aafe836f51bd93a2`). #87 50/50 CI sur ce4a09c, 1311/1311 locaux ; post-fusion à relever. #86 main 50/50 en 203 s.
+**PR en cours : #88**, canal positionnel typé optionnel du moteur ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -565,11 +565,18 @@ Résultats #85 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #86 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/86#issuecomment-7198085107), SHA exact bfc663b, 25/25 ciblés 0,12 s, 1295/1295 6,64 s ; fixture 8 lignes/6 records, ALU 0/0, core 56 lignes/1481 records, reconstruction exacte 7 rapports. Pipeline historique 4,910083 s, graph build 2,462214 s, RSS Python/slang 183840/213340 Kio, compteurs inchangés, 0 troncature. Coût total audits non mesuré. CI 50/50 201 s, fusion c70d6b8 ; #85 main 50/50 199 s.
 
-### PR #87 — Liaison des occurrences et audit des recouvrements (en cours)
+### PR #87 — Liaison des occurrences et audit des recouvrements (fusionnée)
 
 - [~] **PR87-OCC-01 · P1** — Ajouter un ordinal de parcours `assignment_sites` complet avant filtrage aux sept producteurs, optionnel (sorties historiques par défaut inchangées). Liaison fraîche au même AST, contrôle scope/contexte/source, census PR79, unicité producteur+ordinal, aucune jointure par ligne. Fixture réelle deux affectations même ligne, deux identités et positions ; test compatibilité sans champ optionnel. Core attendu 56 lignes → 30 occurrences distinctes, 1481 records conservés. Ordinal local à extraction et version du parcours, jamais stable entre élaborations.
 - [~] **PR87-OVERLAP-01 · P1** — Groupes de doublons exacts (payload sans site_id, catégorie et occurrence), audit des recouvrements et désaccords candidats au même destinataire/position ; références logiques multiples non conflictuelles seules. Aucun aplatissement entre coordonnées déclarées et packed, systèmes mixtes signalés. Oracle attendu 1481 records exacts distincts, 0 doublon/recouvrement/désaccord/mixte, partition CSR 32 et NBA 7 ; conserver originaux même si doublons. Pas de preuve de conflit fonctionnel, ni promotion graphe. 16 nouveaux tests, CI même job.
 - [ ] **PR87-PROMOTE-01 · P1** — Contrat d'intégration au moteur, validation des unités de coordonnées et du lien indépendant des champs, vérifier recouvrement avec graphe plat existant, distinguer toutes catégories, pas d'addition au 815/1199 sans rapprochement justifié. PR79-IDENT-01 et limites précédentes restent ouvertes.
+
+Résultats #87 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/87#issuecomment-7200652938), SHA exact ce4a09c, 16/16 ciblés 0,18 s, 1311/1311 8,72 s ; fixture deux assign même ligne, 2 occurrences/2 records ; ALU 0 ; core 56 lignes/30 occurrences/1481 records exacts, 0 doublon/recouvrement/désaccord/mixte et occurrence sans record. Pipeline historique 4,755401 s, graph build 2,257145 s, RSS Python/slang 183820/217688 Kio, 0 troncature, compteurs et tailles historiques inchangés. CI 50/50 220 s, fusion 2da8fba ; #86 main 50/50 203 s. Coût audits non mesuré.
+
+### PR #88 — Canal positionnel typé optionnel (en cours)
+
+- [~] **PR88-POSITION-01 · P1** — Artefact #87 15144428065 : 660 candidats positionnels (640 PMP, 20 autres), 10 paires signal toutes présentes dans graphe historique, aucun tuple numérique plat identique observé (comparaison numérique seule non sémantique). Nouveau canal optionnel `member_position_candidates` via `build_dependency_graph(..., enable_member_positions=True)`, défaut désactivé ; vérification types exacts index, champs/offsets/indices et coordonnées, provenance et ordinal ; conserver les 821 autres records hors canal. Comparaison des paires et des tuples uniquement si les deux coordonnées sont des indices déclarés, jamais assimiler offset/coordonnée à index plat. Attendu 660 positions dont 640 multidimensionnelles et 0 comparable au plat, oracle PMP intégral et fixture. Aucune modification graphes historiques ni dénominateur, publication sous budget. 16 tests ciblés, CI même job.
+- [ ] **PR88-INTEGRATION-01 · P1** — API Python opt-in seulement, CLI/MCP, coûts totaux audits, validation multi-config et champ indépendant encore à étudier. Intégration distincte des constantes/logique/NBA dans prochaines étapes ; aucun lien causal, garde/priorité/temporalité ni preuve globale. PR79-IDENT-01 et autres dettes maintenues.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
