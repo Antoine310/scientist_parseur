@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.23 — 26 novembre 2026 (fusion #88, chantier #89)**  
+**Version : 1.24 — 26 novembre 2026 (fusion #89, chantier #90)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #88** (`a8da59641cfa0a4a2aa40ceae5f927933e7a8c7d`). #88 50/50 CI sur ee48ab7, 1327/1327 locaux ; post-fusion à relever. #87 main 50/50 en 200 s.
-**PR en cours : #89**, constantes locales/de configuration et références logiques optionnelles ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #89** (`e7048c2c61bc7d3931781ed0977e1fb6b5d8d839`). #89 50/50 CI sur be59162, 1345/1345 locaux ; post-fusion à relever. #88 main 50/50 en 170 s.
+**PR en cours : #90**, canal NBA optionnel, partition locale de l'instruction ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -580,11 +580,19 @@ Résultats #87 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #88 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/88#issuecomment-7201352254), SHA exact ee48ab7, 16/16 ciblés 0,09 s, 1327/1327 6,25 s ; core 660 positions typées/13 occurrences/10 paires historiques, 640 cibles multidimensionnelles, aucune comparable au plat, 821 autres non promues. Graphe historique identique hors empreinte/métriques, aucune troncature. Pipeline historique 3,808946 s, graph build 1,827748 s, opt-in 4,650151 s, RSS historique Python/slang 183916/209508 Kio, publication opt-in 884171 valeurs profondeur22. Mesures ponctuelles non appariées. CI 50/50 244 s, fusion a8da596 ; #87 main 50/50 200 s.
 
-### PR #89 — Constantes et références logiques optionnelles (en cours)
+### PR #89 — Constantes et références logiques optionnelles (fusionnée)
 
 - [~] **PR89-COMB-01 · P1** — Nouveau canal `member_combinational_candidates` via `enable_member_combinational=True`, défaut off. 805 constantes locales, 3 constantes de configuration, 6 références logiques structurelles, 814 records sur 17 occurrences attendus (artefact #88 15147088281). Vérifier type et coordonnées exacts, conserver preuve conditionnelle liée à l'opérande, aucune source artificielle pour constantes, aucune assimilation logique à copie/influence. 660 positionnels distincts, 7 NBA non promus ; 667 autres records hors canal. Oracle indépendant toutes constantes (dont 768 PMP), 6 références, partition CSR 32, fixtures #82/#83/#85. Graphe historique inchangé, budget publication conservé.
 - [~] **PR89-SHARE-01 · P2** — Mutualiser une collecte fraîche des 7 audits et liaison quand les deux canaux sont activés. Test appel unique et mesure temps construction deux canaux ; coût total et benchmark répété restent ouverts. 18 tests ciblés attendus, 50 jobs CI, références fraîches.
 - [ ] **PR89-SEMANTIC-01 · P1** — Aucun invariant global, garde/priorité/temporalité prouvés ; liaison indépendante champ, multi-config, CLI/MCP restent ouvertes. #90 intégration NBA séparée avec hypothèses explicites ; aucun ajout au dénominateur historique. 
+
+Résultats #89 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/89#issuecomment-7203327646), SHA exact be59162, 18/18 ciblés 0,10 s, 1345/1345 6,98 s ; 814 records (805 locales,3 config,6 logique) sur 17 occurrences, 660 positions conservées, 7 NBA non promus. Fixtures #82/#83/#85 conformes, ALU 0, graphe historique identique intra-run hors empreinte/métriques. Pipeline historique 4,544982 s, graph build 2,416650 s, deux canaux 5,890925 s, RSS historique Python/slang 185932/211364 Kio, publication 909275 valeurs profondeur22. AST/index/graphe 47967016/856321/33354606 octets, différents #88 ; chemin de sortie pr89µ et métadonnées possibles, cause non vérifiée. Mesures ponctuelles non appariées. CI 50/50 217 s, fusion e7048c2 ; #88 main 50/50 170 s.
+
+### PR #90 — Canal NBA optionnel (en cours)
+
+- [~] **PR90-NBA-01 · P1** — Nouveau canal `member_sequential_candidates` via `enable_member_sequential=True`, défaut off. Recontrôler l'occurrence AST, AlwaysFF/NBA explicite, pattern struct complet, destination exacte, types et offsets de champ, partition locale sans trou ni doublon. 2 candidats RHS échantillonnés +5 constantes NBA sur une occurrence core ; fixture #84 2+3. Aucun événement/horloge/reset, garde, dominance ou priorité inférés ; aucune latence de cycle ni next-state global. Les constantes n'ont pas de source fictive. 1474 autres records préservés dans canaux distincts ; oracle exact et unicité IDs sur 1481 records cumulés, aucun ajout au graphe historique/denominateur. 23 tests ciblés attendus, CI même job.
+- [~] **PR90-SHARE-01 · P2** — Une collecte fraîche pour les combinaisons d'options ; test appel unique, ancienne API préservée. Mesure ponctuelle 3 canaux, benchmark répété/performance/RSS opt-in encore ouverts.
+- [ ] **PR90-TIME-01 · P1** — Rapprochement avec événements exacts et relations séquentielles existantes, gardes et priorité à prouver séparément ; liaison indépendante des champs, CLI/MCP, couverture/configurations, coût total restent ouverts. #91 bilan consolidé avant extension des familles arithmétiques, sans clore les dettes historiques par simple intégration.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
