@@ -1,11 +1,7 @@
 name: Real CV32E40P decoder RTL test
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-      - 'test/**'
+  workflow_call:
   workflow_dispatch:
 
 permissions:

@@ -1,19 +1,11 @@
 name: CV32E40P diagnostic inventory (real slang + pinned RTL)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   cv32e40p-diagnostics-pr67:

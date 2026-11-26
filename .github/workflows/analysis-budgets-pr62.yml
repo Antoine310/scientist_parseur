@@ -1,19 +1,11 @@
 name: Global analysis budget regression (real slang + pinned ALU)
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   analysis-budgets-pr62:

@@ -1,11 +1,7 @@
 name: Real slang integration
 
 on:
-  push:
-    branches:
-      - main
-      - 'feat/**'
-  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
