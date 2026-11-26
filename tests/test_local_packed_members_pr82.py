@@ -48,9 +48,30 @@ def test_read_positions_and_ast_unchanged():
     assert [x["target_coordinates"] for x in e]==[list(x) for x in coordinates(HI)]
     assert a==before
 
-def test_zero_positions_no_edges():
-    e,c=run(assignment(True))
-    assert not e and [(x["target_bit"],x["value"]) for x in c]==[(4+i,0) for i in range(8)]
+@pytest.mark.parametrize("field,typ,width,value,offset", [
+    ("upper", HI, 8, "8'h0", 4),
+    ("upper", HI, 8, "8'd0", 4),
+    ("upper", HI, 8, "8'b0", 4),
+    ("lower", LO, 4, "4'b0", 0),
+])
+def test_zero_positions_no_edges(field,typ,width,value,offset):
+    a=assignment(True)
+    a["type"]=typ
+    a["left"].update(type=typ,member=f"21 {field}")
+    a["right"].update(type=typ,value=value,constant=value)
+    e,c=run(a)
+    assert not e and [(x["target_bit"],x["value"]) for x in c]==[(offset+i,0) for i in range(width)]
+    assert [x["field_coordinates"] for x in c]==[list(x) for x in coordinates(typ)]
+
+
+@pytest.mark.parametrize("value", [
+    "4'b0", "8'd1", "8'bx", "8'bz", "8'sd0", "8'o0", "8'd00", "8'd0 ", 0,
+])
+def test_zero_spelling_fail_closed(value):
+    a=assignment(True)
+    a["right"]["value"]=value
+    with pytest.raises(Unsupported,match="unproven_exact_zero"):
+        run(a)
 
 @pytest.mark.parametrize("mode",["wrong_owner","wrong_addr","duplicate_alias","duplicate_instance","inactive",
     "signed","union","unpacked","field","conflict","nba","compound","timing","source","target",

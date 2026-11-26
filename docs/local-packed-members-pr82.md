@@ -9,3 +9,7 @@ python -m scripts.run_local_packed_members_pr82 --out reports/pr82
 ```
 
 CI : référence fraîche PR80 réutilisée dans le même job, sans supprimer les étapes #80/#81. Le runner local régénère par défaut la référence. Aucun ajout au dénominateur historique. Résultats à mesurer.
+
+## Correction après première CI
+
+Head 3d8a06a, run [45837398777](https://github.com/Antoine310/scientist_parseur/actions/runs/45837398777) : 48/50, Python 1198/1198 local, fixture 2/4 sites et 12 arêtes, 0 constante. Artefact CI 15126866660 : slang exporte les zéros fixture en `8'd0` et `4'b0`, et ceux du cœur en `512'h0` et `128'h0`. Le moteur n'acceptait que le dernier radix. Correction bornée aux trois graphies exactes b/d/h, largeur et type identiques, tag constant éventuel concordant. Pas de modification de l'oracle, ni du RTL. Tests positifs sur chaque radix et sur dimension ascendante, refus largeur erronée, valeur non nulle, X/Z, signed, octal, graphies non canoniques et valeur non textuelle. Nouvelle validation requise.

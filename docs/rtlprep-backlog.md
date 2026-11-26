@@ -2,7 +2,7 @@
 
 **Version : 1.16 — 26 novembre 2026 (fusion #81, chantier #82)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #81** (`b8e79f6d512c51e807b00af8800bf1f693fb3c70`). #81 50/50 CI PR, 1175/1175 locaux sur fc82e3e ; post-fusion à relever. #79 et #80 CI main 49/49 et 50/50.
+**Dernière PR fusionnée confirmée : #81** (`b8e79f6d512c51e807b00af8800bf1f693fb3c70`). #81 50/50 CI PR, 1175/1175 locaux sur fc82e3e ; post-fusion 50/50 en 205 s. #79 et #80 CI main 49/49 et 50/50.
 **PR en cours : #82**, structures packed multidimensionnelles locales ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
@@ -531,6 +531,8 @@ Résultats #81 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 - [~] **PR82-LOCAL-01 · P1** — Artefact #81 15123545136 : Pmp_t TypeAlias direct du corps élaboré de cs_registers_i, token adresse + module.type, offsets 256/128/0 pour pmpaddr/pmpcfg_packed/pmpcfg. Pas de fallback nom, corps non matérialisé ou scope local ambigu refusé. Champs logic packed non signés, 1 ou 2 dimensions, cibles 2D, ordre LSB cartésien (dimension droite varie le plus vite), bornes explicites. Cinq sites : 910–912 zéro non dimensionné typé exact (768 positions constantes), 1125–1126 lectures directes (640 arêtes positionnelles). Oracle exact positions/coordonnées, disjoint des 21 sites précédents ; objectif cumul 26/30. Fixture mixte ascendant/descendant, 4 sites, 12 arêtes/12 constantes, 4096 vecteurs/12288 checks. Mesures à effectuer, rapport distinct. CI même job #80/#81, extraction fraîche réutilisée, 50 jobs.
 - [ ] **PR82-RESIDUAL-01 · P1** — Quatre sites résiduels si #82 validée ; concat RHS, logique (2), StructuredAssignmentPattern. Unions, champs imbriqués, identité de déclaration de champ indépendante, références aux corps partagés et priorités/temporalité non prouvées. Ne pas clôturer PR79-IDENT-01, PR76-STRUCT-01, PR78-CENSUS-01 ni les dettes associées. Pas d'ajout au 815/1199. 
+
+Première validation #82 sur 3d8a06a : 1198/1198 locaux (6,40 s), rapport `reports/pr82/run-8rp_cvn2/summary.json` failed, fixture 2/4 sites, 12 arêtes, 0 constante ; CI 48/50 en 201 s, run 45837398777. Artefact 15126866660 : deux zéros refusés, `8'd0` et `4'b0`, cœur `512'h0` et `128'h0`. Correction limitée aux graphies exactes b/d/h et largeur/type concordants, avec tests négatifs ; oracle inchangé. Pas de gain #82 déclaré avant validation complète. Historique CI conserve l'échec. Post-fusion #81 : 50/50, 205 s.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

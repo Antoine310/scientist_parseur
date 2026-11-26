@@ -167,7 +167,12 @@ def expand(node, owner, resolve, declared, types, observed):
     if lhs.get("kind") == "MemberAccess" and rhs.get("kind") == "UnbasedUnsizedIntegerLiteral":
         target, typ, coords, offset, field = member(lhs)
         value = rhs.get("value")
-        if rhs.get("type") != typ or value != f"{len(coords)}'h0" or ("constant" in rhs and rhs["constant"] != value):
+        # Slang v12.1 prints the elaborated zero in different bases depending
+        # on width: fixture 4'b0 / 8'd0, official CSR 128'h0 / 512'h0.
+        # Accept only an exact-width, unsigned, known zero in these spellings.
+        zeros = {f"{len(coords)}'{radix}0" for radix in ("b", "d", "h")}
+        if (rhs.get("type") != typ or not isinstance(value, str) or value not in zeros
+                or ("constant" in rhs and rhs["constant"] != value)):
             raise Unsupported("unproven_exact_zero")
         return [], [{"relation": "local_packed_zero_write_candidate", "target": target,
                      "target_bit": offset+i, "field": field, "field_coordinates": list(c),

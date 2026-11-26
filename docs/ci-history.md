@@ -16,8 +16,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 79 | main | 292fb83 | [45832194530](https://github.com/Antoine310/scientist_parseur/actions/runs/45832194530) | 49/49 | 289 | 13 | 253 | 2 | 1971 | bit-width-pr70 85 s |
 | 80 | main | 9b01304 | [45832255988](https://github.com/Antoine310/scientist_parseur/actions/runs/45832255988) | 50/50 | 330 | 24 | 274 | 4 | 1954 | bitwise-pr72 90 s |
 | 81 | PR | fc82e3e | [45832617457](https://github.com/Antoine310/scientist_parseur/actions/runs/45832617457) | 50/50 | 237 | 11 | 210 | 2 | 2107 | packed-members-pr79 84 s |
+| 81 | main | b8e79f6 | [45837014585](https://github.com/Antoine310/scientist_parseur/actions/runs/45837014585) | 50/50 | 205 | 14 | 165 | 3 | 2340 | typed-layout-pr76 108 s |
+| 82 | PR intermédiaire (échec) | 3d8a06a | [45837398777](https://github.com/Antoine310/scientist_parseur/actions/runs/45837398777) | 48/50 (2 échecs) | 201 | 19 | 171 | 3 | 2360 | cva6-lane-evidence 88 s |
 
-#81 : 13:47:46→13:51:43 UTC, une tentative, job partagé #80/#81 36 s, local 1175/1175 6,21 s, fusion b8e79f6 ; [main 45837014585](https://github.com/Antoine310/scientist_parseur/actions/runs/45837014585) en cours au contrôle. #79 main 13:45:09→13:49:58, #80 main 13:45:30→13:51:00 UTC ; chevauchement, pas de causalité déduite. #82 réutilise le même job, 50 jobs attendus.
+#82 : premier head 14:16:50→14:20:11 UTC, tentative 1, job partagé 82 s (échec fixture #82), verdict final échec 3 s. Local 1198/1198 en 6,40 s, rapport fixture failed (2/4 sites, 12 arêtes, 0 constante). Artefact 15126866660 : correction du format zéro, nouvelle CI attendue. #81 main 14:14:36→14:18:01 UTC, 50/50, job partagé 46 s.
+
+#81 : 13:47:46→13:51:43 UTC, une tentative, job partagé #80/#81 36 s, local 1175/1175 6,21 s, fusion b8e79f6 ; [main 45837014585](https://github.com/Antoine310/scientist_parseur/actions/runs/45837014585) réussi (voir tableau). #79 main 13:45:09→13:49:58, #80 main 13:45:30→13:51:00 UTC ; chevauchement, pas de causalité déduite. #82 réutilise le même job, 50 jobs attendus.
 
 #79 : 10:43:14→10:46:42 UTC, une tentative, nouveau job 103 s, local 1140/1140 6,90 s, fusion 292fb83 ; [main 45832194530](https://github.com/Antoine310/scientist_parseur/actions/runs/45832194530) réussi (voir tableau). #80 : 11:58:39→12:01:38 UTC, une tentative, nouveau job 36 s, local 1156/1156 5,85 s, retarget main sans nouvelle CI PR observée, arbre base identique, fusion 9b01304. Run main réussi (voir tableau). #81 : ajout au job #80 et réutilisation de son extraction fraîche, pas de nouveau workflow ; mesurer toutes les tentatives.
 
