@@ -232,7 +232,7 @@ def build_typed_layout(ast,index,captured,flat,dynamic,*,enabled=True):
                 truncated=True
                 break
             row={"flat_assignment_id":ordinal,"target":access["target"],
-                 "source_location":access.get("source"),"coverage":"partial","edge_count":0",
+                 "source_location":access.get("source"),"coverage":"partial","edge_count":0,
                  "assignment_kind":access.get("assignment_kind","continuous"),
                  "procedure_kind":access.get("procedure_kind"),"nonblocking":access.get("nonblocking"),
                  "guards":access.get("guards",[]),"events":access.get("events",[]),
