@@ -20,7 +20,7 @@ MAX_PROOFS=64
 BUDGET_REASONS=frozenset(("selector_scan_budget","selector_proof_budget",
     "edge_budget_exceeded","row_pair_budget","mux_row_pair_budget","mux_node_budget",
     "mux_depth_budget","mux_branch_budget","expression_traversal_budget","concat_operand_budget",
-    "lane_budget_exceeded"))
+    "lane_budget_exceeded","operator_scan_budget"))
 
 def normalize(node,constants):
     proofs=[]
