@@ -141,4 +141,5 @@ def test_legacy_graph_inventory_readable():
     from rtlprep.analysis_budgets import analyzer_summary
     g=graph(assignment())
     g.pop("dynamic_dependencies")
+    g.pop("selector_recovery")
     assert len(analyzer_summary(g)["analyzers"])==12
