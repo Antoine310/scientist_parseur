@@ -85,7 +85,7 @@ def summarize_rows(graph,index):
     limits=graph["analysis_limits"]["analyzers"]
     result={}
     for name,(_,counter,_) in ANALYZERS.items():
-        if name in ("bitwise_dependencies","mux_dependencies") and name not in graph:
+        if name in ("bitwise_dependencies","mux_dependencies","dynamic_dependencies") and name not in graph:
             continue
         data=graph[name]
         rows=data["items"]
