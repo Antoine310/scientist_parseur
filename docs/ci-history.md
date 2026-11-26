@@ -37,8 +37,11 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 90 | PR | fe5718c | [45895500052](https://github.com/Antoine310/scientist_parseur/actions/runs/45895500052) | 50/50 | 330 | 11 | 291 | 2 | 2241 | bitgraph-pr54 196 s |
 | 90 | main | cb3cd2a | [45899905282](https://github.com/Antoine310/scientist_parseur/actions/runs/45899905282) | 50/50 | 181 | 14 | 154 | 2 | 2100 | member-writes-pr80 114 s |
 | 91 | PR initial | 2f0480d | [45900116043](https://github.com/Antoine310/scientist_parseur/actions/runs/45900116043) | 50/50 | 245 | 23 | 210 | 2 | 1908 | member-writes-pr80 145 s |
+| 91 | PR finale | 00daf57 | [45901030741](https://github.com/Antoine310/scientist_parseur/actions/runs/45901030741) | 50/50 | 215 | 11 | 191 | 4 | 2045 | member-writes-pr80 120 s |
 
-#91 initial : 21:43:49→21:47:54 UTC, tentative1, partagé145 s, local1390/1390 6,65 s, scientifique passed ; RSS identique 261420 Kio non interprétable, correction volontaire avant fusion. #90 main 21:41:54→21:44:55 UTC, partagé114 s. #91 correctif à relever séparément.
+#91 finale : 21:52:08→21:55:43 UTC, tentative1, partagé120 s, local1398/1398 7,70 s, RSS corrigé et scientifique passed ; deux heads cumul460 s, fenêtre714 s, aucun échec/relance. Fusion 11cd261, main à relever. #92 conserve 50 jobs attendus.
+
+#91 initial : 21:43:49→21:47:54 UTC, tentative1, partagé145 s, local1390/1390 6,65 s, scientifique passed ; RSS identique 261420 Kio non interprétable, correction volontaire avant fusion. #90 main 21:41:54→21:44:55 UTC, partagé114 s. #91 correctif réussi (voir tableau).
 
 #90 : 21:04:03→21:09:33 UTC, tentative 1, partagé 113 s, local 1368/1368 6,57 s, fusion cb3cd2a, main réussi (voir tableau). #89 main 21:02:46→21:06:13 UTC, partagé 94 s. #91 conserve 50 jobs attendus.
 
