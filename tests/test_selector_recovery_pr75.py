@@ -145,4 +145,5 @@ def test_legacy_graph_inventory():
     from rtlprep.analysis_budgets import analyzer_summary
     g=graph(assignment())
     g.pop("selector_recovery")
+    g.pop("typed_layout")
     assert len(analyzer_summary(g)["analyzers"])==13

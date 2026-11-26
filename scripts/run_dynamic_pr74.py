@@ -219,8 +219,8 @@ def execute(out):
              ((1199,531,668,2842),(378,245,133,2469),(66,24,42,375),(165,39,126,2030)),214)]:
             ast=read_ast(folder/"elaborated_ast.json")
             idx=json.loads((folder/"rtl_index.json").read_text())
-            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_selector_recovery=False)
-            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_selector_recovery=False)
+            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_dynamic=False,enable_selector_recovery=False,enable_typed_layout=False)
+            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_selector_recovery=False,enable_typed_layout=False)
             for channel,expected in zip(CHANNELS,baselines):
                 c=old[channel]["counts"]
                 k="assignments" if channel==CHANNELS[0] else "captured"

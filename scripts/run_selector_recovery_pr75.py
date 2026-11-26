@@ -202,8 +202,8 @@ def execute(out):
              "cv32e40p_core.ex_stage_i.alu_i.ff_one_i")]:
             ast=read_ast(folder/"elaborated_ast.json")
             idx=json.loads((folder/"rtl_index.json").read_text())
-            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_selector_recovery=False)
-            new=build_dependency_graph(ast,expected_top=top,index=idx)
+            old=build_dependency_graph(ast,expected_top=top,index=idx,enable_selector_recovery=False,enable_typed_layout=False)
+            new=build_dependency_graph(ast,expected_top=top,index=idx,enable_typed_layout=False)
             for channel,expected in zip(CHANNELS,baselines):
                 c=old[channel]["counts"]
                 field="assignments" if channel==CHANNELS[0] else "captured"
