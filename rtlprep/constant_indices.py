@@ -12,6 +12,7 @@ MAX_VALUE=1024
 MAX_DEPTH=12
 MAX_NODES=256
 MAX_SCOPE_CONSTANTS=256
+MAX_POWER_EXPONENT=10
 
 
 def integer_value(raw):
@@ -88,7 +89,7 @@ def scope_constants(members,parent=None,*,instance_parameters=False):
     return result
 
 
-def evaluate(node,constants,depth=0,budget=None):
+def evaluate(node,constants,depth=0,budget=None,*,allow_power=False):
     if budget is None:
         budget=[MAX_NODES]
     budget[0]-=1
@@ -107,14 +108,28 @@ def evaluate(node,constants,depth=0,budget=None):
             return None
         value=entry[1]
     elif kind in ("Conversion","SignedConversion"):
-        value=evaluate(node.get("operand"),constants,depth+1,budget)
-    elif kind=="BinaryOp" and node.get("op") in ("Add","Subtract","Multiply"):
-        left=evaluate(node.get("left"),constants,depth+1,budget)
-        right=evaluate(node.get("right"),constants,depth+1,budget)
+        value=evaluate(node.get("operand"),constants,depth+1,budget,allow_power=allow_power)
+    elif kind=="BinaryOp" and (node.get("op") in ("Add","Subtract","Multiply")
+            or (allow_power and node.get("op")=="Power")):
+        left=evaluate(node.get("left"),constants,depth+1,budget,allow_power=allow_power)
+        right=evaluate(node.get("right"),constants,depth+1,budget,allow_power=allow_power)
         if left is None or right is None:
             return None
         op=node["op"]
-        value=left+right if op=="Add" else left-right if op=="Subtract" else left*right
+        if op=="Power":
+            # Positive base, bounded nonnegative exponent and no intermediate
+            # overflow. Never use the serialized folded tag as a value source.
+            if not 1<=left<=MAX_VALUE or right>MAX_POWER_EXPONENT:
+                return None
+            if node.get("left",{}).get("type")!=node.get("type"):
+                return None
+            value=1
+            for _ in range(right):
+                value*=left
+                if value>MAX_VALUE or not fits(value,node.get("type")):
+                    return None
+        else:
+            value=left+right if op=="Add" else left-right if op=="Subtract" else left*right
     else:
         return None
     if value is None or not 0<=value<=MAX_VALUE or not fits(value,node.get("type")):
