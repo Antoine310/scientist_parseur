@@ -125,9 +125,14 @@ def _build_combinational(ast,index,graph,envelope,linked):
                      "Field identity remains conditional on serialized metadata; no historical graph promotion."}
 
 
-def build_member_channels(ast,index,graph,*,positions=False):
+def build_member_channels(ast,index,graph,*,positions=False,combinational=True,sequential=False):
     envelope,_,linked=collect_linked(ast,index)
-    result={"member_combinational_candidates":_build_combinational(ast,index,graph,envelope,linked)}
+    result={}
+    if combinational:
+        result["member_combinational_candidates"]=_build_combinational(ast,index,graph,envelope,linked)
     if positions:
         result["member_position_candidates"]=_build_member_positions(ast,index,graph,envelope,linked)
+    if sequential:
+        from .member_sequential import _build_sequential
+        result["member_sequential_candidates"]=_build_sequential(ast,index,graph,envelope,linked)
     return result
