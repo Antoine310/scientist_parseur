@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.5 — 25 novembre 2026 (fusion #70 et chantier #71)**  
+**Version : 1.6 — 25 novembre 2026 (fusion #71 et chantier #72)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #70** (`721fdbee2bf46d73f0075a572801c828fbde89ba`). 40/40 CI sur `f19bdcd4dc7ecfbaa9a9791e89709798610f3a6f`.
-**PR en cours : #71**, coordonnées packed fixes ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #71** (`abb42fc4e3ec79d2ac045955ef2db53b1c8455b0`). 41/41 CI sur `192ca19727082baa1bfca884c2e12397696bb343`.
+**PR en cours : #72**, candidats d'influence bitwise ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -431,11 +431,19 @@ Mesures locales #69 : [preuve sur la PR](https://github.com/Antoine310/scientist
 
 Résultats locaux #70 : [preuve sur la PR](https://github.com/Antoine310/scientist_parseur/pull/70#issuecomment-7165614181), `reports/pr70/run-vp2rns1y/bit_width_literals.result.json`. ALU 479/254/225/477 inchangée ; cœur 1199/528/671/2842 → 1199/531/668/2842. Trois lignes supplémentaires de cs_registers_i, motif conversion_width_unproven_or_changed, modes truncate_msb et scoped_procedural_selectors, oracle reset [0,2,3]. 256 vecteurs et 1 024 vérifications, 512 ns, WIDTHTRUNC attendu dans fixture. 1597 nœuds, 3566 arêtes signal, 15 warnings, 47/47 annotations, 7/7 chemins, aucun analyseur tronqué, pipeline 2,635 s (un échantillon). Résidus plats : BinaryOp 175, mismatch 165, ConditionalOp 138, indices dynamiques 70, conversions largeur 52, état 29, positions AST 23, littéraux 9, contexte 4, layout 2, largeur inconnue 1 ; total 668.
 
-### PR #71 — Coordonnées packed fixes (en cours)
+### PR #71 — Coordonnées packed fixes (fusionnée)
 
-- [~] **PR71-COORD-01 · P1** — Étendre le canal array_dependencies pour les lignes continues déjà partielles et les écritures procédurales déjà recensées, avec types élaborés et identité des déclarations, sélecteurs lexicaux fixes, copie directe ou chaîne littérale. Pas de faux indices plats ; conserver métadonnées d'événement/garde sans déduire priorité. Clôture : anciens résultats inchangés, oracle de 95 sites du register file, budget et non-régression, tests/CI.
-- [ ] **PR71-EVAL-01 · P1** — Rapporter les nouveaux liens exacts vers les IDs locaux du graphe plat, distinguer lignes partielles couvertes par coordonnées, arêtes dynamiques et positions constantes. Les anciens résultats du canal tableaux (p. ex. 29 constantes mhpmcounter_q ligne 1462 et LUT ALU) ne sont pas des gains nouveaux. Ne pas additionner 531 et tous les résultats du canal tableaux. Clôture : rapprochement sans doublon, mêmes AST, mesures réelles et rapports.
+- [x] **PR71-COORD-01** — Étendre le canal array_dependencies pour les lignes continues déjà partielles et les écritures procédurales déjà recensées, avec types élaborés et identité des déclarations, sélecteurs lexicaux fixes, copie directe ou chaîne littérale. Pas de faux indices plats ; conserver métadonnées d'événement/garde sans déduire priorité. Validé : 24 tests ciblés, 941 tests locaux, oracle register file 95/95, 41/41 CI et fusion.
+- [x] **PR71-EVAL-01** — Rapporter les nouveaux liens exacts vers les IDs locaux du graphe plat, distinguer lignes partielles couvertes par coordonnées, arêtes dynamiques et positions constantes. Les anciens résultats du canal tableaux (p. ex. 29 constantes mhpmcounter_q ligne 1462 et LUT ALU) ne sont pas des gains nouveaux. Ne pas additionner 531 et tous les résultats du canal tableaux. Validé : 151 liens uniques vers des lignes plates partielles, 2 464 arêtes et 1 784 positions constantes nouvelles ; anciens résultats non liés exclus du total combiné.
 - [ ] **PR71-COORD-02 · P1** — Restent hors périmètre : agrégats entiers, unpacked procédural, champs/alias signés ou non résolus, conversions dynamiques, concaténations, mux, indices runtime, boucles et écritures concurrentes. Le graphe plat conserve 668 lignes partielles comme baseline ; les gains de coordonnées sont mesurés à part. Liens PR70-ARRAY-01, PR60-ARRAY-01/02, PR54-BIT-01 et PR65-BIT-01.
+
+Résultats #71 : [preuve sur la PR](https://github.com/Antoine310/scientist_parseur/pull/71#issuecomment-7166450660), `reports/pr71/run-kdivpxj5/packed_coordinates.result.json`. Graphe plat cœur 1199/531/668/2842 inchangé ; tableaux 221/94/127/5 → 378/245/133/2469 (captured/supported/partial/edges). 151 nouvelles lignes liées : register file 95, ALU 28, CSR 17, ID 6, EX 3, controller 2. 2464 arêtes, 1784 positions constantes ; oracle register file 1984/1056. ALU seule tableaux 94/33/61/5 → 130/61/69/21, 28 nouveaux liens, 16 arêtes, 40 constantes. Ne pas additionner ALU et cœur. Extension cœur 123 partielles (88 unsupported_selection_chain, 35 dynamic_or_unproven_index), ALU 69 (38/31). Minimum combiné 682/1199, 517 sans support plat ni nouveau lien PR71 ; ne pas présumer du recouvrement ancien. 24 instances, 1597 nœuds, 3566 arêtes signal, 15 warnings, 47/47 annotations, 7/7 chemins, aucune troncature, pipeline 2,684 s (un échantillon), simulation 256 vecteurs + reset 1028 ns, 941 tests, 41/41 CI. PR70-ARRAY-01 et PR71-COORD-02 restent ouvertes.
+
+### PR #72 — Candidats d'influence bitwise (en cours)
+
+- [~] **PR72-LOGIC-01 · P1** — Canal séparé bitwise_dependencies pour les lignes déjà recensées et plates partielles : BinaryAnd/Or/Xor/Xnor, BitwiseNot et réductions And/Or/Xor/Nand/Nor/Xnor ; feuilles à coordonnées fixes, concaténation et réplication bornées, conversions de largeur égale (changement d'état uniquement pour opérande sans source dynamique). Union des feuilles par bit ou réduction ; aucune assertion d'influence effective ou de copie. Garder gardes/événements/NBA, pas de priorité. Cas opaques et budgets explicitement partiels. Clôture : oracle indépendant, anciens graphes inchangés, tests et CI.
+- [ ] **PR72-EVAL-01 · P1** — Comparaison même AST avec désactivation du nouveau canal, exactes baselines #71 ; oracle ALU ligne 889, 2 candidats, simulation fixture 256 vecteurs/1792 vérifications, 48 candidats. Dédupliquer par ordinal avec les liens PR71 avant total combiné, distinguer les relations de l'influence fonctionnelle (masquage, annulation, contrôle non prouvés). Résultats réels à mesurer. Nouveau summary.json compact, rapport détaillé conservé.
+- [ ] **PR72-SEM-02 · P1** — Reste : opérateurs logiques booléens, comparaisons, arithmétique, extensions dynamiques, alias/agrégats, indices runtime, mux, influence conditionnelle et masquage/cancellation. Examiner aussi les sélecteurs avec Power (ff_one) avant d'étendre l'évaluateur lexical, sans faire confiance aux tags constant seuls. Liens PR61-BIT-03, PR40-UNARY-01, PR57-IDX-01, PR71-COORD-02. Le dénominateur 1199 exclut toujours des affectations AST (PR67-CENSUS-01).
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

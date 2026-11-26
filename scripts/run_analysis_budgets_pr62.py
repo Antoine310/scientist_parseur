@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 
-from rtlprep.analysis_budgets import DEFAULT_BUDGET, AnalysisBudgetError, read_ast
+from rtlprep.analysis_budgets import ANALYZERS, DEFAULT_BUDGET, AnalysisBudgetError, read_ast
 from rtlprep.dependencies import build_dependency_graph
 from rtlprep.manifest import load_design
 from rtlprep.runner import dependency_design
@@ -13,6 +13,13 @@ from scripts.run_scalability_pr55 import TOP, ALU_FILES, generate_pipeline, writ
 from scripts.rtl_fixtures import load_lock, verify_checkout
 
 ROOT=Path(__file__).resolve().parents[1]
+
+def validate_analyzer_inventory(limits):
+    """Fresh extractions must report every registered analyzer by name."""
+    actual=set(limits["analyzers"])
+    expected=set(ANALYZERS)
+    assert actual==expected, {"missing":sorted(expected-actual),
+                              "unexpected":sorted(actual-expected)}
 
 def extract(directory,top,sources,includes=()):
     directory.mkdir(exist_ok=True)
@@ -25,7 +32,7 @@ def extract(directory,top,sources,includes=()):
     limits=graph["analysis_limits"]
     assert result["analysis_limits"]["assessment"]==limits["assessment"]
     assert result["analysis_limits"]["truncated_analyzers"]==limits["truncated_analyzers"]
-    assert len(limits["analyzers"])==10
+    validate_analyzer_inventory(limits)
     return graph,index
 
 def gate_probe(ast,top,index,budget,stage):
