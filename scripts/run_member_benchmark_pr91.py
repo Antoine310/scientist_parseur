@@ -1,6 +1,6 @@
 """PR91: reconcile evidence and benchmark fresh-process graph builds.
 
-Linux worker RSS includes AST/index load and graph build; it is not a
+Linux worker VmHWM includes AST/index load and graph build; it is not a
 phase-specific allocation counter. No performance threshold or coverage claim.
 """
 import argparse
@@ -9,7 +9,6 @@ import hashlib
 import json
 from pathlib import Path
 import platform
-import resource
 from statistics import median
 import subprocess
 import sys
@@ -152,20 +151,38 @@ def paired_summary(samples):
     return result
 
 
+def parse_vmhwm(status):
+    """Read the peak RSS of this exec's address space, not inherited rusage."""
+    matches=[line.split() for line in status.splitlines() if line.startswith("VmHWM:")]
+    if len(matches)!=1:
+        raise ValueError("missing_or_ambiguous_vmhwm")
+    fields=matches[0]
+    if len(fields)!=3 or fields[2]!="kB" or not fields[1].isascii() or not fields[1].isdecimal():
+        raise ValueError("invalid_vmhwm")
+    value=int(fields[1])
+    if value<=0:
+        raise ValueError("invalid_vmhwm")
+    return value
+
+
+def peak_rss_kib():
+    return parse_vmhwm(Path("/proc/self/status").read_text(encoding="ascii"))
+
+
 def worker(folder,mode,verify):
     if sys.platform!="linux":
-        raise ValueError("RSS benchmark requires Linux ru_maxrss in KiB")
+        raise ValueError("RSS benchmark requires Linux /proc/self/status VmHWM")
     ast=read_ast(folder/"elaborated_ast.json")
     index=json.loads((folder/"rtl_index.json").read_text())
     start,cpu=perf_counter(),process_time()
     graph=build_dependency_graph(ast,expected_top=index["top"],index=index,
                                  **(OPTIONS if mode=="all_channels" else {}))
     wall,cpu=perf_counter()-start,process_time()-cpu
-    rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    rss=peak_rss_kib()
     start=perf_counter()
     data=encoded(graph)
     serial=perf_counter()-start
-    serialized_rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    serialized_rss=peak_rss_kib()
     result={"build_wall_seconds":wall,"build_cpu_seconds":cpu,"peak_rss_after_build_kib":rss,
             "compact_json_bytes":len(data),"serialization_wall_seconds":serial,
             "peak_rss_after_serialization_kib":serialized_rss,
@@ -212,7 +229,8 @@ def execute(out,reference=None,repeats=3):
     path=run/"summary.json"
     report={"status":"incomplete","repeats":repeats,"cases":[],
             "protocol":"fresh Linux processes, same AST/index files, alternating order; first all-channel worker verifies after timing",
-            "rss_scope":"process high-water RSS including load; not isolated graph allocation",
+            "rss_scope":"Linux /proc/self/status VmHWM of current address space including load; not isolated graph allocation",
+            "rss_method":"proc_self_status_vmhwm_kib",
             "size_scope":"compact sorted ASCII JSON, includes analysis_limits, excludes pipeline-added fingerprint",
             "environment":{"python":sys.version,"platform":platform.platform(),"machine":platform.machine()},
             "design_coverage":"not_measured","functional_influence":"not_proven","formal_proof":"not_performed"}

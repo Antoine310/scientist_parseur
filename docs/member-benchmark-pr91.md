@@ -15,7 +15,7 @@ Les 3811 occurrences syntaxiques cœur, 1199 lignes plat et 30 occurrences membr
 
 ## Protocole apparié
 
-Même AST/index frais de diagnostic, empreintes SHA256 avant/après, 3 paires par design (2–10 autorisées), processus Linux neufs, ordre baseline/all puis all/baseline. Temps mur et CPU autour du seul build, RSS high-water après build incluant chargement AST/index ; taille JSON compact ASCII trié, temps sérialisation et RSS après sérialisation mesurés distinctement. Vérification scientifique après mesure ; pas de cache forcé ni d'isolation matérielle, pas de seuil de performance arbitraire. Min/médiane/max et différences appariées, valeurs brutes, environnement et métriques publication. Empreintes déterministes sur même AST par mode, comparaison historique hors analysis_limits, source_fingerprint et nouveaux canaux. Ces tailles ne sont pas les fichiers indentés historiques. Ces RSS ne sont pas comparables directement aux pics des anciens workers. Aucune mesure de slang ni coût complet du pipeline dans ce benchmark.
+Même AST/index frais de diagnostic, empreintes SHA256 avant/après, 3 paires par design (2–10 autorisées), processus Linux neufs, ordre baseline/all puis all/baseline. Temps mur et CPU autour du seul build, RSS high-water VmHWM de l'espace d'adressage courant après exec, lu via /proc/self/status, après build incluant chargement AST/index ; taille JSON compact ASCII trié, temps sérialisation et RSS après sérialisation mesurés distinctement. Vérification scientifique après mesure ; pas de cache forcé ni d'isolation matérielle, pas de seuil de performance arbitraire. Min/médiane/max et différences appariées, valeurs brutes, environnement et métriques publication. Empreintes déterministes sur même AST par mode, comparaison historique hors analysis_limits, source_fingerprint et nouveaux canaux. Ces tailles ne sont pas les fichiers indentés historiques. Ces RSS ne sont pas comparables directement aux pics des anciens workers. Aucune mesure de slang ni coût complet du pipeline dans ce benchmark.
 
 ## Limites et suite
 
@@ -27,4 +27,8 @@ python -m pytest -q
 python -m scripts.run_member_benchmark_pr91 --out reports/pr91 --repeats 3
 ```
 
-Résultats à mesurer. CI conserve 50 jobs, référence fraîche partagée, aucune modification moteur.
+## Première campagne et correction RSS
+
+Head initial 2f0480d, local 1390/1390 en 6,65 s, 22 ciblés en 0,16 s, rapport reports/pr91/run-m87vqas0/summary.json passed. 3 paires ALU et core, 1481/1481 payloads/provenances exacts, 30 occurrences, union historique 381/479 et 815/1199. Temps médian ALU 0,433366 → 1,207348 s (delta apparié 0,773981 s), core 2,282853 → 5,779960 s (delta 3,468386 s). JSON compact ALU 3158761 → 3161269 octets, core 20657851 → 21954132. RSS 261420 Kio identique dans les douze workers : mesure non interprétable. Reproduction indépendante sur Linux : parent ayant alloué puis libéré 180 Mio, ru_maxrss parent et enfant après exec 279448 Kio, VmHWM enfant 95352 Kio. Le ru_maxrss hérité peut masquer le pic de l'espace d'adressage courant. Correction : lire VmHWM dans /proc/self/status, strictement en Kio ; refuser donnée absente/malformée, 8 tests supplémentaires. Ne pas comparer les RSS initiaux aux nouveaux comme des mesures équivalentes. Temps et données scientifiques de la première campagne conservés. Le compteur résiduel partial_bit_access (371 core,96 ALU) est trop générique : approfondir les raisons des bit_accesses par ID avant de choisir la prochaine famille. CI initiale 50/50 245 s ; main #90 50/50 181 s.
+
+Résultats corrigés à mesurer. CI conserve 50 jobs, référence fraîche partagée, aucune modification moteur.

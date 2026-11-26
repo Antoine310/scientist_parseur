@@ -87,3 +87,21 @@ def test_historical_digest_ignores_only_documented_fields():
 def test_empty_benchmark():
     with pytest.raises(ValueError):
         m.paired_summary([])
+
+
+def test_vmhwm_is_not_current_rss():
+    assert m.parse_vmhwm("Name:\tpython\nVmHWM:\t12345 kB\nVmRSS:\t10000 kB\n")==12345
+
+@pytest.mark.parametrize("status",["VmRSS: 100 kB","VmHWM: 0 kB","VmHWM: -2 kB",
+    "VmHWM: 5 MB","VmHWM: NaN kB","VmHWM: 12 kB\nVmHWM: 13 kB"])
+def test_refuse_invalid_vmhwm(status):
+    with pytest.raises(ValueError):
+        m.parse_vmhwm(status)
+
+def test_current_exec_vmhwm(monkeypatch):
+    from pathlib import Path
+    def read(self,**kwargs):
+        assert str(self)=="/proc/self/status"
+        return "VmHWM: 9876 kB\nVmRSS: 4321 kB\n"
+    monkeypatch.setattr(Path,"read_text",read)
+    assert m.peak_rss_kib()==9876
