@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.22 — 26 novembre 2026 (fusion #87, chantier #88)**  
+**Version : 1.23 — 26 novembre 2026 (fusion #88, chantier #89)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #87** (`2da8fba04207a91738254c17aafe836f51bd93a2`). #87 50/50 CI sur ce4a09c, 1311/1311 locaux ; post-fusion à relever. #86 main 50/50 en 203 s.
-**PR en cours : #88**, canal positionnel typé optionnel du moteur ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #88** (`a8da59641cfa0a4a2aa40ceae5f927933e7a8c7d`). #88 50/50 CI sur ee48ab7, 1327/1327 locaux ; post-fusion à relever. #87 main 50/50 en 200 s.
+**PR en cours : #89**, constantes locales/de configuration et références logiques optionnelles ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -573,10 +573,18 @@ Résultats #86 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #87 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/87#issuecomment-7200652938), SHA exact ce4a09c, 16/16 ciblés 0,18 s, 1311/1311 8,72 s ; fixture deux assign même ligne, 2 occurrences/2 records ; ALU 0 ; core 56 lignes/30 occurrences/1481 records exacts, 0 doublon/recouvrement/désaccord/mixte et occurrence sans record. Pipeline historique 4,755401 s, graph build 2,257145 s, RSS Python/slang 183820/217688 Kio, 0 troncature, compteurs et tailles historiques inchangés. CI 50/50 220 s, fusion 2da8fba ; #86 main 50/50 203 s. Coût audits non mesuré.
 
-### PR #88 — Canal positionnel typé optionnel (en cours)
+### PR #88 — Canal positionnel typé optionnel (fusionnée)
 
 - [~] **PR88-POSITION-01 · P1** — Artefact #87 15144428065 : 660 candidats positionnels (640 PMP, 20 autres), 10 paires signal toutes présentes dans graphe historique, aucun tuple numérique plat identique observé (comparaison numérique seule non sémantique). Nouveau canal optionnel `member_position_candidates` via `build_dependency_graph(..., enable_member_positions=True)`, défaut désactivé ; vérification types exacts index, champs/offsets/indices et coordonnées, provenance et ordinal ; conserver les 821 autres records hors canal. Comparaison des paires et des tuples uniquement si les deux coordonnées sont des indices déclarés, jamais assimiler offset/coordonnée à index plat. Attendu 660 positions dont 640 multidimensionnelles et 0 comparable au plat, oracle PMP intégral et fixture. Aucune modification graphes historiques ni dénominateur, publication sous budget. 16 tests ciblés, CI même job.
 - [ ] **PR88-INTEGRATION-01 · P1** — API Python opt-in seulement, CLI/MCP, coûts totaux audits, validation multi-config et champ indépendant encore à étudier. Intégration distincte des constantes/logique/NBA dans prochaines étapes ; aucun lien causal, garde/priorité/temporalité ni preuve globale. PR79-IDENT-01 et autres dettes maintenues.
+
+Résultats #88 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/88#issuecomment-7201352254), SHA exact ee48ab7, 16/16 ciblés 0,09 s, 1327/1327 6,25 s ; core 660 positions typées/13 occurrences/10 paires historiques, 640 cibles multidimensionnelles, aucune comparable au plat, 821 autres non promues. Graphe historique identique hors empreinte/métriques, aucune troncature. Pipeline historique 3,808946 s, graph build 1,827748 s, opt-in 4,650151 s, RSS historique Python/slang 183916/209508 Kio, publication opt-in 884171 valeurs profondeur22. Mesures ponctuelles non appariées. CI 50/50 244 s, fusion a8da596 ; #87 main 50/50 200 s.
+
+### PR #89 — Constantes et références logiques optionnelles (en cours)
+
+- [~] **PR89-COMB-01 · P1** — Nouveau canal `member_combinational_candidates` via `enable_member_combinational=True`, défaut off. 805 constantes locales, 3 constantes de configuration, 6 références logiques structurelles, 814 records sur 17 occurrences attendus (artefact #88 15147088281). Vérifier type et coordonnées exacts, conserver preuve conditionnelle liée à l'opérande, aucune source artificielle pour constantes, aucune assimilation logique à copie/influence. 660 positionnels distincts, 7 NBA non promus ; 667 autres records hors canal. Oracle indépendant toutes constantes (dont 768 PMP), 6 références, partition CSR 32, fixtures #82/#83/#85. Graphe historique inchangé, budget publication conservé.
+- [~] **PR89-SHARE-01 · P2** — Mutualiser une collecte fraîche des 7 audits et liaison quand les deux canaux sont activés. Test appel unique et mesure temps construction deux canaux ; coût total et benchmark répété restent ouverts. 18 tests ciblés attendus, 50 jobs CI, références fraîches.
+- [ ] **PR89-SEMANTIC-01 · P1** — Aucun invariant global, garde/priorité/temporalité prouvés ; liaison indépendante champ, multi-config, CLI/MCP restent ouvertes. #90 intégration NBA séparée avec hypothèses explicites ; aucun ajout au dénominateur historique. 
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

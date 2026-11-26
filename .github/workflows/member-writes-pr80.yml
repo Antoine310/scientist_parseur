@@ -130,6 +130,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_member_positions_pr88 --out reports/pr88 --reference "${refs[0]}"
 
+      - name: PR89 member constants and logical references (reuse fresh PR80 reference)
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_member_combinational_pr89.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_member_combinational_pr89 --out reports/pr89 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -171,3 +180,6 @@ jobs:
             reports/pr88/**/member_positions.result.json
             reports/pr88/**/summary.json
             reports/pr88/**/elaborated_ast.json
+            reports/pr89/**/member_combinational.result.json
+            reports/pr89/**/summary.json
+            reports/pr89/**/elaborated_ast.json
