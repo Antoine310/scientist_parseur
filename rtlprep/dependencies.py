@@ -27,6 +27,7 @@ from .bitwise_dependencies import build_bitwise_dependencies
 from .mux_dependencies import build_mux_dependencies
 from .dynamic_dependencies import build_dynamic_dependencies
 from .selector_recovery import build_selector_recovery
+from .typed_layout import build_typed_layout
 from .analysis_budgets import DEFAULT_BUDGET, AnalysisBudget, inspect_ast, build_analysis_limits
 from .symbols import SignalResolver, member_name
 
@@ -98,7 +99,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                            enable_bitwise: bool = True,
                            enable_mux: bool = True,
                            enable_dynamic: bool = True,
-                           enable_selector_recovery: bool = True) -> dict[str, Any]:
+                           enable_selector_recovery: bool = True,
+                           enable_typed_layout: bool = True) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
@@ -888,6 +890,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         graph["bit_dependency_graph"], enabled=enable_dynamic)
     graph["selector_recovery"] = build_selector_recovery(ast, structural, captured_assignments,
         graph["bit_dependency_graph"], graph["dynamic_dependencies"], enabled=enable_selector_recovery and enable_dynamic)
+    graph["typed_layout"] = build_typed_layout(ast, structural, captured_assignments,
+        graph["bit_dependency_graph"], graph["dynamic_dependencies"], enabled=enable_typed_layout and enable_dynamic)
     graph["coverage"] = build_coverage_summary(graph)
     graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     graph["intercycle_dependencies"] = build_intercycle_dependencies(graph["sequential_candidates"])
