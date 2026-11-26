@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.12 — 26 novembre 2026 (fusion #77 et chantier #78)**  
+**Version : 1.13 — 26 novembre 2026 (fusion #78 et chantier #79)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #77** (`4f894c0f70adf9bd72ed13cc6346f8ef2b305af3`). 47/47 jobs PR sur `331a39c6eaff812f59951df70bba99bf1fbab14f`.
-**PR en cours : #78**, inventaire des agrégats et concaténations directes ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #78** (`945c19dd6c788b801928d271811b7fc9af6416a6`). 48/48 jobs PR sur `a6c6975e9d29a8314aae41afa8215e1038151620`, 48/48 post-fusion.
+**PR en cours : #79**, positions des membres de structures packed de package ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -16,6 +16,8 @@ Ce document complète la feuille de route et les rapports de validation ; il ne 
 - Conserver les anciens rapports et les labels gelés. Ajouter de nouvelles annotations distinctes avant de mesurer le moteur. Ne jamais ajuster un oracle pour masquer une régression.
 - Ne pas fusionner sans accord explicite, validation locale pertinente et CI verte sur le **head exact**. Ne pas modifier `main` directement, le RTL officiel, les modifications locales de l'utilisateur ou effacer `docs/agent-reports/`.
 - Ce fichier versionné (`docs/rtlprep-backlog.md`) est la référence de reprise. Le consulter dans `main` au début de chaque chantier et le mettre à jour dans chaque PR concernée (même si aucune dette n'est clôturée). Le fichier n'est pas mis à jour automatiquement entre les conversations. Maintenir les IDs historiques, les rapports et les critères de clôture ; ne pas dupliquer une dette sous un nouvel ID lorsqu'un lien suffit.
+
+**Mesures CI obligatoires à chaque PR** : enregistrer tous les heads/tentatives, y compris intermédiaires, échecs, annulations et relances ; SHA, run ID/lien, événement, compteurs de jobs, horodatages UTC création→fin, gate Python, fenêtre spécialisée, verdict final, job le plus long et somme des durées des jobs. Distinguer temps mural, exécution cumulée et attente ; pas de minutes facturées déduites. Noter séparément la CI post-fusion, le cycle CI global de la PR et les mesures locales ; compléter les runs encore actifs au chantier suivant. Historique dans [ci-history.md](ci-history.md), sans écraser les anciennes données.
 
 **Contrat scientifique :** compilation ≠ analyse complète ; dépendance syntaxique ≠ influence fonctionnelle ; position de bit ≠ égalité de valeur ; simulation échantillonnée ≠ preuve ; aucune troncature ≠ support exhaustif. Une précision de 100 % sur des labels ne mesure pas les relations non annotées. Les compteurs de plusieurs analyseurs se recoupent : ne pas les additionner en un total de défauts.
 
@@ -494,10 +496,19 @@ Résultats #76 : [preuve locale](https://github.com/Antoine310/scientist_parseur
 
 Résultats #77 : [run 45799218988](https://github.com/Antoine310/scientist_parseur/actions/runs/45799218988), head 331a39c, 47/47 succès. 10:12:56–10:16:43 UTC, 227 s, baisse observée 78,7 % par rapport à #76 (1068 s). 1 déclenchement PR au lieu de 85 PR+push. Fusion 4f894c0 autorisée et effective. CI push main 45799854470 encore queued au contrôle de reprise ; ne pas déclarer réussite. Les installations/caches et l'annulation en conditions réelles ne sont pas validés.
 
-### PR #78 — Agrégats : inventaire et concaténations directes (en cours)
+### PR #78 — Agrégats : inventaire et concaténations directes (fusionnée)
 
-- [~] **PR78-CONCAT-01 · P1** — Rapport expérimental séparé des graphes historiques : census syntaxique actif, concat LHS continue uniquement, NamedValue de type logic/bit scalaire ou vecteur non signé déclaré et identité sémantique exacte, largeur/état égaux, ordre LSB, cibles distinctes, aucun fallback par nom. Rejet atomique des conversions, sélections, agrégats, NBA et concat imbriquées. Oracle fixture indépendant et simulation 256 vecteurs prévus ; aucun gain officiel déclaré avant mesure.
+- [~] **PR78-CONCAT-01 · P1** — Rapport expérimental séparé des graphes historiques : census syntaxique actif, concat LHS continue uniquement, NamedValue de type logic/bit scalaire ou vecteur non signé déclaré et identité sémantique exacte, largeur/état égaux, ordre LSB, cibles distinctes, aucun fallback par nom. Rejet atomique des conversions, sélections, agrégats, NBA et concat imbriquées. Oracle fixture indépendant réussi : 8 candidats, 256 vecteurs/1280 checks, 16 ciblés et 1125/1125 suite, 48/48 CI PR et main. Aucun gain officiel : 0 concat LHS dans ALU/cœur recensés. Reste les autres formes de concat.
 - [ ] **PR78-CENSUS-01 · P1** — Inventorier MemberAccess LHS/RHS et concat LHS du vrai ALU et cœur, types observés et provenance ; dénominateur AST distinct de 1199, catégories recouvrantes. Clôture : rapports réconciliés et audit des identités/offsets avant extension struct/union. PR76-STRUCT-01, PR36-TYPE-01, PR37-LVALUE-01, PR32-LVALUE-01 et PR75-TYPE-01 restent ouvertes. Aucun layout de membre déduit du texte ou du nom ; aucune modification du graphe historique.
+
+Résultats #78 : [preuve locale](https://github.com/Antoine310/scientist_parseur/pull/78#issuecomment-7189306539), head a6c6975, `reports/pr78/run-jrsfby5s/summary.json` passed. Fixture 6 occurrences, 5 sites, 1 supporté/4 partiels/8 candidats ; simulation 1/1 à 512 ns. ALU 612 occurrences/0 site, cœur 3811 occurrences/30 sites, 20 LHS/12 RHS (2 communs), 0 concat LHS, 30 partiels member_layout_not_proven. Graphe plat ALU 479/254/225/477, cœur 1199/531/668/2842 ; 24 instances, 1597 nœuds, 3566 arêtes, 15 warnings, 39 TP/8 TN, 7/7 chemins, aucune troncature. Pipeline 3,21334 s, graph build 1,37843 s, RSS Python/slang 284304/232136 Kio (pics séparés), AST 47778002, graphe 33322406 octets (un échantillon). 48/48 CI PR et main ; fusion 945c19d. Durées dans ci-history.md.
+
+### PR #79 — Structures packed de package (en cours)
+
+Audit artefact #78 15106804167, run 45800487135 : les 30 sites sont dans cs_registers_i, types Status_t/Dcsr_t/Pmp_t. TypeAlias.target exporte l'ordre des champs sans adresses de déclaration de champs ; les MemberAccess portent un token adresse/nom. L'identité exacte du typedef, le nom de champ unique et l'accord du type d'expression sont exigés ; cohérence des tokens observés, sans prétendre à une preuve indépendante de leur liaison aux déclarations. Layouts locaux Pmp_t et multidimensionnels, unions, conversions, sélections, opérateurs, constantes enum non signal, gardes et NBA hors périmètre.
+
+- [~] **PR79-MEMBER-01 · P1** — Rapport distinct : candidats positionnels de copies directes continues/AlwaysComb avec membre simple de struct packed unsigned de package, layout homogène et borné, enum de package explicite via #76 ; rejet atomique des cas non prouvés. Oracle fixture 4 sites/16 candidats et simulation 256/768 ; oracle officiel attendu 7 sites/10 candidats (1055,1059,1068,1076,1128–1130). Mesures à effectuer, ne pas additionner au dénominateur historique.
+- [ ] **PR79-IDENT-01 · P1** — Vérifier l'export détaillé de slang ou autre preuve indépendante d'identité de champ, puis étendre aux structures locales/multidimensionnelles, unions et composition. PR76-STRUCT-01, PR78-CENSUS-01, PR36-TYPE-01, PR37-LVALUE-01 et PR75-TYPE-01 restent ouverts.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
