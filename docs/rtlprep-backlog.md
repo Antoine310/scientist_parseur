@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.6 — 25 novembre 2026 (fusion #71 et chantier #72)**  
+**Version : 1.7 — 25 novembre 2026 (validation #72 et chantier #73)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
 **Dernière PR fusionnée confirmée : #71** (`abb42fc4e3ec79d2ac045955ef2db53b1c8455b0`). 41/41 CI sur `192ca19727082baa1bfca884c2e12397696bb343`.
-**PR en cours : #72**, candidats d'influence bitwise ; validation à effectuer.
+**PR en cours : #73**, mux et gardes ; branche issue du head validé de #72, fusion #72 bloquée par API au moment de la préparation.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -439,11 +439,19 @@ Résultats locaux #70 : [preuve sur la PR](https://github.com/Antoine310/scienti
 
 Résultats #71 : [preuve sur la PR](https://github.com/Antoine310/scientist_parseur/pull/71#issuecomment-7166450660), `reports/pr71/run-kdivpxj5/packed_coordinates.result.json`. Graphe plat cœur 1199/531/668/2842 inchangé ; tableaux 221/94/127/5 → 378/245/133/2469 (captured/supported/partial/edges). 151 nouvelles lignes liées : register file 95, ALU 28, CSR 17, ID 6, EX 3, controller 2. 2464 arêtes, 1784 positions constantes ; oracle register file 1984/1056. ALU seule tableaux 94/33/61/5 → 130/61/69/21, 28 nouveaux liens, 16 arêtes, 40 constantes. Ne pas additionner ALU et cœur. Extension cœur 123 partielles (88 unsupported_selection_chain, 35 dynamic_or_unproven_index), ALU 69 (38/31). Minimum combiné 682/1199, 517 sans support plat ni nouveau lien PR71 ; ne pas présumer du recouvrement ancien. 24 instances, 1597 nœuds, 3566 arêtes signal, 15 warnings, 47/47 annotations, 7/7 chemins, aucune troncature, pipeline 2,684 s (un échantillon), simulation 256 vecteurs + reset 1028 ns, 941 tests, 41/41 CI. PR70-ARRAY-01 et PR71-COORD-02 restent ouvertes.
 
-### PR #72 — Candidats d'influence bitwise (en cours)
+### PR #72 — Candidats d'influence bitwise (validée, fusion à confirmer)
 
 - [~] **PR72-LOGIC-01 · P1** — Canal séparé bitwise_dependencies pour les lignes déjà recensées et plates partielles : BinaryAnd/Or/Xor/Xnor, BitwiseNot et réductions And/Or/Xor/Nand/Nor/Xnor ; feuilles à coordonnées fixes, concaténation et réplication bornées, conversions de largeur égale (changement d'état uniquement pour opérande sans source dynamique). Union des feuilles par bit ou réduction ; aucune assertion d'influence effective ou de copie. Garder gardes/événements/NBA, pas de priorité. Cas opaques et budgets explicitement partiels. Clôture : oracle indépendant, anciens graphes inchangés, tests et CI.
 - [ ] **PR72-EVAL-01 · P1** — Comparaison même AST avec désactivation du nouveau canal, exactes baselines #71 ; oracle ALU ligne 889, 2 candidats, simulation fixture 256 vecteurs/1792 vérifications, 48 candidats. Dédupliquer par ordinal avec les liens PR71 avant total combiné, distinguer les relations de l'influence fonctionnelle (masquage, annulation, contrôle non prouvés). Résultats réels à mesurer. Nouveau summary.json compact, rapport détaillé conservé.
 - [ ] **PR72-SEM-02 · P1** — Reste : opérateurs logiques booléens, comparaisons, arithmétique, extensions dynamiques, alias/agrégats, indices runtime, mux, influence conditionnelle et masquage/cancellation. Examiner aussi les sélecteurs avec Power (ff_one) avant d'étendre l'évaluateur lexical, sans faire confiance aux tags constant seuls. Liens PR61-BIT-03, PR40-UNARY-01, PR57-IDX-01, PR71-COORD-02. Le dénominateur 1199 exclut toujours des affectations AST (PR67-CENSUS-01).
+
+Résultats #72 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/72#issuecomment-7167555039), head 6e3ab2f, 977 tests locaux, 42/42 CI, 256 vecteurs/1792 checks, 48 candidats fixture, oracle ALU passé. Correctif PR62 : comparer le registre des noms, pas un nombre fixé ; quatre tests ajoutés. Cœur bitwise 66/24/42/375 ; ALU 43/8/35/74. 24 nouvelles lignes uniques (8 ALU,16 mult), 375 candidats, 0 recouvrement PR71 ; minimum combiné 706/1199, reste 493 sans support lié. Résidus bitwise : 33 indices, 5 ConditionalOp, 2 Equality, 1 LogicalOr, 1 LogicalAnd. Graphes plat/tableaux inchangés, 47/47 annotations, 7/7 chemins, zéro troncature, pipeline 2,882 s (un échantillon). PR72-LOGIC-01/EVAL-01 validées, clôture après fusion.
+
+### PR #73 — Mux et provenance des branches
+
+- [~] **PR73-MUX-01 · P1** — Canal mux_dependencies : ConditionalOp racine, branches imbriquées, sélecteurs intégraux et comparaisons/logiques simples, feuilles fixes et bitwise. Candidats données par branche, contrôle par décision, chemins syntaxiques ; X/Z peuvent fusionner les bras. Positions constantes par branche, aucune preuve de valeur, faisabilité ou priorité. Limites atomiques.
+- [ ] **PR73-EVAL-01 · P1** — Comparaison même AST, déduplication PR71/72, oracle ALU ligne 961 (64 données, 32 contrôle), fixture 5 affectations, 64 candidats, 8 constantes locales, 1024 vecteurs/5120 checks ; résultats et CI à valider, summary.json compact.
+- [ ] **PR73-SEM-02 · P1** — Mux sous opérateurs, alias/enum non prouvés, indices runtime, pattern, largeur variable et gardes procédurales/priorités restent ouverts. Pas de preuve de sensibilité ni de couverture du RTL.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

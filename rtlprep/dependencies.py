@@ -24,6 +24,7 @@ from .function_dependencies import build_function_dependencies
 from .static_loops import build_static_loop_expansion
 from .array_dependencies import build_array_dependencies
 from .bitwise_dependencies import build_bitwise_dependencies
+from .mux_dependencies import build_mux_dependencies
 from .analysis_budgets import DEFAULT_BUDGET, AnalysisBudget, inspect_ast, build_analysis_limits
 from .symbols import SignalResolver, member_name
 
@@ -92,7 +93,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
                            enable_width_conversions: bool = True,
                            enable_width_literals: bool = True,
                            enable_packed_coordinates: bool = True,
-                           enable_bitwise: bool = True) -> dict[str, Any]:
+                           enable_bitwise: bool = True,
+                           enable_mux: bool = True) -> dict[str, Any]:
     """Bâtir des liens orientés source -> destination, à granularité signal.
 
     Les détails de sélection de bits et les effets combinatoires de primitives
@@ -835,7 +837,7 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
         x["context"], x["role"], x["signal"], str(x["selection"])
     ))
     warnings.sort(key=lambda x: (x["context"], x["reason"]))
-    captured_assignments=[] if enable_packed_coordinates or enable_bitwise else None
+    captured_assignments=[] if enable_packed_coordinates or enable_bitwise or enable_mux else None
     graph = {
         "schema_version": GRAPH_SCHEMA_VERSION, "backend": "slang-ast-json",
         "top": expected_top, "nodes": nodes, "edges": edges,
@@ -876,6 +878,8 @@ def build_dependency_graph(ast: dict[str, Any], *, expected_top: str,
     graph["array_dependencies"] = build_array_dependencies(ast, index=structural, captured_assignments=captured_assignments if enable_packed_coordinates else None)
     graph["bitwise_dependencies"] = build_bitwise_dependencies(ast, structural, captured_assignments,
         graph["bit_dependency_graph"], enabled=enable_bitwise)
+    graph["mux_dependencies"] = build_mux_dependencies(ast, structural, captured_assignments,
+        graph["bit_dependency_graph"], enabled=enable_mux)
     graph["coverage"] = build_coverage_summary(graph)
     graph["sequential_candidates"] = build_sequential_candidates(graph["register_flow"])
     graph["intercycle_dependencies"] = build_intercycle_dependencies(graph["sequential_candidates"])
