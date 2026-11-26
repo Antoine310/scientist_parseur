@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.24 — 26 novembre 2026 (fusion #89, chantier #90)**  
+**Version : 1.25 — 26 novembre 2026 (fusion #90, chantier #91)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #89** (`e7048c2c61bc7d3931781ed0977e1fb6b5d8d839`). #89 50/50 CI sur be59162, 1345/1345 locaux ; post-fusion à relever. #88 main 50/50 en 170 s.
-**PR en cours : #90**, canal NBA optionnel, partition locale de l'instruction ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #90** (`cb3cd2a684330c05439fcd5368d13ac7a6826949`). #90 50/50 CI sur fe5718c, 1368/1368 locaux ; post-fusion à relever. #89 main 50/50 en 207 s.
+**PR en cours : #91**, bilan consolidé et benchmark apparié ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -588,11 +588,25 @@ Résultats #88 : [preuve locale/CI](https://github.com/Antoine310/scientist_pars
 
 Résultats #89 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/89#issuecomment-7203327646), SHA exact be59162, 18/18 ciblés 0,10 s, 1345/1345 6,98 s ; 814 records (805 locales,3 config,6 logique) sur 17 occurrences, 660 positions conservées, 7 NBA non promus. Fixtures #82/#83/#85 conformes, ALU 0, graphe historique identique intra-run hors empreinte/métriques. Pipeline historique 4,544982 s, graph build 2,416650 s, deux canaux 5,890925 s, RSS historique Python/slang 185932/211364 Kio, publication 909275 valeurs profondeur22. AST/index/graphe 47967016/856321/33354606 octets, différents #88 ; chemin de sortie pr89µ et métadonnées possibles, cause non vérifiée. Mesures ponctuelles non appariées. CI 50/50 217 s, fusion e7048c2 ; #88 main 50/50 170 s.
 
-### PR #90 — Canal NBA optionnel (en cours)
+### PR #90 — Canal NBA optionnel (fusionnée)
 
 - [~] **PR90-NBA-01 · P1** — Nouveau canal `member_sequential_candidates` via `enable_member_sequential=True`, défaut off. Recontrôler l'occurrence AST, AlwaysFF/NBA explicite, pattern struct complet, destination exacte, types et offsets de champ, partition locale sans trou ni doublon. 2 candidats RHS échantillonnés +5 constantes NBA sur une occurrence core ; fixture #84 2+3. Aucun événement/horloge/reset, garde, dominance ou priorité inférés ; aucune latence de cycle ni next-state global. Les constantes n'ont pas de source fictive. 1474 autres records préservés dans canaux distincts ; oracle exact et unicité IDs sur 1481 records cumulés, aucun ajout au graphe historique/denominateur. 23 tests ciblés attendus, CI même job.
 - [~] **PR90-SHARE-01 · P2** — Une collecte fraîche pour les combinaisons d'options ; test appel unique, ancienne API préservée. Mesure ponctuelle 3 canaux, benchmark répété/performance/RSS opt-in encore ouverts.
 - [ ] **PR90-TIME-01 · P1** — Rapprochement avec événements exacts et relations séquentielles existantes, gardes et priorité à prouver séparément ; liaison indépendante des champs, CLI/MCP, couverture/configurations, coût total restent ouverts. #91 bilan consolidé avant extension des familles arithmétiques, sans clore les dettes historiques par simple intégration.
+
+Résultats #90 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/90#issuecomment-7203962197), SHA exact fe5718c, 23/23 ciblés 0,12 s, 1368/1368 6,57 s. Core 2 NBA sampled +5 constantes, partition locale 7 positions, 1474 autres records conservés, 1481 IDs disjoints. Fixture 2+3 NBA, 5 positions et 2 constantes locales. ALU 0. Graphe historique identique intra-run hors empreinte/métriques, 0 troncature ; pipeline 4,831719 s, graph build 2,347725 s, opt-in 6,337471 s, RSS historique Python/slang 184700/231700 Kio, publication 909543 valeurs profondeur22. AST/index/graphe 47778002/851329/33322406 octets, cause variation #89 non vérifiée. Mesures ponctuelles non appariées. CI 50/50 330 s, fusion cb3cd2a ; #89 main 50/50 207 s.
+
+### PR #91 — Bilan scientifique consolidé (en cours)
+
+- [~] **PR91-RECONCILE-01 · P1** — Recalcul sur même AST/index : 3811 occurrences syntaxiques cœur/612 ALU ; 1199/479 lignes plat ; union des IDs plats validés et récupérés #71–76 (815/1199, 381/479 attendus) ; histogramme résiduel sur IDs sans support lié. 30 occurrences membres/56 lignes producteur/1481 records ; correspondance exacte catégories, payloads, provenance et occurrence entre enveloppe et canaux, aucun ajout au dénominateur plat (pas de liaison exacte entre les univers). Tests négatifs. Oracles précédents maintenus.
+- [~] **PR91-BENCH-01 · P2** — Trois paires par design, processus Linux frais, ordre alterné sur fichiers AST/index identiques, min/médiane/max et différences appariées : temps mur/CPU construction, RSS high-water VmHWM de l'espace d'adressage courant incluant chargement, taille JSON compact et temps sérialisation, RSS après sérialisation ; vérification après chronométrage, empreintes des entrées et graphes par mode, mêmes sorties historiques. Pas de seuil performance arbitraire, ni comparaison RSS avec ancien worker comme mesure équivalente. 30 tests ciblés attendus après correction RSS ; même job CI, 50 jobs.
+- [ ] **PR91-NEXT-01 · P1** — Priorités proposées après bilan : exposition lecture seule CLI/MCP avec provenance et pagination ; mesurer/optimiser collectes redondantes sans retirer de contrôles ; arithmétique (add/sub/carry, comparaisons, shifts), familles résiduelles puis validation multi-config. Liaison indépendante champs, unions, gardes/priorité, événements, X/Z et preuves fonctionnelles restent ouvertes ; pas de clôture automatique des dettes.
+
+Première validation #91 sur 2f0480d : 22/22 ciblés 0,16 s, 1390/1390 6,65 s, rapport reports/pr91/run-m87vqas0/summary.json passed, CI 50/50 245 s. Union historique 815/1199 et 381/479, 1481 records exacts, déterminisme même AST. Médianes build ALU 0,433366 → 1,207348 s (delta 0,773981), core 2,282853 → 5,779960 s (delta 3,468386), JSON compact 3158761→3161269 et 20657851→21954132 octets. RSS 261420 Kio identique 12 fois, invalide pour conclure à absence de surcoût : reproduction Linux indépendante ru_maxrss hérité après exec, correction VmHWM /proc/self/status +8 tests, nouvelle validation requise. Résidus historiques 384 core (371 partial_bit_access,10 unvalidated_ast_positions,2 unproven_packed_layout,1 target_rhs_width_mismatch) et 98 ALU (96 partial_bit_access,1 unproven_packed_layout,1 target_rhs_width_mismatch).
+
+- [ ] **PR91-RSS-01 · P1** — Corriger le benchmark mémoire hérité du parent : VmHWM de l'espace d'adressage courant, lecture stricte, rapport méthode explicite, revalider paires et CI. Ne pas déduire un delta nul des anciennes mesures.
+- [ ] **PR91-REASONS-01 · P1** — Ventiler partial_bit_access (371 core/96 ALU) par raison détaillée du bit_accesses et ID exact, sans rapprochement approximatif ni addition de dénominateurs ; audit avant sélection des familles arithmétiques.
+- [ ] **PR91-FASTPATH-01 · P2** — Mesurer et réduire coût de la collecte membre sur ALU sans site ; aucun raccourci qui masque une occurrence active, conserver comparaisons d'empreintes et oracles.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
