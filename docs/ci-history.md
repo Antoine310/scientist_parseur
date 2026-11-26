@@ -33,8 +33,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 88 | PR | ee48ab7 | [45880493273](https://github.com/Antoine310/scientist_parseur/actions/runs/45880493273) | 50/50 | 244 | 10 | 222 | 2 | 2371 | cv32e40p-popcnt-eqy 213 s |
 | 88 | main | a8da596 | [45882156720](https://github.com/Antoine310/scientist_parseur/actions/runs/45882156720) | 50/50 | 170 | 11 | 141 | 3 | 2070 | rtl-security-lab 95 s |
 | 89 | PR | be59162 | [45882398138](https://github.com/Antoine310/scientist_parseur/actions/runs/45882398138) | 50/50 | 217 | 17 | 187 | 3 | 2212 | aggregate-pr78 184 s |
+| 89 | main | e7048c2 | [45895349274](https://github.com/Antoine310/scientist_parseur/actions/runs/45895349274) | 50/50 | 207 | 12 | 163 | 3 | 2206 | member-writes-pr80 94 s |
+| 90 | PR | fe5718c | [45895500052](https://github.com/Antoine310/scientist_parseur/actions/runs/45895500052) | 50/50 | 330 | 11 | 291 | 2 | 2241 | bitgraph-pr54 196 s |
 
-#89 : 19:16:25→19:20:02 UTC, tentative 1, partagé 68 s, local 1345/1345 6,98 s, fusion e7048c2, main à relever. #88 main 19:14:33→19:17:23 UTC, partagé 73 s. #90 conserve 50 jobs attendus.
+#90 : 21:04:03→21:09:33 UTC, tentative 1, partagé 113 s, local 1368/1368 6,57 s, fusion cb3cd2a, main à relever. #89 main 21:02:46→21:06:13 UTC, partagé 94 s. #91 conserve 50 jobs attendus.
+
+#89 : 19:16:25→19:20:02 UTC, tentative 1, partagé 68 s, local 1345/1345 6,98 s, fusion e7048c2, main réussi (voir tableau). #88 main 19:14:33→19:17:23 UTC, partagé 73 s. #90 conserve 50 jobs attendus.
 
 #88 : 19:01:41→19:05:45 UTC, tentative 1, partagé 104 s, local 1327/1327 6,25 s, fusion a8da596, main réussi (voir tableau). #87 main 18:59:29→19:02:49 UTC, partagé 74 s. #89 conserve 50 jobs attendus.
 
