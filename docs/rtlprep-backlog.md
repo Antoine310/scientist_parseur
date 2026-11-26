@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.15 — 26 novembre 2026 (fusion #79/#80, chantier #81)**  
+**Version : 1.16 — 26 novembre 2026 (fusion #81, chantier #82)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #80** (`9b01304103917c3609db2564c0eaf158e11a67f9`). #79 et #80 fusionnées après CI 49/49 et 50/50, post-fusion à relever.
-**PR en cours : #81**, constantes enum de package vers champs packed ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #81** (`b8e79f6d512c51e807b00af8800bf1f693fb3c70`). #81 50/50 CI PR, 1175/1175 locaux sur fc82e3e ; post-fusion 50/50 en 205 s. #79 et #80 CI main 49/49 et 50/50.
+**PR en cours : #82**, structures packed multidimensionnelles locales ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -520,10 +520,19 @@ CI #79 vérifiée : [run 45803933566](https://github.com/Antoine310/scientist_pa
 
 Résultats #79 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/79#issuecomment-7193611455) ; 1140/1140 6,90 s, fixture 4 sites/16 candidats, 256 vecteurs/768 checks, core 7/30 sites/10 arêtes. Pipeline 4,472456 s (environnement Python 3.13.0rc1), graph build 2,250070 s, RSS Python/slang 184136/219632 Kio. #80 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/80#issuecomment-7193612334), head exact 698da07, 1156/1156 5,85 s, fixture 4 sites/2 arêtes/2 constantes, 16 vecteurs/16 checks, core 10/10 sites ciblés, 3 arêtes/7 constantes, disjoints #79. Cumul 17/30 sites, 13 arêtes/7 constantes, 13 résiduels. Pipeline 4,251796 s, graph build 2,284978 s, RSS Python/slang 184072/217548 Kio. Compteurs historiques inchangés ALU 479/254/225/477, cœur 1199/531/668/2842, 24 instances, 1597 nœuds, 3566 arêtes, 15 warnings, 39 TP/8 TN/0 FP/FN, 7 chemins, 0 troncature, AST 47778002, graphe 33322406 octets. Mesures ponctuelles. #79 fusion 292fb83, #80 retarget main puis fusion 9b01304, arbres fusionnés identiques aux heads CI. Pas de nouvelle CI PR observée après retarget ; CI main à relever.
 
-### PR #81 — Constantes enum dans champs packed (en cours)
+### PR #81 — Constantes enum dans champs packed (fusionnée)
 
 - [~] **PR81-ENUM-01 · P1** — Artefact #80 15115756390 : quatre sites CSR 1007/1054 (dcsr_n.prv), 1061/1071 (mstatus_n.mpp), RHS PRIV_LVL_M. TypeAlias de PrivLvl_t pointe exactement vers EnumType homonyme qualifié ; valeur EnumValue explicite adresse+nom et initialiseur binaire converti, type et encodage vérifiés, offsets #79 ; aucun fallback, aucune arête pour constantes. Oracle attendu 4 sites/8 positions constantes, cumul 21/30 sites disjoints ; pas de conclusion temporelle, de priorité, de reachability, ni de preuve indépendante de liaison des champs. Fixture deux écritures conditionnelles, 4 constantes, 4 vecteurs.
 - [ ] **PR81-RESIDUAL-01 · P1** — Pmp_t multidimensionnel local (5 sites), concat RHS, logique (2 sites), StructuredAssignmentPattern (1 site) : 9 résiduels si #81 validée. Toutes les dettes agrégats restent ouvertes. CI #81 mutualisée dans job #80 avec référence fraîche #80, aucune suppression de validation, 50 jobs attendus ; conserver mesures et vérifier le gain, sans en présumer.
+
+Résultats #81 : [preuve locale/CI](https://github.com/Antoine310/scientist_parseur/pull/81#issuecomment-7194223038), head local exact fc82e3e confirmé ensuite, 1175/1175 6,21 s. Fixture 2/2 sites, 4 constantes, simulation 4 vecteurs/4 checks, 1/1 à 8 ns ; core 4/4 sites/8 constantes/0 arête ; cumul 21/30, 13 arêtes/15 constantes, 9 résiduels. Pipeline 4,356839 s, graph build 2,278325 s, RSS Python/slang 183880/219760 Kio, tailles AST/graphe et compteurs historiques inchangés, aucune troncature. CI 50/50, fusion b8e79f6. Post-fusion #79/#80 réussie. Ne pas confondre les constantes locales avec une propriété permanente de valeur du signal.
+
+### PR #82 — Structures locales packed multidimensionnelles (en cours)
+
+- [~] **PR82-LOCAL-01 · P1** — Artefact #81 15123545136 : Pmp_t TypeAlias direct du corps élaboré de cs_registers_i, token adresse + module.type, offsets 256/128/0 pour pmpaddr/pmpcfg_packed/pmpcfg. Pas de fallback nom, corps non matérialisé ou scope local ambigu refusé. Champs logic packed non signés, 1 ou 2 dimensions, cibles 2D, ordre LSB cartésien (dimension droite varie le plus vite), bornes explicites. Cinq sites : 910–912 zéro non dimensionné typé exact (768 positions constantes), 1125–1126 lectures directes (640 arêtes positionnelles). Oracle exact positions/coordonnées, disjoint des 21 sites précédents ; objectif cumul 26/30. Fixture mixte ascendant/descendant, 4 sites, 12 arêtes/12 constantes, 4096 vecteurs/12288 checks. Mesures à effectuer, rapport distinct. CI même job #80/#81, extraction fraîche réutilisée, 50 jobs.
+- [ ] **PR82-RESIDUAL-01 · P1** — Quatre sites résiduels si #82 validée ; concat RHS, logique (2), StructuredAssignmentPattern. Unions, champs imbriqués, identité de déclaration de champ indépendante, références aux corps partagés et priorités/temporalité non prouvées. Ne pas clôturer PR79-IDENT-01, PR76-STRUCT-01, PR78-CENSUS-01 ni les dettes associées. Pas d'ajout au 815/1199. 
+
+Première validation #82 sur 3d8a06a : 1198/1198 locaux (6,40 s), rapport `reports/pr82/run-8rp_cvn2/summary.json` failed, fixture 2/4 sites, 12 arêtes, 0 constante ; CI 48/50 en 201 s, run 45837398777. Artefact 15126866660 : deux zéros refusés, `8'd0` et `4'b0`, cœur `512'h0` et `128'h0`. Correction limitée aux graphies exactes b/d/h et largeur/type concordants, avec tests négatifs ; oracle inchangé. Pas de gain #82 déclaré avant validation complète. Historique CI conserve l'échec. Post-fusion #81 : 50/50, 205 s.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
