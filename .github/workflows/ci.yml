@@ -222,11 +222,16 @@ jobs:
     needs: unit-tests
     uses: ./.github/workflows/packed-members-pr79.yml
 
+  member-writes-pr80:
+    needs: unit-tests
+    uses: ./.github/workflows/member-writes-pr80.yml
+
   full-validation:
     name: RTLPrep full validation
     if: ${{ always() }}
     needs:
       - unit-tests
+      - member-writes-pr80
       - packed-members-pr79
       - aggregate-pr78
       - analysis-budgets-pr62
@@ -283,4 +288,4 @@ jobs:
         run: |
           set -euo pipefail
           jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS_JSON"
-          jq -e 'length == 48 and all(.[]; .result == "success")' <<< "$NEEDS_JSON"
+          jq -e 'length == 49 and all(.[]; .result == "success")' <<< "$NEEDS_JSON"
