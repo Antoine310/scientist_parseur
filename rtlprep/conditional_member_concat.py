@@ -170,7 +170,7 @@ def conditional_constant(expr,owner,params,resolve,types):
                    "parameters":[{"instance":p,"name":n,"value":v} for (p,n),v in sorted(proofs.items())]}
 
 
-def audit_conditional_concat(ast,index):
+def audit_conditional_concat(ast,index, *, include_occurrence=False):
     inspect_ast(ast)
     types=Types(ast)
     if types.truncated:
@@ -180,7 +180,7 @@ def audit_conditional_concat(ast,index):
     declared=raw_layouts(index)
     instances={i["path"] for i in index["instances"]}
     rows,constants=[],[]
-    for owner,context,node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         rhs=node.get("right")
         if not isinstance(rhs,dict) or rhs.get("kind")!="Concatenation" or not member_sites(rhs):
             continue
@@ -193,6 +193,8 @@ def audit_conditional_concat(ast,index):
              "source":{"file":node.get("source_file_start") or node.get("source_file"),
                        "line":node.get("source_line_start") or node.get("source_line")},
              "coverage":"partial","conditional_operands":[]}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             lhs=node.get("left")

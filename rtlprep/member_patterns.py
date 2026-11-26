@@ -159,7 +159,7 @@ def expand(node,context,resolve,declared,types,observed):
     return "concat",[],constants,gaps
 
 
-def audit_patterns(ast,index):
+def audit_patterns(ast,index, *, include_occurrence=False):
     inspect_ast(ast)
     types=Types(ast)
     if types.truncated:
@@ -169,7 +169,7 @@ def audit_patterns(ast,index):
     declared=raw_layouts(index)
     instances={i["path"] for i in index["instances"]}
     rows,edges,constants=[],[],[]
-    for owner,context,node in assignment_sites(ast):
+    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
         rhs=node.get("right")
         if not isinstance(rhs,dict) or rhs.get("kind") not in ("StructuredAssignmentPattern","Concatenation") or not member_sites(rhs):
             continue
@@ -179,6 +179,8 @@ def audit_patterns(ast,index):
              "source":{"file":node.get("source_file_start") or node.get("source_file"),
                        "line":node.get("source_line_start") or node.get("source_line")},
              "coverage":"partial"}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if owner not in instances:

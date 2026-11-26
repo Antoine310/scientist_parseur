@@ -190,7 +190,7 @@ def expand(node, owner, resolve, declared, types, observed):
     raise Unsupported("unsupported_local_member_assignment")
 
 
-def audit_local_members(ast, index):
+def audit_local_members(ast, index, *, include_occurrence=False):
     inspect_ast(ast)
     types = local_types(ast)
     resolver = SignalResolver(ast, index)
@@ -200,7 +200,7 @@ def audit_local_members(ast, index):
     sites = list(assignment_sites(ast))
     observed = observations(sites, types)
     rows, edges, constants = [], [], []
-    for owner, context, node in sites:
+    for ordinal, (owner, context, node) in enumerate(sites):
         relevant = False
         for side in ("left", "right"):
             e = node.get(side)
@@ -217,6 +217,8 @@ def audit_local_members(ast, index):
                "source": {"file": node.get("source_file_start") or node.get("source_file"),
                           "line": node.get("source_line_start") or node.get("source_line")},
                "coverage": "partial"}
+        if include_occurrence:
+            row["occurrence_ordinal"] = ordinal
         rows.append(row)
         try:
             if owner not in instances or context not in ("continuous", "AlwaysComb"):
