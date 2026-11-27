@@ -23,6 +23,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #97** : 31/31 ALU et 31/64 cœur admissibles, 33 incréments cœur à traiter (#98). #99 soustraction proposée ensuite. Phase H ajoutée sur demande utilisateur, voir ci-dessous.
 
+**Révision après #98** : #97/#98 union exacte 31/31 ALU et64/64 core Add résiduelles, pas de promotion historique. #99 traite 2 racines Subtract core (offset LSU, masque shift), cinq imbriquées restent dette ; comparaisons ensuite selon résultats. Phase H conservée.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

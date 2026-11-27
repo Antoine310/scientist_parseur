@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.32 — 27 novembre 2026 (fusion #97, chantier #98)**  
+**Version : 1.33 — 27 novembre 2026 (fusion #98, chantier #99)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #97** (`43a8ff19fe60eb6a7c20f8b0b913e6bc9d7776ef`). #97 50/50 CI sur c9249d3, 1504/1504 locaux ; main à relever. #96 main 50/50 en 209 s.
-**PR en cours : #98**, incréments constants ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #98** (`36e6ca3a1f31f901f524e777a828ad3f2a3cecc9`). #98 50/50 CI sur 371dc57, 1526/1526 locaux ; main à relever. #97 main50/50 en261 s.
+**PR en cours : #99**, soustraction et masque de décalage ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -659,16 +659,24 @@ Validation #96 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/9
 - [x] **PR97-SELECT-01 · P1** — Artefact CI #96 15184771945 : 31 racines popcnt ALU et cœur, 32 CSR incréments et 1 adresse cœur. Inspecter groupes AST, pas identité par ligne ; replay exact avec constantes lexicales de capture, evaluate sans Power, preuve de chaque sélection, type et identité exacts, refuse runtime, tags seuls et incohérences.
 - [x] **PR97-ZERO-01 · P1** — Deux concaténations zéro MSB littéral+feuille n, résultat n+1, mêmes types d'état, coordonnées non recouvrantes, préfixes bornés. Oracle coordonné indépendant arbre popcnt : 31 lignes,312 paires,202 coordonnées attendues par design, 33 racines restantes cœur. Rapport séparé, aucune promotion au graphe ni CLI/MCP. 16 tests ciblés attendus,1504 suite.
 - [x] **PR97-FORMAL-01 · P1** — Modèle Z3 largeur opérandes1..5 :20 UNSAT,100 SAT témoins,5 SAT mutant perte retenue ; simulation popcnt officiel 196 checks, oracle Python exhaustif, pas de preuve RTL. Même 50 jobs.
-- [ ] **PR97-INCR-01 · P1** — #98 proposée : incréments constants CSR (32) et adresse (1), modéliser littéraux/conversions et concaténation sans extrapoler ; soustraction ensuite. Garder PR96-COMPOSE-01 et PR95-ARITH-01 ouvertes.
+- [x] **PR97-INCR-01 · P1** — #98 proposée : incréments constants CSR (32) et adresse (1), modéliser littéraux/conversions et concaténation sans extrapoler ; soustraction ensuite. Garder PR96-COMPOSE-01 et PR95-ARITH-01 ouvertes.
 
 Validation #97 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/97#issuecomment-7214627976), SHA c9249d3, 16/16 ciblés 0,12 s,1504/1504 6,48 s, reports/pr97/run-4n98wfuj/summary.json passed. ALU31/31 et cœur31/64,312 paires202 coordonnées par design, audit0,189339/0,515684 s ; 33 refus cœur (32 not_single_zero_extended_operand,1 unproven_single_zero_prefix). Popcnt RTL officiel196 checks, Z3 20 UNSAT/100 SAT témoins/5 SAT mutant, modèle abstrait seulement. Graphes historiques et entrées inchangés, aucune troncature, pipeline4,114789 s, graph2,024390 s, RSS184344/211216 Kio, AST/index/graphe47778002/851329/33322406 octets. CI #97 230 s, #96 main209 s, fusion43a8ff1. Pas de preuve RTL ou de couverture globale.
 
-### PR #98 — Incréments constants (en cours)
-- [~] **PR98-INCR-01 · P1** — Artefact CI #97 15184969853 : groupe AST CSR 32 Add 64 bits +1 (ligne1387) et prefetch adresse alignée +4 (ligne138). Exact replay et coordonnées #97 ; littéral défini, conversion unique, refus explicites. Oracle coordonné 33 core, 67025 paires,4158 coordonnées attendues ; ALU0. Union IDs disjointe #97/#98 31/64 racines attendues ; pas de promotion dans historique. 22 tests ciblés/1526 suite attendue après correctif.
-- [~] **PR98-FORMAL-01 · P1** — Oracle Python exhaustif 1–4 bits, fixture réelle slang/cocotb 32 checks, Z3 modèles 4/64/32 bits,100 UNSAT non-interférence +1 alignement,2555 SAT témoins,3 SAT mutant sans retenue ; modèle abstrait uniquement. 50 jobs attendus.
+### PR #98 — Incréments constants (fusionnée)
+- [x] **PR98-INCR-01 · P1** — Artefact CI #97 15184969853 : groupe AST CSR 32 Add 64 bits +1 (ligne1387) et prefetch adresse alignée +4 (ligne138). Exact replay et coordonnées #97 ; littéral défini, conversion unique, refus explicites. Oracle coordonné 33 core, 67025 paires,4158 coordonnées attendues ; ALU0. Union IDs disjointe #97/#98 31/64 racines attendues ; pas de promotion dans historique. 22 tests ciblés/1526 suite attendue après correctif.
+- [x] **PR98-FORMAL-01 · P1** — Oracle Python exhaustif 1–4 bits, fixture réelle slang/cocotb 32 checks, Z3 modèles 4/64/32 bits,100 UNSAT non-interférence +1 alignement,2555 SAT témoins,3 SAT mutant sans retenue ; modèle abstrait uniquement. 50 jobs attendus.
 - [ ] **PR98-NEXT-01 · P1** — Soustraction après validation ; extension générale littéraux, casts, concat, alias, X/Z, gardes et intégration ultérieures. 
 
 Correctif après validation locale initiale bc1dfc3 : 20/20 ciblés 0,10 s, 1524/1524 suite 6,65 s, Z3 2659/2659 (run-ibiaq9b8), mais reports/pr98/run-wy9h2wud/summary.json failed avant simulation et RTL réel. La fixture initiale a deux incréments de vecteurs entiers sans sélection, hors census historique selon bitaccess.extract/_contains_selection ; seul le concat d'adresse est éligible syntaxiquement. Corriger les deux entrées à 5/65 bits avec sélections [3:0]/[63:0], stimuler leur bit supérieur ignoré ; garder oracle trois résidus et mêmes coordonnées, diagnostiquer les comptes et publier détails/AST/graphe même en échec. Deux tests du gate, 22 ciblés/1526 suite attendue. Aucun changement analyseur ni formel. Ne pas réduire le dénominateur de fixture. La reproduction sur vrai slang reste à valider. Main #97 50/50.
+
+Validation finale #98 [preuve](https://github.com/Antoine310/scientist_parseur/pull/98#issuecomment-7214932274) : SHA371dc57, 22/22 ciblés 0,10 s,1526/1526 6,48 s, reports/pr98/run-d4mm9vfy/summary.json passed. Fixture3/3,2555 paires198 coordonnées, 32 checks simulation ; core33/64,67025 paires4158 coordonnées, ALU0/31 ; union exacte disjointe #97/#98 31 ALU64 core, 67337 paires4360 coordonnées core, aucun ajout historique. Audits fixture/ALU/core0,002454/0,133651/0,549817 s, aucun tronqué, graphes inchangés. Z3 4.15.5 reports/pr98-formal/run-1s28ifro/summary.json passed 2659 requêtes abstraites (101 UNSAT,2558 SAT). Core24 instances1597 nœuds3566 arêtes15 warnings39 TP8 TN0 FP/FN annotés7 chemins ; pipeline3,926017 s, graphe1,894055 s, RSS ancien worker184316/slang217548 Kio, AST/index/graphe47778002/851329/33322406 octets. CI initiale48/50 265 s, finale50/50 296 s, cumul561 s fenêtre587 s ; main à relever. PR95-ARITH-01 et PR96-COMPOSE-01 restent ouvertes globalement.
+
+### PR #99 — Soustraction et masque (en cours)
+- [~] **PR99-SUB-01 · P1** — Artefact #98 15186144129, 0 ALU/2 core racines Subtract, 5 core imbriquées. Exact replay partagé sans changement Add, soustraction modulo 1–64, coordonnées fixes exactes et états/largeurs égaux ; oracle LSU offset 2 bits,6 paires/6 coordonnées. 
+- [~] **PR99-MASK-01 · P1** — Forme exacte (1<<k)-1 avec k 5 bits, résultat32, littéraux 1 prouvés, support seuil t=i+1 : suffixe à partir de v2(t), bit31 constant0,129 paires37 coordonnées. Oracle exhaustif indépendant ; union core66 racines arithmétiques et318 résidus, ALU31 et67, aucun ajout graphe. 
+- [~] **PR99-FORMAL-01 · P1** — 22 nouveaux tests ciblés (1548 suite attendue), fixture48 checks, Z3 1287 requêtes (soustraction2/4/32 et masque5→32), modèle abstrait binaire, pas preuve RTL. 50 jobs existants.
+- [ ] **PR99-NESTED-01 · P1** — Cinq lignes Subtract imbriquées et autres compositions/omissions non promues ; poursuivre comparaisons après validation, conserver phases indicatives et dettes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

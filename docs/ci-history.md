@@ -52,8 +52,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 96 | main | 519df7e | [45972213920](https://github.com/Antoine310/scientist_parseur/actions/runs/45972213920) | 50/50 | 209 | 20 | 177 | 2 | 2543 | member-writes-pr80 176 s |
 | 97 | PR | c9249d3 | [45972681195](https://github.com/Antoine310/scientist_parseur/actions/runs/45972681195) | 50/50 | 230 | 17 | 200 | 3 | 2335 | member-writes-pr80 176 s |
 | 97 | main | 43a8ff1 | [45973651373](https://github.com/Antoine310/scientist_parseur/actions/runs/45973651373) | 50/50 | 261 | 15 | 200 | 3 | 2403 | member-writes-pr80 199 s |
+| 98 | PR initiale | bc1dfc3 | [45974019754](https://github.com/Antoine310/scientist_parseur/actions/runs/45974019754) | 48/50,2 échecs | 265 | 14 | 237 | 4 | 2340 | member-writes-pr80 167 s |
+| 98 | PR finale | 371dc57 | [45974697416](https://github.com/Antoine310/scientist_parseur/actions/runs/45974697416) | 50/50 | 296 | 13 | 270 | 2 | 2193 | member-writes-pr80 203 s |
 
-#97 main : 09:25:54→09:30:15 UTC tentative1, partagé199 s, formel39 s. #98 initiale [45974019754](https://github.com/Antoine310/scientist_parseur/actions/runs/45974019754) en cours au relevé ; local 20/20 ciblés,1524/1524,2659 requêtes Z3 réussies, runner failed sur census fixture, correction requise. Résultat final de ce head à relever séparément, y compris annulation éventuelle.
+#98 initiale : 09:28:36→09:33:01 UTC tentative1, partagé167 s échec étape27 fixture, gate échec, formel35 s réussi. Finale 09:33:27→09:38:23 UTC tentative1, partagé203 s, formel41 s, local1526/1526 6,48 s, cumul deux heads561 s fenêtre587 s sans retry/annulation. Fusion36e6ca3, main à relever. #99 conserve 50 jobs attendus.
+
+#97 main : 09:25:54→09:30:15 UTC tentative1, partagé199 s, formel39 s. #98 initiale [45974019754](https://github.com/Antoine310/scientist_parseur/actions/runs/45974019754) terminée en échec (voir tableau) ; local20/20 ciblés,1524/1524,2659 requêtes Z3 réussies, runner failed sur census fixture, corrigé au head final.
 
 #97 : 09:19:00→09:22:50 UTC tentative1, local1504/1504 6,48 s, partagé176 s, formel36 s, fusion43a8ff1, main réussi (voir tableau). #96 main09:15:36→09:19:05 UTC tentative1, partagé176 s, formel37 s. Aucun échec/retry. #98 conserve 50 jobs attendus.
 
