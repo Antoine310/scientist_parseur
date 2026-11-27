@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.26 — 26 novembre 2026 (fusion #91, chantier #92)**  
+**Version : 1.27 — 27 novembre 2026 (fusion #92, chantier #93)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #91** (`11cd261ee7c83f436f7baffa746826dafd5e1375`). #91 50/50 CI sur 00daf57, 1398/1398 locaux ; post-fusion à relever. #90 main 50/50 en 181 s.
-**PR en cours : #92**, mutualisation locale des audits membres ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #92** (`ea19b3ec0ad8c15eae295891800d44d4f4d4a992`). #92 50/50 CI sur 2ed2e0d, 1409/1409 locaux ; post-fusion à relever. #91 main 50/50 en 225 s.
+**PR en cours : #93**, exposition CLI opt-in et consultation paginée ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -606,16 +606,24 @@ Première validation #91 sur 2f0480d : 22/22 ciblés 0,16 s, 1390/1390 6,65 s, r
 
 - [x] **PR91-RSS-01 · P1** — Corriger le benchmark mémoire hérité du parent : VmHWM de l'espace d'adressage courant, lecture stricte, rapport méthode explicite, revalider paires et CI. Ne pas déduire un delta nul des anciennes mesures.
 - [ ] **PR91-REASONS-01 · P1** — Ventiler partial_bit_access (371 core/96 ALU) par raison détaillée du bit_accesses et ID exact, sans rapprochement approximatif ni addition de dénominateurs ; audit avant sélection des familles arithmétiques.
-- [ ] **PR91-FASTPATH-01 · P2** — Mesurer et réduire coût de la collecte membre sur ALU sans site ; aucun raccourci qui masque une occurrence active, conserver comparaisons d'empreintes et oracles.
+- [~] **PR91-FASTPATH-01 · P2** — Mesurer et réduire coût de la collecte membre sur ALU sans site ; aucun raccourci qui masque une occurrence active, conserver comparaisons d'empreintes et oracles.
 
 Validation finale #91 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/91#issuecomment-7204312688), SHA exact 00daf57, 30/30 ciblés 0,19 s, 1398/1398 7,70 s, rapports/pr91/run-dumuds1l/summary.json (reports/pr91). 1481 payloads et provenances exacts, 30 occurrences, union historique 815/1199 et 381/479. Temps build médian ALU 0,449009→1,216879 s (delta apparié 0,768667), core 2,096685→4,964367 s (delta 2,769435), CPU delta 0,765762/2,760002 s. VmHWM build médian ALU 54796→54816 Kio (delta -8), core 158992→158896 (delta +4), après sérialisation core 162692→167472 (delta +4808 Kio). JSON compact +2508/+1296281 octets. Pas de gain garanti intercampagnes, ni absence d'allocations déduite du pic. CI finale 50/50 215 s, initiale 245 s, deux heads sans échec/relance ; fusion 11cd261, #90 main 181 s. 
 
-### PR #92 — Mutualisation locale des audits membres (en cours)
+### PR #92 — Mutualisation locale des audits membres (fusionnée)
 
-- [~] **PR92-SHARE-01 · P2** — Contexte privé par collecte fraîche AST/index : inspect_ast une fois, parcours complet borné 100000, ordinal conservé, préfiltrage des 7 producteurs par census membre, types package, observations globales (pas de filtrage des tokens), resolver, layouts et instances partagés. Inventaires local/paramètres et contrôles budgets conservés. Aucun cache persistant ni modification des rapports autonomes. Chemin indépendant `collect_linked(..., shared=False)` de référence, mêmes résultats attendus.
-- [~] **PR92-BENCH-01 · P2** — Benchmark apparié #91 adapté : deux modes avec trois canaux, seule collecte différente ; trois paires ALU/core, une paire 4 fixtures, processus frais VmHWM, empreinte graphe complet identique, égalité exacte sept rapports/enveloppe/linkage, contrôles historiques et oracles #87/#90. 11 tests ciblés, 1409 suite attendue, 50 jobs CI. Pas de seuil arbitraire, gain à mesurer ; ne pas masquer les limites d'un AST sans membre.
+- [x] **PR92-SHARE-01 · P2** — Contexte privé par collecte fraîche AST/index : inspect_ast une fois, parcours complet borné 100000, ordinal conservé, préfiltrage des 7 producteurs par census membre, types package, observations globales (pas de filtrage des tokens), resolver, layouts et instances partagés. Inventaires local/paramètres et contrôles budgets conservés. Aucun cache persistant ni modification des rapports autonomes. Chemin indépendant `collect_linked(..., shared=False)` de référence, mêmes résultats attendus.
+- [x] **PR92-BENCH-01 · P2** — Benchmark apparié #91 adapté : deux modes avec trois canaux, seule collecte différente ; trois paires ALU/core, une paire 4 fixtures, processus frais VmHWM, empreinte graphe complet identique, égalité exacte sept rapports/enveloppe/linkage, contrôles historiques et oracles #87/#90. 11 tests ciblés, 1409 suite attendue, 50 jobs CI. Pas de seuil arbitraire, gain à mesurer ; ne pas masquer les limites d'un AST sans membre.
 - [ ] **PR92-REMAIN-01 · P2** — Si le profil reste coûteux, auditer les inventaires redondants des trois builders et mesurer séparément leur coût ; aucune suppression d'observation globale ou validation de type sans démonstration. PR91-FASTPATH-01 partielle jusqu'aux mesures. CLI/MCP #93/#94 proposés ; résidus #95, arithmétique #96+, numéros historiques conservés.
 
+Validation #92 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/92#issuecomment-7205432157), SHA exact 2ed2e0d, 11/11 ciblés 0,16 s, 1409/1409 7,74 s, reports/pr92/run-ea7ejg14/summary.json passed. Six designs, dix paires, rapports/enveloppe/linkage et graphes complets identiques. Core 30/1481 ; ALU 0 ; fixtures 2/12/6/24 records. Médianes build indépendante→partagée ALU 1,330794→0,652718 s (-50,95 %, delta apparié -0,678076), core 5,636274→2,969595 s (-47,31 %, delta -2,666679). VmHWM build ALU59348→59380 Kio, core163480→163492 ; après sérialisation core177164→175836, delta -1328 Kio. JSON identique 3161269/21954132 octets ; pas de généralisation. CI #92 50/50 265 s, fusion ea19b3e, #91 main 225 s.
+
+### PR #93 — Exposition CLI opt-in (en cours)
+
+- [~] **PR93-CLI-01 · P1** — `deps --member-positions/--member-combinational/--member-sequential`, raccourci `--member-all`. Défaut historique inchangé, propagation au moteur, provenance/fingerprint conservées, compteurs dans deps.result uniquement sur opt-in, pas de mélange des graphes ni de dénominateurs. Échec de construction sans ancien graphe trompeur.
+- [~] **PR93-QUERY-01 · P1** — Consultation lecture seule `member-evidence GRAPH --category ... --signal ... --limit ... --offset ...` ; catégories distinctes, filtrage exact source ou cible, pagination max100, lecture bornée 64 Mio et gate valeurs/profondeur, absence de canal distincte de zéro publié, contrôle structure/compteurs/provenance sans prétendre revalider les preuves. 27 tests ciblés attendus ; runner vrai CLI huit combinaisons fixture, ALU/core tous canaux, égalité API même AST, pagination, oracle #90. 
+- [ ] **PR93-MCP-SIZE-01 · P1** — MCP existant max 32 Mio graphe ; taille cœur historique 33322406 octets proche de la limite, nouveau JSON indenté à mesurer. #94 exposition lecture seule via module query, réexaminer budget d'admission et bornes réponse sans exposer chemin arbitraire ou exécuter EDA. Les limites historiques de couverture/preuve restent ouvertes.
+ 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
 Le document est introduit par une PR exclusivement documentaire, envisagée #66. Les travaux moteur partent **après fusion effective de #65 et de cette documentation**. Les numéros suivants sont prévisionnels, les IDs de dettes restent permanents.
