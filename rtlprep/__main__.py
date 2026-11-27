@@ -36,6 +36,18 @@ def main() -> int:
         s.add_argument("manifest", help="chemin vers design.json")
         s.add_argument("--out", default="reports", help="dossier de sortie")
         s.add_argument("--timeout", type=int, default=120, help="timeout par outil en secondes")
+        if name == "deps":
+            s.add_argument("--member-positions", action="store_true", help="positions typées candidates")
+            s.add_argument("--member-combinational", action="store_true", help="constantes et références logiques candidates")
+            s.add_argument("--member-sequential", action="store_true", help="relations NBA locales candidates")
+            s.add_argument("--member-all", action="store_true", help="activer les trois canaux membres")
+    members = sub.add_parser("member-evidence", help="consulter les candidats membres d'un graphe existant")
+    members.add_argument("graph_file", type=Path)
+    members.add_argument("--category", choices=("position","local_constant","configuration_constant",
+                         "logical_reference","nba_sampled","nba_constant"))
+    members.add_argument("--signal", help="signal exact (source ou destination)")
+    members.add_argument("--limit", type=int, default=50)
+    members.add_argument("--offset", type=int, default=0)
     eq = sub.add_parser("eqy", help="comparer deux RTL approuvés avec Yosys EQY")
     eq.add_argument("manifest", help="design.json de référence (gold)")
     eq.add_argument("--gate", required=True, help="design.json du candidat (gate)")
@@ -94,6 +106,13 @@ def main() -> int:
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0
     try:
+        if args.cmd == "member-evidence":
+            from .member_query import load_member_graph, query_members
+            graph = load_member_graph(args.graph_file)
+            result = query_members(graph, category=args.category, signal=args.signal,
+                                   limit=args.limit, offset=args.offset)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
         if args.cmd == "trace":
             graph = json.loads(Path(args.graph_file).read_text(encoding="utf-8"))
             result = trace_dependencies(graph, args.node, args.direction,
@@ -144,7 +163,13 @@ def main() -> int:
         keys = ["analyze", "lint", "synth"] if args.cmd == "all" else [args.cmd]
         statuses = []
         for key in keys:
-            result = tasks[key](d, out, args.timeout)
+            if key == "deps":
+                result = tasks[key](d, out, args.timeout,
+                    enable_member_positions=args.member_all or args.member_positions,
+                    enable_member_combinational=args.member_all or args.member_combinational,
+                    enable_member_sequential=args.member_all or args.member_sequential)
+            else:
+                result = tasks[key](d, out, args.timeout)
             statuses.append(result["status"])
             print(f"[{key}] {result['status']}")
             if result.get("error"):

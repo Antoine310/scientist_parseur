@@ -219,7 +219,10 @@ def index_design(d: Design, out: Path, timeout: int) -> dict:
     return result
 
 
-def dependency_design(d: Design, out: Path, timeout: int) -> dict:
+def dependency_design(d: Design, out: Path, timeout: int, *,
+                      enable_member_positions: bool = False,
+                      enable_member_combinational: bool = False,
+                      enable_member_sequential: bool = False) -> dict:
     """Générer index + graphe, uniquement si slang a correctement élaboré le RTL."""
     graph_path = out / "rtl_dependencies.json"
     graph_path.unlink(missing_ok=True)
@@ -228,7 +231,15 @@ def dependency_design(d: Design, out: Path, timeout: int) -> dict:
         try:
             ast = read_ast(out / "elaborated_ast.json")
             idx = json.loads((out / "rtl_index.json").read_text(encoding="utf-8"))
-            graph = build_dependency_graph(ast, expected_top=d.top, index=idx)
+            options = {
+                "enable_member_positions": enable_member_positions,
+                "enable_member_combinational": enable_member_combinational,
+                "enable_member_sequential": enable_member_sequential,
+            }
+            graph = build_dependency_graph(ast, expected_top=d.top, index=idx, **options)
+            if any(options.values()):
+                from .member_query import member_summary
+                result["member_evidence"] = member_summary(graph)
             graph["source_fingerprint"] = fingerprint(d)
             graph_path.write_text(json.dumps(graph, ensure_ascii=False, indent=2), encoding="utf-8")
             result["dependencies"] = str(graph_path)
