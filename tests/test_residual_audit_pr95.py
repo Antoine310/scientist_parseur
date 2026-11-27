@@ -7,7 +7,8 @@ def graph():
               {"target":"top.a","source":{"line":1},"coverage":"partial","reason":"dynamic_or_unknown_index"},
               {"target":"top.b","source":{"line":2},"coverage":"rhs_lanes_only"}]
     rows=[{"assignment_id":i,"target":a["target"],"source_location":a["source"],
-           "assignment_kind":"continuous","coverage":"partial" if i<2 else "assignment_local_position_candidates",
+           "assignment_kind":"continuous","procedure_kind":None,"nonblocking":None,
+           "guards":[],"events":[],"coverage":"partial" if i<2 else "assignment_local_position_candidates",
            "reason":"partial_bit_access"} for i,a in enumerate(accesses)]
     g={"bit_accesses":{"items":accesses,"counts":{"captured":3,"truncated":False}},
        "bit_dependency_graph":{"items":rows,"counts":{"assignments":3,"supported":1,"partial":2,"truncated":False}}}
@@ -35,7 +36,7 @@ def test_unlinked_not_guessed():
     _,r,left,_,_,unlinked=m.exact_links(g)
     assert not r and left=={0,1} and unlinked[k]=={"candidate":1}
 
-@pytest.mark.parametrize("bad",["id","source","context","count","truncated","link_id","link_source","link_count","link_truncated"])
+@pytest.mark.parametrize("bad",["id","source","context","guards","events","count","truncated","link_id","link_source","link_count","link_truncated"])
 def test_refuse_bad_links(bad):
     g=graph()
     a=g["bit_accesses"]
@@ -44,13 +45,21 @@ def test_refuse_bad_links(bad):
     if bad=="id": f["items"][0]["assignment_id"]=True
     elif bad=="source": f["items"][0]["source_location"]={"line":99}
     elif bad=="context": f["items"][0]["assignment_kind"]="procedural"
+    elif bad=="guards": f["items"][0]["guards"]=[{"kind":"if"}]
+    elif bad=="events": f["items"][0]["events"]=[{"edge":"posedge"}]
     elif bad=="count": a["counts"]["captured"]=2
     elif bad=="truncated": f["counts"]["truncated"]=True
     elif bad=="link_id": c["items"][0]["flat_assignment_id"]=True
     elif bad=="link_source": c["items"][0]["source_location"]={"line":99}
     elif bad=="link_count": c["counts"]["captured"]=0
     else: c["counts"]["truncated"]=True
-    with pytest.raises(ValueError):
+    expected = {"id":"flat_access_identity_disagreement","source":"flat_access_identity_disagreement",
+                "context":"flat_access_identity_disagreement","guards":"flat_access_identity_disagreement",
+                "events":"flat_access_identity_disagreement","count":"flat_access_count_disagreement",
+                "truncated":"truncated_flat_access","link_id":"invalid_linked_flat_id",
+                "link_source":"linked_flat_metadata_disagreement","link_count":"invalid_linked_channel",
+                "link_truncated":"invalid_linked_channel"}
+    with pytest.raises(ValueError,match="^"+expected[bad]+"$"):
         m.exact_links(g)
 
 def test_detailed_reason_only_for_generic_refusal():
