@@ -1,6 +1,6 @@
 package enum_conversions_pkg;
     typedef enum logic [3:0] {OP_A, OP_B} op_t;
-    typedef enum logic [2:0] {FMT_A = 32'd2, FMT_B = 32'd5} fmt_t;
+    typedef enum logic [2:0] {FMT_A = 'd2, FMT_B = 'd5} fmt_t;
     typedef enum logic [1:0] {S0, S1, S2, S3} state_t;
 endpackage
 module enum_conversions_pr117(
