@@ -43,6 +43,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Découpage indicatif convenu après #106, jusqu'au prochain bilan statique cœur :** #107 audit CSR ; #108 concat vectorielles/sélections/alias (correction generate à intercaler si nécessaire) ; #109 Initial ; #110 logique/réductions ; #111 shifts ; #112 multiplication ; #113 conversions largeur/signe/X/Z ; #114 composition ; #115 fonctions/arguments ; #116 branches/appels imbriqués ; #117 boucles bornées ; #118 boucles imbriquées/écritures multiples ; #119 tableaux/register file ; #120 structures/unions/champs ; #121 conditions complexes/casez/casex/Inside ; #122 audit consolidé ; **#123 bilan scientifique cœur complet**. Puis #124–131 hiérarchie/temporalité, #132–138 simulation CPU/oracle ISA. Numéros non contractuels, toutes dettes et phases A–H préservées, P0 avancées si nécessaire. Ne pas assimiler le bilan statique à une simulation du CPU.
 
+**Révision après #107 (fusionnée, 1751 tests et 50 jobs)** : 3/5 refus CSR déjà représentés PR80/88, 2 scopes generate. #108 traite ces deux sites avant les concat vectorielles (PR106-CONCAT-GENERAL-01 reste ouverte). Numéros prévisionnels suivants à décaler selon résultats ; bilan #123 indicatif. Aucune modification des dénominateurs historiques.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.41 — 27 novembre 2026 (fusion #106, chantier #107)**  
+**Version : 1.42 — 27 novembre 2026 (fusion #107, chantier #108)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #106** (`04f2f516f0d17e24767dc8cde38534ff4f6413f1`). #106 CI50/50,1731/1731 locaux ; main [46004218559](https://github.com/Antoine310/scientist_parseur/actions/runs/46004218559) à relever après achèvement.
-**PR en cours : #107**, audit des cinq cibles CSR et recouvrement des preuves existantes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #107** (`3fe7421eee587fd3669bfa7b603832fc807c7aa0`). #107 CI50/50,1751/1751 locaux ; main [46005890496](https://github.com/Antoine310/scientist_parseur/actions/runs/46005890496) à relever après achèvement.
+**PR en cours : #108**, candidats NBA à cibles generate ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -737,10 +737,17 @@ Validation #105 : [commentaire permanent](https://github.com/Antoine310/scientis
 
 Validation #106 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/106#issuecomment-7219057869), head 54ff17d1827b415dd275030c3b155e7b47816516, fusion 04f2f516f0d17e24767dc8cde38534ff4f6413f1. Local28/28 0,09 s,1731/1731 7,04 s (SHA local non visible dans extrait), reports/pr106/run-ag3mffvb/summary.json passed, fixture/rxuart2 sites/6 records chacun (3 sampled,3 zéro),5 autres CSR, 6 designs, replay exact. Cocotb1/1,320 ns,160 tuples (32 transitions,128 préparations), SHA256 fixture 7e9e6bb96c3a1b55ea3fa325ef70842b635052b39333d20dda3ffc3b61928357. reports/pr106-formal/run-wofn8rph/summary.json passed,8 Z3 (2 UNSAT équivalence modèle,3 SAT sensibilité,3 SAT mutants), aucune preuve RTL/temporelle. CI50/50,337 s, main #105 50/50,246 s, artefacts15201005092/15198493897. Pas de promotion ou nouvelle arête historique ; autres concat et dettes conservées.
 
-### PR #107 — Audit cibles CSR (en cours)
+### PR #107 — Audit cibles CSR (fusionnée)
 
-- [~] **PR107-CSR-AUDIT-01 · P0** — Réconcilier cinq cibles refusées core avec positions membres existantes et résolution exacte des scopes generate. Trois champs DCSR déjà présents PR80/88, deux cibles gen_trigger_regs. Joindre uniquement identité AST+instance→ordinal, replay historique, aucune promotion/double comptage. Fixture 2 champs+2 cibles generate, six designs, refus explicites, pas de nouvelle preuve sémantique. 
-- [ ] **PR107-SCOPE-01 · P0** — Étudier admission versionnée des cibles generate et positions NBA avec oracle indépendant, préserver identités et dénominateurs ; aucune assimilation aux signaux directs. PR106-CONCAT-GENERAL-01 et PR105-INITIAL-01 restent ouvertes ; réordonner selon mesures. 
+- [x] **PR107-CSR-AUDIT-01 · P0** — Réconcilier cinq cibles refusées core avec positions membres existantes et résolution exacte des scopes generate. Trois champs DCSR déjà présents PR80/88, deux cibles gen_trigger_regs. Joindre uniquement identité AST+instance→ordinal, replay historique, aucune promotion/double comptage. Fixture 2 champs+2 cibles generate, six designs, refus explicites, pas de nouvelle preuve sémantique. 
+- [~] **PR107-SCOPE-01 · P0** — Étudier admission versionnée des cibles generate et positions NBA avec oracle indépendant, préserver identités et dénominateurs ; aucune assimilation aux signaux directs. PR106-CONCAT-GENERAL-01 et PR105-INITIAL-01 restent ouvertes ; réordonner selon mesures. 
+
+Validation locale #107 corrigée : head 7fc056994cd2f97506553b5a9d75656e8e479049, 20/20 en0,19 s et1751/1751 en7,09 s (SHA non réaffiché), reports/pr107/run-bbxgrxxz/summary.json passed, 6 designs. Fixture7 AST/4 refus/2 positions déjà existantes ; ALU612/0/0,core3811/5/3,axis44/0/0,encoder9/0/0,rxuart87/2/0 (concat #106). 3 champs PR80/88,2 scopes generate, zéro nouvel enregistrement/arête, replay et PR67 exacts. [Rapport](https://github.com/Antoine310/scientist_parseur/pull/107#issuecomment-7219231710). Initiale head991264c : 1750/1750 7,17 s, runner top erroné avant audit, run-ax3c5oxw, CI annulée40 success/9 cancelled/1 failure. Correctif top dérivé + test + census exact. Main #106 CI50/50,362 s. CI corrigée 50/50,363 s, head exact, artefact15200552325, [verdict permanent](https://github.com/Antoine310/scientist_parseur/pull/107#issuecomment-7219299483). Fusion 3fe7421eee587fd3669bfa7b603832fc807c7aa0.
+
+### PR #108 — Cibles NBA generate (en cours)
+
+- [~] **PR108-GENERATE-NBA-01 · P0** — PR107-SCOPE-01 : deux destinations CSR exactes, sélection fixe scalaire et vecteur 32 bits, candidats locaux séparés (33 records attendus), refus explicites. Fixture deux scopes homonymes, quatre sites/10 records, 768 tuples simulation,43 Z3 modèle. Pas de promotion historique, aucune preuve RTL/temporelle.
+- [ ] **PR108-SCOPE-GENERAL-01 · P0** — Autres scopes, sources/targets composés, indices dynamiques, conversions, intégration/versionnement public et corpus supplémentaires ; PR107-SCOPE-01 globale reste ouverte. PR106-CONCAT-GENERAL-01, PR105-INITIAL-01 et autres dettes préservées.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

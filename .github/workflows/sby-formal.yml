@@ -95,6 +95,9 @@ jobs:
       - name: PR106 scalar concat NBA statement models (Z3)
         run: python -m scripts.prove_concat_nba_pr106 --out reports/pr106-formal
 
+      - name: PR108 scoped generate NBA fixed selection models (Z3)
+        run: python -m scripts.prove_generate_nba_pr108 --out reports/pr108-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -110,6 +113,7 @@ jobs:
             reports/pr100-formal/**
             reports/pr101-formal/**
             reports/pr106-formal/**
+            reports/pr108-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
