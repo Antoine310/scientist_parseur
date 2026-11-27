@@ -51,6 +51,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #110** : fusionnée1845 tests/50 jobs,13 Initial rxuart/47 bits,2 paramètres partiels. #111 arbres logiques/réductions directes,69 racines résiduelles core dont4 candidats attendus. #112 shifts, #113 multiplication, suite selon backlog ; bilan cœur #123 indicatif.
 
+**Révision après #111** : 1875 tests/50 jobs,4 racines core/11 paires,65 partielles. #112 décalages logiques bornés, deux racines réelles ALU/core, six signées partielles à traiter séparément. Multiplication ensuite selon mesures ; bilan cœur #123 indicatif.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

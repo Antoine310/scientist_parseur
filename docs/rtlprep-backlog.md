@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.45 — 27 novembre 2026 (fusion #110, chantier #111)**  
+**Version : 1.46 — 27 novembre 2026 (fusion #111, chantier #112)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #110** (89f677c3e095d02e54b59fac575b0199fbceaef9). #110 CI50/50,1845/1845 locaux ; main [46009676138](https://github.com/Antoine310/scientist_parseur/actions/runs/46009676138) à relever.
-**PR en cours : #111**, arbres logiques et réductions directes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #111** (3645a8c4ac74ceffd028bff80f7af104e077f5cc). #111 CI50/50,1875/1875 locaux ; main [46011169232](https://github.com/Antoine310/scientist_parseur/actions/runs/46011169232) à relever.
+**PR en cours : #112**, décalages logiques bornés ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -765,10 +765,17 @@ Validation locale #109 : head attendu fbb047a6be1a1cb2f836a00c29f61e0fc279fd8d (
 
 Validation #110 : [local](https://github.com/Antoine310/scientist_parseur/pull/110#issuecomment-7219808351), [CI et fusion opérateur](https://github.com/Antoine310/scientist_parseur/pull/110#issuecomment-7219932050), head c8bd55cba22c4a704d213705e3f5aa520c01416c, fusion 89f677c3e095d02e54b59fac575b0199fbceaef9. 30/30 0,18 s,1845/1845 7,16 s (SHA non réaffiché), reports/pr110/run-yhfof0an/summary.json passed,6 designs,fixture3/5/13,rxuart13/15/47,2 paramètres partiels. 771 assertions,513 ns, fixture SHA256 3774abe7ac96417113a7aa71e64607e965ea1f710ecd26ffd1c06caf017b7a94 ; reports/pr110-formal/run-msjo7dy2/summary.json passed,12 Z3 modèle (4 UNSAT,8 SAT). Aucune constante permanente ou arête historique nouvelle. CI50/50,355 s, artefacts15204070536/15201999973 ; main #109 50/50,275 s. Dettes générales Initial conservées.
 
-### PR #111 — Arbres logiques et réductions (en cours)
+### PR #111 — Arbres logiques et réductions (fusionnée)
 
-- [~] **PR111-LOGICAL-01 · P0** — 69 racines LogicalAnd résiduelles core (artefact #105), 4 read-once candidates attendues IDs182/183/882/883,11 paires/15 coordonnées ; 65 partielles. Fixture6 sites/23 paires,1536 assertions,60 Z3 modèles. ALU/core et fixture. Exact lexical endpoint, aucun double comptage PR72 ni promotion.
+- [x] **PR111-LOGICAL-01 · P0** — 69 racines LogicalAnd résiduelles core (artefact #105), 4 read-once candidates attendues IDs182/183/882/883,11 paires/15 coordonnées ; 65 partielles. Fixture6 sites/23 paires,1536 assertions,60 Z3 modèles. ALU/core et fixture. Exact lexical endpoint, aucun double comptage PR72 ni promotion.
 - [ ] **PR111-LOGICAL-COMPOSE-01 · P0** — 64 racines comparaisons/adresses et une réduction de masque composé, autres opérateurs imbriqués, alias, X/Z, constantes et conversions, corpus supplémentaires, intégration versionnée restent ouverts. Décalage indicatif : shifts #112, multiplication #113 ; bilan cœur #123 ou ultérieur. Conserver toutes dettes.
+
+Validation #111 : [local](https://github.com/Antoine310/scientist_parseur/pull/111#issuecomment-7220047693), [CI](https://github.com/Antoine310/scientist_parseur/pull/111#issuecomment-7220131694), head4c882518a5d22c349f302f1ab927af66041a8e1a, fusion 3645a8c4ac74ceffd028bff80f7af104e077f5cc. Local30/30 0,33 s,1875/1875 8,09 s (SHA non réaffiché), reports/pr111/run-kjootcoi/summary.json passed, fixture6/6/23 paires,ALU0/0 et1 nested-only,core69/4/11 paires/15 coords,65 partielles/15 nested-only. Simulation1536 assertions,256 ns, deux WIDTHTRUNC intentionnels non fatals, source SHA256 df629674002e0bffae98000f57e144fba34e0546d7892c5d28642c6a552eb895 ; reports/pr111-formal/run-jynd925r/summary.json passed,60 Z3 (31 UNSAT,29 SAT). CI50/50,347 s, artefacts15203393162/15203831763. Main #110 50/50,278 s. Union indicative80/384 non recalculée, aucune promotion.
+
+### PR #112 — Décalages logiques bornés (en cours)
+
+- [~] **PR112-SHIFT-LOGICAL-01 · P0** — 8 racines ALU/core chacune, 2 candidats attendus (masque constant et droite 64→32),1313 paires/138 coords par design,6 partielles signées ; 4 sites fixture/233 paires,32768 assertions,10 Z3 modèle. Replay exact, aucun gain historique promu.
+- [ ] **PR112-SHIFT-SIGNED-01 · P0** — 6 formes signe construit, conversion/troncature, autres décalages signés et compositions, X/Z, intégration et corpus supplémentaires. Ne pas généraliser le modèle unsigned ; étudier avant multiplication. Bilan cœur #123 indicatif ou ultérieur ; toutes dettes conservées.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
