@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.38 — 27 novembre 2026 (fusion #103, chantier #104)**  
+**Version : 1.39 — 27 novembre 2026 (fusion #104, chantier #105)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #103** (`e34bdc2d9f25e1549108f494cc919e52a61aab11`). #103 CI50/50,1655/1655 locaux ; main [46000762608](https://github.com/Antoine310/scientist_parseur/actions/runs/46000762608) à relever après achèvement.
-**PR en cours : #104**, publication versionnée CLI/MCP et corpus indépendants ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #104** (`cfce52cb503cb121b4af42f6fc64857c8cb23bfd`). #104 CI50/50,1684/1684 locaux ; main [46001942369](https://github.com/Antoine310/scientist_parseur/actions/runs/46001942369) à relever après achèvement.
+**PR en cours : #105**, audit P0 des exclusions du walker ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -709,14 +709,24 @@ Validation #102 : [commentaire permanent](https://github.com/Antoine310/scientis
 ### PR #103 — Correction versionnée opt-in (fusionnée)
 
 - [x] **PR103-GATE-01 · P0** — Corriger les omissions de sélection après résultat négatif v1 par parcours borné des conteneurs hors métadonnées, refus explicite au budget. Mode opt-in, rapport v2 distinct, projection exacte IDs/lignes/arêtes v1. Attentes fixture1→2, ALU479→479, core1199→1212, 13 nouvelles lignes strictement partielles, zéro arête ajoutée ; aucun gain avant validation. PR101-CAPTURE-01 et PR102-VERSION-01 restent ouverts globalement.
-- [~] **PR103-PUBLIC-01 · P0** — Intégration versionnée au pipeline public, corpus indépendants et budgets ; définir stratégie de migration des consommateurs CLI/MCP, maintenir lecture historique et IDs #95. Les cinq cibles non supportées CSR, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouvertes. Sémantique des nouveaux sites à traiter séparément.
+- [x] **PR103-PUBLIC-01 · P0** — Intégration versionnée au pipeline public, corpus indépendants et budgets ; définir stratégie de migration des consommateurs CLI/MCP, maintenir lecture historique et IDs #95. Les cinq cibles non supportées CSR, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouvertes. Sémantique des nouveaux sites à traiter séparément.
 
 Validation #103 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/103#issuecomment-7218489812), head 25efa5372b642de2e285c45628cdd12468168efc, fusion e34bdc2d9f25e1549108f494cc919e52a61aab11. Local25/25 0,10 s,1655/1655 6,92 s ; reports/pr103/run-xssmexzs/summary.json passed, fixture3/1→2, ALU612/479→479, core3811/1199→1212, 13 ajoutées strictement partielles (7 appels,5 conditions,1 pattern),531 supportées inchangées,668→681 partielles,2842 arêtes inchangées,5 cibles non supportées. Projection et replay exacts, aucune troncature historique, audits0,00287/0,354/1,464 s ; unions historiques39/76 et reste59/308 inchangés. CI50/50,256 s, main #102 50/50,246 s. Artefact15197128504. Pas de promotion sémantique.
 
-### PR #104 — Publication CLI/MCP du census (en cours)
+### PR #104 — Publication CLI/MCP du census (fusionnée)
 
-- [~] **PR104-PUBLIC-01 · P0** — Export séparé depuis artefacts deps, version explicite V1/V2, pagination bornée, provenance SHA256, validation structure/partition/IDs, refus écrasement et artefacts incohérents. MCP outil conditionnel19 vs18, lecture seule et parité CLI/protocole. Fixture et CV32E40P, corpus indépendants épinglés verilog-axis (axis_register,priority_encoder) et wbuart32 (rxuart) ; comptes externes à mesurer. Aucune modification graphe historique ni sémantique. PR103-PUBLIC-01 et PR102-VERSION-01 restent ouvertes globalement avant validation.
+- [x] **PR104-PUBLIC-01 · P0** — Export séparé depuis artefacts deps, version explicite V1/V2, pagination bornée, provenance SHA256, validation structure/partition/IDs, refus écrasement et artefacts incohérents. MCP outil conditionnel19 vs18, lecture seule et parité CLI/protocole. Fixture et CV32E40P, corpus indépendants épinglés verilog-axis (axis_register,priority_encoder) et wbuart32 (rxuart) ; comptes externes à mesurer. Aucune modification graphe historique ni sémantique. PR103-PUBLIC-01 et PR102-VERSION-01 restent ouvertes globalement avant validation.
 - [ ] **PR104-MIGRATE-01 · P1** — Étudier une migration explicite du défaut, consommateurs CLI/MCP, budgets globaux et corpus plus larges sans réécrire les dénominateurs historiques ; cinq cibles CSR et PR23-COV-01/PR67-CENSUS-01/PR53-CPLX-01 restent ouvertes.
+
+Validation #104 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/104#issuecomment-7218707415), head e622dbc3faa91f81b43c8396b631c8f2e43449e2, fusion cfce52cb503cb121b4af42f6fc64857c8cb23bfd. Local29/29 0,21 s et1684/1684 7,34 s ; reports/pr104/run-25vlkfqz/summary.json passed, 4 dépôts/15 fichiers épinglés, 6 cas,43 pages MCP (2/10/25/2/2/2),24 refus attendus, SHA local non affiché dans extrait. Fixture3/1→2, ALU612/479→479, core3811/1199→1212,531 supportées,13 ajoutées partielles, zéro arête. Externes axis_register44/4→4/0 supportée, priority_encoder9/8→8/0, rxuart87/16→16/1,54 sans sélection,15 non visitées,2 cibles non supportées. Parité CLI/MCP, entrées inchangées ; 19 outils avec census,18 sinon. CI50/50,258 s, main #103 50/50,296 s ; artefact15199185312. PR101-CAPTURE-01/PR102-VERSION-01 satisfaites pour l'admission/publication opt-in des 13 sites mesurés, migration défaut/corpus plus larges et autres omissions ouvertes ; ne pas modifier l'historique. 
+
+- [~] **PR104-WALK-01 · P0** — Auditer les 15 non visitées rxuart, toutes Initial d'après artefact #104, 1 sélection de plage ; établir les frontières effectives par traçage, distinguer des 2 cibles concaténées refusées. Aucune promotion.
+- [ ] **PR104-MCP-ERROR-01 · P2** — Erreurs attendues MCP présentées en UnexpectedToolError ; améliorer messages structurés et lisibles sans masquer les erreurs inattendues, conserver is_error et les contraintes. 24 refus attendus #104, runner passed.
+
+### PR #105 — Audit des exclusions du walker (en cours)
+
+- [~] **PR105-TRACE-01 · P0** — Traçage opt-in des décisions effectives, rapprochement par identité/instance/ancêtre JSON pointer, replay historique exact. Fixture Initial et RepeatLoop, 6 designs épinglés, oracle PR67, refus explicites, non expliqué reste explicite. Attendu rxuart15 exclusions Initial dont1 sélection,2 concaténations refusées ; aucune modification de graphe.
+- [ ] **PR105-INITIAL-01 · P1** — Étudier sémantique des initialisations et périmètre synthétisable (simulation/formel, état au démarrage, X/Z, priorité et temporalité), ne pas assimiler Initial à Always ni à une constante. **PR105-CONCAT-TARGET-01 · P0** — Auditer et caractériser les cibles concaténées (rxuart2), widths/ordre/alias/positions et refus, corpus indépendants. Les cinq cibles CSR et autres P0 restent ouvertes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
