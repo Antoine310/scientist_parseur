@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.44 — 27 novembre 2026 (fusion #109, chantier #110)**  
+**Version : 1.45 — 27 novembre 2026 (fusion #110, chantier #111)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #109** (`d6db176da58a722881a6f669a271779078e6debe`). #109 CI50/50,1815/1815 locaux ; CI post-fusion à relever après achèvement.
-**PR en cours : #110**, initialisations directes à zéro ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #110** (89f677c3e095d02e54b59fac575b0199fbceaef9). #110 CI50/50,1845/1845 locaux ; main [46009676138](https://github.com/Antoine310/scientist_parseur/actions/runs/46009676138) à relever.
+**PR en cours : #111**, arbres logiques et réductions directes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -758,10 +758,17 @@ Validation #108 : [local](https://github.com/Antoine310/scientist_parseur/pull/1
 
 Validation locale #109 : head attendu fbb047a6be1a1cb2f836a00c29f61e0fc279fd8d (SHA non réaffiché), 30/30 0,23 s,1815/1815 7,14 s, reports/pr109/run-154r96mt/summary.json passed, six designs, fixture2 sites/9 records, rxuart2/6 PR106 existants, core5 hors famille, zéro promotion historique. Simulation768 assertions,512 ns, source SHA256 5bf7cc52da28963a0d374d50ab33077dd9c9a20a309e0a3ffe9616c73f90d896 ; reports/pr109-formal/run-_3vxccxr/summary.json passed,20 Z3 (9 UNSAT,11 SAT). CI50/50,394 s, artefacts15202329074/15200784680, [verdict permanent](https://github.com/Antoine310/scientist_parseur/pull/109#issuecomment-7219716884). Fusion d6db176da58a722881a6f669a271779078e6debe. Corpus vectoriel réel P0 ouvert.
 
-### PR #110 — Initialisations directes à zéro (en cours)
+### PR #110 — Initialisations directes à zéro (fusionnée)
 
-- [~] **PR110-INITIAL-ZERO-01 · P1** — Audit PR105 des 15 Initial rxuart ; 13 affectations directes à zéro /47 bits attendus, deux références paramètres partielles. Aucun invariant permanent, aucune preuve état global ou synthèse. Fixture5 sites/3 supportés/13 bits,771 assertions simulation,12 Z3 modèles. Six designs, replay historique exact.
+- [x] **PR110-INITIAL-ZERO-01 · P1** — Audit PR105 des 15 Initial rxuart ; 13 affectations directes à zéro /47 bits attendus, deux références paramètres partielles. Aucun invariant permanent, aucune preuve état global ou synthèse. Fixture5 sites/3 supportés/13 bits,771 assertions simulation,12 Z3 modèles. Six designs, replay historique exact.
 - [ ] **PR110-INITIAL-GENERAL-01 · P1** — Paramètres, valeurs non nulles/X/Z, initialisations de déclaration, blocs/délais/concurrence/ordonnancement, synthèse et état global ; PR105-INITIAL-01 globale reste ouverte. PR109-CONCAT-CORPUS-01 P0 et autres dettes préservées.
+
+Validation #110 : [local](https://github.com/Antoine310/scientist_parseur/pull/110#issuecomment-7219808351), [CI et fusion opérateur](https://github.com/Antoine310/scientist_parseur/pull/110#issuecomment-7219932050), head c8bd55cba22c4a704d213705e3f5aa520c01416c, fusion 89f677c3e095d02e54b59fac575b0199fbceaef9. 30/30 0,18 s,1845/1845 7,16 s (SHA non réaffiché), reports/pr110/run-yhfof0an/summary.json passed,6 designs,fixture3/5/13,rxuart13/15/47,2 paramètres partiels. 771 assertions,513 ns, fixture SHA256 3774abe7ac96417113a7aa71e64607e965ea1f710ecd26ffd1c06caf017b7a94 ; reports/pr110-formal/run-msjo7dy2/summary.json passed,12 Z3 modèle (4 UNSAT,8 SAT). Aucune constante permanente ou arête historique nouvelle. CI50/50,355 s, artefacts15204070536/15201999973 ; main #109 50/50,275 s. Dettes générales Initial conservées.
+
+### PR #111 — Arbres logiques et réductions (en cours)
+
+- [~] **PR111-LOGICAL-01 · P0** — 69 racines LogicalAnd résiduelles core (artefact #105), 4 read-once candidates attendues IDs182/183/882/883,11 paires/15 coordonnées ; 65 partielles. Fixture6 sites/23 paires,1536 assertions,60 Z3 modèles. ALU/core et fixture. Exact lexical endpoint, aucun double comptage PR72 ni promotion.
+- [ ] **PR111-LOGICAL-COMPOSE-01 · P0** — 64 racines comparaisons/adresses et une réduction de masque composé, autres opérateurs imbriqués, alias, X/Z, constantes et conversions, corpus supplémentaires, intégration versionnée restent ouverts. Décalage indicatif : shifts #112, multiplication #113 ; bilan cœur #123 ou ultérieur. Conserver toutes dettes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

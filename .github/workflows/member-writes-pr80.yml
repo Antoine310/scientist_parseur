@@ -329,6 +329,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_initial_zero_pr110 --out reports/pr110 --reference "${refs[0]}"
 
+      - name: PR111 read-once logical reduction candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_logical_reduction_pr111.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_logical_reduction_pr111 --out reports/pr111 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -465,3 +474,9 @@ jobs:
             reports/pr110/**/fixture/elaborated_ast.json
             reports/pr110/**/fixture/rtl_index.json
             reports/pr110/**/fixture/rtl_dependencies.json
+            reports/pr111/**/summary.json
+            reports/pr111/**/*.logical-reduction.json
+            reports/pr111/**/simulation_results.xml
+            reports/pr111/**/fixture/elaborated_ast.json
+            reports/pr111/**/fixture/rtl_index.json
+            reports/pr111/**/fixture/rtl_dependencies.json
