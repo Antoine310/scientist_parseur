@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.47 — 27 novembre 2026 (fusion #112, chantier #113)**  
+**Version : 1.48 — 27 novembre 2026 (fusion #113, chantier #114)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #112** (6015ecf35da85e5c141d33da8129c7a9306f1e7f). #112 CI50/50,1905/1905 locaux ; main [46013114651](https://github.com/Antoine310/scientist_parseur/actions/runs/46013114651) à relever.
-**PR en cours : #113**, décalages arithmétiques à signe conditionnel ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #113** (bb7d0c98b3804809d0d1ea7e82e2b0333740830f). #113 CI50/50,1935/1935 locaux ; CI main #113 à relever.
+**PR en cours : #114**, produits signés pleine largeur ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -779,10 +779,17 @@ Validation #111 : [local](https://github.com/Antoine310/scientist_parseur/pull/1
 
 Validation #112 : [initiale](https://github.com/Antoine310/scientist_parseur/pull/112#issuecomment-7220254587), [local corrigé](https://github.com/Antoine310/scientist_parseur/pull/112#issuecomment-7220310595), [CI](https://github.com/Antoine310/scientist_parseur/pull/112#issuecomment-7220417875). Head initial3f0f7c6,29/30 SyntaxError runner, CI20 s 2 échecs/48 skipped ; correction syntaxique seule f4d83fba7f5c6811e8cad08faccc0a9c02782fc1, SHA local exact,30/30 0,17 s,1905/1905 7,42 s. reports/pr112/run-7uy0qz_h/summary.json passed, fixture4/4/233 paires, ALU/core2/8/1313 paires/138 coords chacun,6 partielles, core1 nested-only. Simulation32768 assertions,8192 ns, WIDTHTRUNC intentionnel non fatal, source SHA256 7320ae89b928dcde1daf555f708ae4e5a6eac380ac64b3ececd2392f177988f9. reports/pr112-formal/run-0fosd2ka/summary.json passed,10 Z3 modèle (5 UNSAT,5 SAT). CI50/50,309 s, artefacts15205235098/15203064492, fusion 6015ecf35da85e5c141d33da8129c7a9306f1e7f. Main #111 50/50,369 s. Union indicative82/384 non recalculée.
 
-### PR #113 — Décalages arithmétiques à signe conditionnel (en cours)
+### PR #113 — Décalages arithmétiques à signe conditionnel (fusionnée)
 
-- [~] **PR113-SIGNED-SHIFT-01 · P0** — Six sites réels ALU/core, 2×16 et4×8, signe construit AND mode/MSB, conversion n+1→n. 698 paires/154 coordonnées attendues par design, fixture2/88,8192 assertions,469 Z3 modèles, 30 tests/1935 suite. Pas de promotion. PR112-SHIFT-SIGNED-01 globale reste ouverte jusqu'aux validations.
+- [x] **PR113-SIGNED-SHIFT-01 · P0** — Six sites réels ALU/core, 2×16 et4×8, signe construit AND mode/MSB, conversion n+1→n. 698 paires/154 coordonnées attendues par design, fixture2/88,8192 assertions,469 Z3 modèles, 30 tests/1935 suite. Pas de promotion. PR112-SHIFT-SIGNED-01 satisfaite pour les six occurrences réelles ; périmètre générique conservé sous PR113-SIGNED-SHIFT-GENERAL-01.
 - [ ] **PR113-SIGNED-SHIFT-GENERAL-01 · P0** — Autres formes signées, quantités plus larges/overshift, conversions/composition, alias, X/Z, intégration et corpus supplémentaires. Multiplication #114 indicative, jalon cœur #124 ou ultérieur ; toutes dettes conservées.
+
+Validation #113 : [local](https://github.com/Antoine310/scientist_parseur/pull/113#issuecomment-7220516993), [CI](https://github.com/Antoine310/scientist_parseur/pull/113#issuecomment-7220606930). SHA exact151e286b4692142c0265a4f7a4cffb7d0608e7fe, fusion bb7d0c98b3804809d0d1ea7e82e2b0333740830f. 30/30 0,18 s,1935/1935 7,63 s, reports/pr113/run-qalurw3e/summary.json passed, fixture2/2/88 paires/31 coords, ALU/core6/6/698/154 chacun ; simulation8192 assertions,4096 ns, deux WIDTHTRUNC intentionnels, source SHA256 7c151463136dfe62fdbdaac0b4905682f0b0c7084b9ebd35a73e0536205528be ; 469 Z3 modèles (160 UNSAT,309 SAT). CI50/50,296 s, artefacts15205611277/15206090433 ; main #112 50/50,380 s. Union indicative88/384 non recalculée, aucune promotion.
+
+### PR #114 — Produits signés pleine largeur (en cours)
+
+- [~] **PR114-MULTIPLY-01 · P0** — Six racines core IDs805–808/817–818, quatre produits9×9→18 et deux17×17→34, 2776 paires/280 coords attendues. 38 nested-only ALU/core, ALU0 racine. Fixture4/1240/136,800 assertions,123 Z3 modèles,30 tests ciblés/1965 suite. Coordonnées packed préservées, opérande pré-négativé direct, pas de composition ou promotion.
+- [ ] **PR114-MULTIPLY-GENERAL-01 · P0** — Multiplications imbriquées, produits tronqués/mixtes, autres largeurs et conversions, X/Z, intégration, corpus supplémentaires ; conversions #115 ensuite, bilan cœur #124 ou ultérieur. Préserver toutes dettes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
