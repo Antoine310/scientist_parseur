@@ -19,6 +19,7 @@ from .manifest import load_design
 from .runner import fingerprint
 from .evidence import build_evidence_view
 from .analysis_budgets import DEFAULT_BUDGET, measure_tree
+from .census_query import load_report as load_census, query_census, file_sha
 from .member_query import (MAX_GRAPH_BYTES as MEMBER_GRAPH_BYTES, member_summary,
                            query_members)
 
@@ -79,9 +80,10 @@ class ReadOnlyRtl:
     def __init__(self, *, index_file: Path | None = None,
                  graph_file: Path | None = None,
                  manifest_file: Path | None = None,
-                 reports_dir: Path | None = None) -> None:
-        if not any((index_file, graph_file, reports_dir)):
-            raise ValueError("Fournir --index, --graph ou --reports-dir")
+                 reports_dir: Path | None = None,
+                 census_file: Path | None = None) -> None:
+        if not any((index_file, graph_file, reports_dir, census_file)):
+            raise ValueError("Fournir --index, --graph, --reports-dir ou --selection-census")
         self.index = (_load_json(Path(index_file), max_bytes=MAX_INDEX_BYTES)
                       if index_file is not None else None)
         self.graph = (_load_json(Path(graph_file), max_bytes=MAX_GRAPH_BYTES)
@@ -101,19 +103,26 @@ class ReadOnlyRtl:
         if self.index is not None and self.graph is not None:
             if self.index.get("top") != self.graph.get("top"):
                 raise ValueError("Index et graphe : modules top différents")
+        self.selection_census_report=load_census(census_file) if census_file is not None else None
+        if self.selection_census_report is not None:
+            census=self.selection_census_report
+            for data,path,name in ((self.index,index_file,"rtl_index.json"),(self.graph,graph_file,"rtl_dependencies.json")):
+                if data is not None and (data.get("top")!=census["top"] or data.get("source_fingerprint")!=census["source_fingerprint"]
+                        or file_sha(path)!=census["input_sha256"][name]):
+                    raise ValueError("Selection census : artefacts incompatibles")
         self.design = load_design(manifest_file) if manifest_file is not None else None
         # The same top is not sufficient to establish the same RTL revision.
         # Missing fingerprints remain explicitly unverifiable (older fixtures).
         fingerprints = {
             item["source_fingerprint"]
-            for item in (self.index, self.graph)
+            for item in (self.index, self.graph, self.selection_census_report)
             if item is not None and isinstance(item.get("source_fingerprint"), str)
             and item["source_fingerprint"]
         }
         if len(fingerprints) > 1:
             raise ValueError("Index et graphe : empreintes RTL incompatibles")
         self.artifact_fingerprint = next(iter(fingerprints), None)
-        tops = [item["top"] for item in (self.index, self.graph) if item is not None]
+        tops = [item["top"] for item in (self.index, self.graph, self.selection_census_report) if item is not None]
         if self.design is not None and tops and any(top != self.design.top for top in tops):
             raise ValueError("Le top du manifeste diffère des rapports")
         self.reports: dict[str, dict[str, Any]] = {}
@@ -139,6 +148,8 @@ class ReadOnlyRtl:
             "runs_eda": False, "edits_files": False, "uses_paid_llm_api": False,
             "index_available": self.index is not None,
             "graph_available": self.graph is not None,
+            "selection_census_available": self.selection_census_report is not None,
+            "selection_census_versions": [1,2] if self.selection_census_report is not None else [],
             "evidence_available": self.graph is not None,
             "member_evidence_available": any(c["status"] == "published"
                                              for c in self._member_channels.values()),
@@ -170,7 +181,7 @@ class ReadOnlyRtl:
             "source_snapshot_status": self._source_snapshot_status(),
             "top": self.index.get("top") if self.index else (
                 self.graph.get("top") if self.graph else (
-                    self.design.top if self.design else None)),
+                    self.design.top if self.design else (self.selection_census_report["top"] if self.selection_census_report is not None else None))),
             "graph_warnings_count": len(self.graph.get("warnings", []))
             if self.graph else None,
             "caveat": "Rapports existants, non recalculés ; graphe partiel et non preuve formelle.",
@@ -466,6 +477,13 @@ class ReadOnlyRtl:
         if size > MAX_MEMBER_RESPONSE_BYTES:
             raise ValueError("Member evidence : réponse trop volumineuse, réduire limit")
         return result
+
+    def selection_census(self, version: int, classification: str | None = None,
+                         instance: str | None = None, limit: int = 20, offset: int = 0):
+        if self.selection_census_report is None:
+            raise ValueError("Selection census non configuré")
+        return query_census(self.selection_census_report,version=version,classification=classification,
+                            instance=instance,limit=limit,offset=offset)
 
     def validations(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         items = [{

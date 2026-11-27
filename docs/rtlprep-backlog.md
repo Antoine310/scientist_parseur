@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.37 — 27 novembre 2026 (fusion #102, chantier #103)**  
+**Version : 1.38 — 27 novembre 2026 (fusion #103, chantier #104)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #102** (`b75c9ecce8b594f909c7cf5121219e5ce1cf7afc`). #102 CI 50/50,1630/1630 locaux ; main [45999143379](https://github.com/Antoine310/scientist_parseur/actions/runs/45999143379) à relever après achèvement.
-**PR en cours : #103**, correction versionnée opt-in du filtre de sélection ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #103** (`e34bdc2d9f25e1549108f494cc919e52a61aab11`). #103 CI50/50,1655/1655 locaux ; main [46000762608](https://github.com/Antoine310/scientist_parseur/actions/runs/46000762608) à relever après achèvement.
+**PR en cours : #104**, publication versionnée CLI/MCP et corpus indépendants ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -706,10 +706,17 @@ Validation finale #101 : [commentaire permanent](https://github.com/Antoine310/s
 
 Validation #102 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/102#issuecomment-7218313125), head 35290a8632a6d47547ba0e9ea11e8926be78a433, fusion b75c9ecce8b594f909c7cf5121219e5ce1cf7afc. Local21/21 0,12 s et1630/1630 6,96 s ; reports/pr102/run-u9jikssa/summary.json passed ; fixture3/1/1 omission/1 sans sélection, ALU612/479/133 sans sélection/0 omission, core3811/1199/2594 sans sélection/13 omissions/5 cibles non supportées/0 non visitées. 7 omissions avec Call.arguments, 5 conditions ternaires,1 pattern structuré (artefact15190879320). Audits0,00156/0,201/0,758 s, visites160/21217/73214, sélections17/1248/2490, replay exact et PR67 réconcilié, aucune troncature. CI50/50,321 s ; main #101 50/50,269 s. Pas de promotion ni nouvelle simulation/formel. PR101-CAPTURE-01 reste ouvert.
 
-### PR #103 — Correction versionnée opt-in (en cours)
+### PR #103 — Correction versionnée opt-in (fusionnée)
 
-- [~] **PR103-GATE-01 · P0** — Corriger les omissions de sélection après résultat négatif v1 par parcours borné des conteneurs hors métadonnées, refus explicite au budget. Mode opt-in, rapport v2 distinct, projection exacte IDs/lignes/arêtes v1. Attentes fixture1→2, ALU479→479, core1199→1212, 13 nouvelles lignes strictement partielles, zéro arête ajoutée ; aucun gain avant validation. PR101-CAPTURE-01 et PR102-VERSION-01 restent ouverts globalement.
-- [ ] **PR103-PUBLIC-01 · P0** — Intégration versionnée au pipeline public, corpus indépendants et budgets ; définir stratégie de migration des consommateurs CLI/MCP, maintenir lecture historique et IDs #95. Les cinq cibles non supportées CSR, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouvertes. Sémantique des nouveaux sites à traiter séparément.
+- [x] **PR103-GATE-01 · P0** — Corriger les omissions de sélection après résultat négatif v1 par parcours borné des conteneurs hors métadonnées, refus explicite au budget. Mode opt-in, rapport v2 distinct, projection exacte IDs/lignes/arêtes v1. Attentes fixture1→2, ALU479→479, core1199→1212, 13 nouvelles lignes strictement partielles, zéro arête ajoutée ; aucun gain avant validation. PR101-CAPTURE-01 et PR102-VERSION-01 restent ouverts globalement.
+- [~] **PR103-PUBLIC-01 · P0** — Intégration versionnée au pipeline public, corpus indépendants et budgets ; définir stratégie de migration des consommateurs CLI/MCP, maintenir lecture historique et IDs #95. Les cinq cibles non supportées CSR, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouvertes. Sémantique des nouveaux sites à traiter séparément.
+
+Validation #103 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/103#issuecomment-7218489812), head 25efa5372b642de2e285c45628cdd12468168efc, fusion e34bdc2d9f25e1549108f494cc919e52a61aab11. Local25/25 0,10 s,1655/1655 6,92 s ; reports/pr103/run-xssmexzs/summary.json passed, fixture3/1→2, ALU612/479→479, core3811/1199→1212, 13 ajoutées strictement partielles (7 appels,5 conditions,1 pattern),531 supportées inchangées,668→681 partielles,2842 arêtes inchangées,5 cibles non supportées. Projection et replay exacts, aucune troncature historique, audits0,00287/0,354/1,464 s ; unions historiques39/76 et reste59/308 inchangés. CI50/50,256 s, main #102 50/50,246 s. Artefact15197128504. Pas de promotion sémantique.
+
+### PR #104 — Publication CLI/MCP du census (en cours)
+
+- [~] **PR104-PUBLIC-01 · P0** — Export séparé depuis artefacts deps, version explicite V1/V2, pagination bornée, provenance SHA256, validation structure/partition/IDs, refus écrasement et artefacts incohérents. MCP outil conditionnel19 vs18, lecture seule et parité CLI/protocole. Fixture et CV32E40P, corpus indépendants épinglés verilog-axis (axis_register,priority_encoder) et wbuart32 (rxuart) ; comptes externes à mesurer. Aucune modification graphe historique ni sémantique. PR103-PUBLIC-01 et PR102-VERSION-01 restent ouvertes globalement avant validation.
+- [ ] **PR104-MIGRATE-01 · P1** — Étudier une migration explicite du défaut, consommateurs CLI/MCP, budgets globaux et corpus plus larges sans réécrire les dénominateurs historiques ; cinq cibles CSR et PR23-COV-01/PR67-CENSUS-01/PR53-CPLX-01 restent ouvertes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
