@@ -311,6 +311,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_generate_nba_pr108 --out reports/pr108 --reference "${refs[0]}"
 
+      - name: PR109 fixed vector concatenation NBA candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_vector_concat_nba_pr109.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_vector_concat_pr109 --out reports/pr109 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -435,3 +444,9 @@ jobs:
             reports/pr108/**/fixture/elaborated_ast.json
             reports/pr108/**/fixture/rtl_index.json
             reports/pr108/**/fixture/rtl_dependencies.json
+            reports/pr109/**/summary.json
+            reports/pr109/**/*.vector-concat.json
+            reports/pr109/**/simulation_results.xml
+            reports/pr109/**/fixture/elaborated_ast.json
+            reports/pr109/**/fixture/rtl_index.json
+            reports/pr109/**/fixture/rtl_dependencies.json

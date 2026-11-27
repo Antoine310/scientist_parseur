@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.42 — 27 novembre 2026 (fusion #107, chantier #108)**  
+**Version : 1.43 — 27 novembre 2026 (fusion #108, chantier #109)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #107** (`3fe7421eee587fd3669bfa7b603832fc807c7aa0`). #107 CI50/50,1751/1751 locaux ; main [46005890496](https://github.com/Antoine310/scientist_parseur/actions/runs/46005890496) à relever après achèvement.
-**PR en cours : #108**, candidats NBA à cibles generate ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #108** (`e2a65ba1d1a8b15e26619d75663637d1669b4633`). #108 CI50/50,1785/1785 locaux ; main [46007356091](https://github.com/Antoine310/scientist_parseur/actions/runs/46007356091) à relever après achèvement.
+**PR en cours : #109**, concaténations vectorielles NBA à sélections fixes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -744,10 +744,17 @@ Validation #106 : [commentaire permanent](https://github.com/Antoine310/scientis
 
 Validation locale #107 corrigée : head 7fc056994cd2f97506553b5a9d75656e8e479049, 20/20 en0,19 s et1751/1751 en7,09 s (SHA non réaffiché), reports/pr107/run-bbxgrxxz/summary.json passed, 6 designs. Fixture7 AST/4 refus/2 positions déjà existantes ; ALU612/0/0,core3811/5/3,axis44/0/0,encoder9/0/0,rxuart87/2/0 (concat #106). 3 champs PR80/88,2 scopes generate, zéro nouvel enregistrement/arête, replay et PR67 exacts. [Rapport](https://github.com/Antoine310/scientist_parseur/pull/107#issuecomment-7219231710). Initiale head991264c : 1750/1750 7,17 s, runner top erroné avant audit, run-ax3c5oxw, CI annulée40 success/9 cancelled/1 failure. Correctif top dérivé + test + census exact. Main #106 CI50/50,362 s. CI corrigée 50/50,363 s, head exact, artefact15200552325, [verdict permanent](https://github.com/Antoine310/scientist_parseur/pull/107#issuecomment-7219299483). Fusion 3fe7421eee587fd3669bfa7b603832fc807c7aa0.
 
-### PR #108 — Cibles NBA generate (en cours)
+### PR #108 — Cibles NBA generate (fusionnée)
 
-- [~] **PR108-GENERATE-NBA-01 · P0** — PR107-SCOPE-01 : deux destinations CSR exactes, sélection fixe scalaire et vecteur 32 bits, candidats locaux séparés (33 records attendus), refus explicites. Fixture deux scopes homonymes, quatre sites/10 records, 768 tuples simulation,43 Z3 modèle. Pas de promotion historique, aucune preuve RTL/temporelle.
+- [x] **PR108-GENERATE-NBA-01 · P0** — PR107-SCOPE-01 : deux destinations CSR exactes, sélection fixe scalaire et vecteur 32 bits, candidats locaux séparés (33 records attendus), refus explicites. Fixture deux scopes homonymes, quatre sites/10 records, 768 tuples simulation,43 Z3 modèle. Pas de promotion historique, aucune preuve RTL/temporelle.
 - [ ] **PR108-SCOPE-GENERAL-01 · P0** — Autres scopes, sources/targets composés, indices dynamiques, conversions, intégration/versionnement public et corpus supplémentaires ; PR107-SCOPE-01 globale reste ouverte. PR106-CONCAT-GENERAL-01, PR105-INITIAL-01 et autres dettes préservées.
+
+Validation #108 : [local](https://github.com/Antoine310/scientist_parseur/pull/108#issuecomment-7219482048), [CI](https://github.com/Antoine310/scientist_parseur/pull/108#issuecomment-7219510930), head a272b4cd1f20fa90ca76802081e2db17456c8ea8, fusion e2a65ba1d1a8b15e26619d75663637d1669b4633. Local34/34 0,20 s,1785/1785 6,89 s, reports/pr108/run-6qcqfont/summary.json passed, 6 designs, fixture4/4 sites/10 records,core2/2/33,3 PR80/88 non recomptées ; replay exact. Cocotb1/1,1536 ns,768 tuples, SHA256 fixture0855e77d00932bac6b28d3157bf953a50c2eb9251ee098def43d43a83bb3473d. reports/pr108-formal/run-zhr6g8pr/summary.json passed,43 Z3 (3 UNSAT modèles,37 SAT sensibilités,3 SAT mutants). Initiale fcb93ef :1781/1781,6,97 s, fixture3/4,6/10, failed run-gyukruvf ; correctif bornes RangeSelect, cause initiale précise inférée, oracle inchangé. CI initiale annulée189 s (37 succès/12 annulés/1 échec), intermédiaire annulée35 s (1 annulé/48 skipped/1 échec), finale50/50,353 s ; main #107 50/50,265 s. Artefacts15201912795/15201816919. PR107-SCOPE-01 et PR108-SCOPE-GENERAL-01 restent ouvertes globalement.
+
+### PR #109 — Concaténations vectorielles NBA (en cours)
+
+- [~] **PR109-VECTOR-CONCAT-01 · P0** — Concat plate de scalaires/vecteurs/sélections fixes, largeur et type exacts, ordre LSB, chevauchement destination (signal,bit) refusé, identité exacte, PR106 d'abord pour éviter recompte. Fixture2 sites/9 records,768 assertions simulation,20 Z3 modèle attendus. Six designs, aucun nouveau site réel attendu ; rxuart2/6 déjà PR106, core5 hors famille. Pas de promotion.
+- [ ] **PR109-CONCAT-CORPUS-01 · P0** — Corpus indépendant comportant des concat vectorielles pertinentes, nested/alias/dynamique/conversions et sémantique quatre états restent ouverts ; PR106-CONCAT-GENERAL-01 globale non close. Initial PR105-INITIAL-01 ensuite ; préserver toutes dettes et bilan cœur indicatif.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
