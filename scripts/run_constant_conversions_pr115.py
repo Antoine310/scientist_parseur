@@ -52,7 +52,7 @@ def check(name,result):
     for row in result["items"]:
         if row["coverage"]=="partial":
             assert name=="core" and row["flat_assignment_id"]==314
-            assert row["reason"]=="not_explicit_unsigned_integral_type"
+            assert row["reason"]=="unsupported_assignment_context"
             continue
         x=row["candidate"];dst=x["target"];bits=dst["bits_lsb_first"]
         assert len(dst["outer_packed_indices"])==1
