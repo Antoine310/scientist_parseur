@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.28 — 27 novembre 2026 (fusion #93, chantier #94)**  
+**Version : 1.29 — 27 novembre 2026 (fusion #94, chantier #95)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #93** (`4bf25f98d860bd417e35d29d5b84fab3c5372ecc`). #93 50/50 CI sur e67a6ab, 1436/1436 locaux ; post-fusion à relever. #92 main 50/50 en 256 s.
-**PR en cours : #94**, exposition MCP lecture seule ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #94** (`5331a855e149a65e2a1697158be2f894bcd0a585`). #94 50/50 CI sur 8aabc00, 1452/1452 locaux ; post-fusion à relever. #93 main 50/50 en 251 s.
+**PR en cours : #95**, audit détaillé des résidus historiques ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -622,15 +622,26 @@ Validation #92 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/9
 
 - [x] **PR93-CLI-01 · P1** — `deps --member-positions/--member-combinational/--member-sequential`, raccourci `--member-all`. Défaut historique inchangé, propagation au moteur, provenance/fingerprint conservées, compteurs dans deps.result uniquement sur opt-in, pas de mélange des graphes ni de dénominateurs. Échec de construction sans ancien graphe trompeur.
 - [x] **PR93-QUERY-01 · P1** — Consultation lecture seule `member-evidence GRAPH --category ... --signal ... --limit ... --offset ...` ; catégories distinctes, filtrage exact source ou cible, pagination max100, lecture bornée 64 Mio et gate valeurs/profondeur, absence de canal distincte de zéro publié, contrôle structure/compteurs/provenance sans prétendre revalider les preuves. 27 tests ciblés attendus ; runner vrai CLI huit combinaisons fixture, ALU/core tous canaux, égalité API même AST, pagination, oracle #90. 
-- [ ] **PR93-MCP-SIZE-01 · P1** — MCP existant max 32 Mio graphe ; taille cœur historique 33322406 octets proche de la limite, nouveau JSON indenté à mesurer. #94 exposition lecture seule via module query, réexaminer budget d'admission et bornes réponse sans exposer chemin arbitraire ou exécuter EDA. Les limites historiques de couverture/preuve restent ouvertes.
+- [x] **PR93-MCP-SIZE-01 · P1** — MCP existant max 32 Mio graphe ; taille cœur historique 33322406 octets proche de la limite, nouveau JSON indenté à mesurer. #94 exposition lecture seule via module query, réexaminer budget d'admission et bornes réponse sans exposer chemin arbitraire ou exécuter EDA. Les limites historiques de couverture/preuve restent ouvertes.
  
 Validation #93 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/93#issuecomment-7213337324), SHA exact e67a6ab, 27/27 ciblés 0,27 s, 1436/1436 4,37 s, reports/pr93/run-6jaze7c1/summary.json passed. 8 combinaisons fixture 0/5/2/7/5/10/7/12 records, ALU 0, core 1481 ; égalité CLI/API, graphe historique et pagination exacte. Core JSON indenté 35378741 octets contre 33322406 historique, +6,17 %, dépasse plafond MCP 32 Mio de 1824309 octets. Core pipeline historique 4,557208 s, build 2,122867 s, RSS Python/slang 184668/231928 Kio, aucune troncature ; pas de benchmark apparié ni nouvelle simulation. CI 50/50 216 s, fusion 4bf25f9, #92 main 256 s.
 
-### PR #94 — Exposition MCP lecture seule (en cours)
+### PR #94 — Exposition MCP lecture seule (fusionnée)
 
-- [~] **PR94-MCP-01 · P1** — Outil `rtl_member_evidence(category,signal,limit,offset)` dans SDK 2.3.0 stdio existant, réutilise query_members #93, signal exact du graphe, provenance/empreinte et statut fraîcheur du snapshot, absent distinct de zéro. 18 outils attendus, aucun fichier choisi par agent, aucune exécution EDA, aucune modification du graphe.
-- [~] **PR94-BUDGET-01 · P1** — Plafond graphe 64 Mio aligné CLI, lecture bornée même si fichier grossit, gate valeurs/profondeur et validation des canaux à l'admission. Page max100, réponse structurée JSON compact ASCII max256 Kio (hors enveloppe protocole), refus explicite si dépassée, sans couper un candidat. Les autres outils MCP conservent leurs budgets historiques de pagination ; plafond global mémoire/CPU et taille des autres réponses restent à étudier.
-- [~] **PR94-VALIDATION-01 · P1** — 16 tests ciblés attendus, SDK réel stdio quatre snapshots #93 (fixture défaut, fixture opt-in, ALU, cœur), pagination complète, comparaison exacte backend CLI, empreintes inchangées, erreurs paramètres, anciennes intégrations maintenues. Même job partagé, 50 jobs. Pas d'association de preuve par signal ni de nouvelle validation formelle. #95 audit des raisons détaillées résiduelles, #96 arithmétique.
+- [x] **PR94-MCP-01 · P1** — Outil `rtl_member_evidence(category,signal,limit,offset)` dans SDK 2.3.0 stdio existant, réutilise query_members #93, signal exact du graphe, provenance/empreinte et statut fraîcheur du snapshot, absent distinct de zéro. 18 outils attendus, aucun fichier choisi par agent, aucune exécution EDA, aucune modification du graphe.
+- [x] **PR94-BUDGET-01 · P1** — Plafond graphe 64 Mio aligné CLI, lecture bornée même si fichier grossit, gate valeurs/profondeur et validation des canaux à l'admission. Page max100, réponse structurée JSON compact ASCII max256 Kio (hors enveloppe protocole), refus explicite si dépassée, sans couper un candidat. Les autres outils MCP conservent leurs budgets historiques de pagination ; plafond global mémoire/CPU et taille des autres réponses restent à étudier.
+- [x] **PR94-VALIDATION-01 · P1** — 16 tests ciblés attendus, SDK réel stdio quatre snapshots #93 (fixture défaut, fixture opt-in, ALU, cœur), pagination complète, comparaison exacte backend CLI, empreintes inchangées, erreurs paramètres, anciennes intégrations maintenues. Même job partagé, 50 jobs. Pas d'association de preuve par signal ni de nouvelle validation formelle. #95 audit des raisons détaillées résiduelles, #96 arithmétique.
+
+Validation #94 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/94#issuecomment-7213531948), SHA exact 8aabc00, 16/16 ciblés 0,16 s, 1452/1452 6,26 s, reports/pr94/run-dunrdcyd/summary.json passed. SDK 2.3.0, 4 snapshots 18 outils, 0/12/0/1481 records, 1/1/1/15 pages, réponses max1248/12321/2931/108106 octets ; graphes 31310/49078/5306791/35783104 octets. Égalité exacte backend, empreintes entrées inchangées, 16 refus protocolaires attendus. Core historique pipeline3,836321 s, build1,908772 s, RSS Python/slang186744/215632 Kio, AST/index/graphe49951663/908737/33692706 octets, variation #93 non expliquée définitivement (chemins plus longs possibles). Pas de benchmark apparié ni preuve nouvelle. CI #94 50/50 268 s, fusion 5331a85, #93 main 251 s.
+
+- [ ] **PR94-ERROR-01 · P2** — Erreurs MCP attendues plus explicites et moins verbeuses ; conserver refus et sécurité, ne pas supprimer les exceptions inattendues.
+- [ ] **PR94-GLOBAL-BUDGET-01 · P2** — Auditer les autres outils MCP et budgets globaux mémoire/CPU/transport ; le plafond 256 Kio concerne uniquement réponse structurée membre.
+
+### PR #95 — Audit des résidus historiques (en cours)
+
+- [~] **PR95-IDS-01 · P1** — Recalcul union explicite six canaux #91, 98/384 IDs restants attendus ; replay bit_accesses et bitgraph exacts sur même AST/index, capture par identité objet/ordinal existante (pas de rapprochement ligne/nom), vérification métadonnées, refus de troncature et incohérences. Détail raison primaire, raison bit_access, refus liés par canal, cas sans ID séparés. Aucun membre ajouté.
+- [~] **PR95-SYNTAX-01 · P1** — Inventaire RHS borné : racine, racine après conversions, opérateurs imbriqués, types LHS/RHS, contexte, instance/module, localisation. Histogrammes raisons et racines disjoints, opérateurs et refus potentiellement chevauchants, expliciter limites ; pas de prédiction d'éligibilité ni preuve d'influence. Résultats détaillés par ID en JSON, synthèse compacte. 15 tests ciblés attendus, 1467 suite attendue, 50 jobs. Pas de modification du moteur de dépendances.
+- [ ] **PR95-ARITH-01 · P1** — Prioriser #96 selon résultats réels, distinguer addition/soustraction, comparaison, décalage, conversion, index et conditions ; sélectionner oracles indépendants et mutants. Pas de déduction de couverture globale à partir des 482 résidus (deux designs, univers séparés).
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
