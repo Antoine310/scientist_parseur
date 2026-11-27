@@ -159,17 +159,20 @@ def expand(node,context,resolve,declared,types,observed):
     return "concat",[],constants,gaps
 
 
-def audit_patterns(ast,index, *, include_occurrence=False):
-    inspect_ast(ast)
-    types=Types(ast)
+def audit_patterns(ast,index, *, include_occurrence=False, _shared=None):
+    if _shared is None:
+        inspect_ast(ast)
+    else:
+        _shared.check_inputs(ast,index)
+    types = Types(ast) if _shared is None else _shared.types
     if types.truncated:
         raise Unsupported("package_inventory_budget")
-    observed=observed_members(ast,types)
-    resolver=SignalResolver(ast,index)
-    declared=raw_layouts(index)
-    instances={i["path"] for i in index["instances"]}
+    observed = observed_members(ast, types) if _shared is None else _shared.package_observations
+    resolver = SignalResolver(ast, index) if _shared is None else _shared.resolver
+    declared = raw_layouts(index) if _shared is None else _shared.declared
+    instances = {i["path"] for i in index["instances"]} if _shared is None else _shared.instances
     rows,edges,constants=[],[],[]
-    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
+    for ordinal, (owner, context, node) in (enumerate(assignment_sites(ast)) if _shared is None else _shared.member_assignments):
         rhs=node.get("right")
         if not isinstance(rhs,dict) or rhs.get("kind") not in ("StructuredAssignmentPattern","Concatenation") or not member_sites(rhs):
             continue

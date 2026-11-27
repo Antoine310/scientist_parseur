@@ -147,17 +147,20 @@ def expand(node, resolve, declared, types, observations):
             for (s, sb, sf), (t, tb, tf) in zip(src, dst)]
 
 
-def audit_members(ast, index, *, include_occurrence=False):
-    inspect_ast(ast)
-    types = Types(ast)
+def audit_members(ast, index, *, include_occurrence=False, _shared=None):
+    if _shared is None:
+        inspect_ast(ast)
+    else:
+        _shared.check_inputs(ast,index)
+    types = Types(ast) if _shared is None else _shared.types
     if types.truncated:
         raise Unsupported("package_inventory_budget")
-    observations = observed_members(ast, types)
-    resolver = SignalResolver(ast, index)
-    declared = raw_layouts(index)
+    observations = observed_members(ast, types) if _shared is None else _shared.package_observations
+    resolver = SignalResolver(ast, index) if _shared is None else _shared.resolver
+    declared = raw_layouts(index) if _shared is None else _shared.declared
     rows, edges = [], []
-    instances = {i["path"] for i in index["instances"]}
-    for ordinal, (owner, context, node) in enumerate(assignment_sites(ast)):
+    instances = {i["path"] for i in index["instances"]} if _shared is None else _shared.instances
+    for ordinal, (owner, context, node) in (enumerate(assignment_sites(ast)) if _shared is None else _shared.member_assignments):
         lhs, rhs = node.get("left"), node.get("right")
         if not (member_sites(lhs) or member_sites(rhs)):
             continue

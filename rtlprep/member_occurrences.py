@@ -6,6 +6,7 @@ Exact-record grouping is not semantic equivalence or a graph promotion.
 """
 from collections import defaultdict
 import json
+from functools import cached_property
 
 from .aggregate_layout import assignment_sites, member_sites
 from .analysis_budgets import inspect_ast
@@ -15,10 +16,9 @@ from .member_evidence import PRODUCERS, normalize, natural
 MAX_OCCURRENCES=100000
 
 
-def occurrence_inventory(ast):
-    inspect_ast(ast)
+def _inventory(sites):
     out={}
-    for ordinal,(owner,context,node) in enumerate(assignment_sites(ast)):
+    for ordinal,(owner,context,node) in enumerate(sites):
         if ordinal>=MAX_OCCURRENCES:
             raise Unsupported("occurrence_inventory_budget")
         if not (member_sites(node.get("left")) or member_sites(node.get("right"))):
@@ -31,13 +31,66 @@ def occurrence_inventory(ast):
     return out
 
 
+def occurrence_inventory(ast):
+    inspect_ast(ast)
+    return _inventory(assignment_sites(ast))
+
+
+class _SharedAudit:
+    """Private, call-local snapshot. AST/index are read-only during collection."""
+    def __init__(self,ast,index):
+        inspect_ast(ast)
+        self.ast,self.index=ast,index
+        sites=[]
+        for site in assignment_sites(ast):
+            if len(sites)>=MAX_OCCURRENCES:
+                raise Unsupported("occurrence_inventory_budget")
+            sites.append(site)
+        self.sites=tuple(sites)
+        self.inventory=_inventory(self.sites)
+        self.member_assignments=tuple((i,self.sites[i]) for i in self.inventory)
+
+    def check_inputs(self,ast,index):
+        if ast is not self.ast or index is not self.index:
+            raise Unsupported("shared_member_input_identity_disagreement")
+
+    @cached_property
+    def types(self):
+        from .typed_layout import Types
+        return Types(self.ast)
+
+    @cached_property
+    def package_observations(self):
+        # Observe the whole AST, including tokens outside active assignments.
+        # Do not filter this inventory: token ambiguity must remain detectable.
+        from .packed_members import observed_members
+        return observed_members(self.ast,self.types)
+
+    @cached_property
+    def resolver(self):
+        from .symbols import SignalResolver
+        return SignalResolver(self.ast,self.index)
+
+    @cached_property
+    def declared(self):
+        from .typed_layout import raw_layouts
+        return raw_layouts(self.index)
+
+    @cached_property
+    def instances(self):
+        return {i["path"] for i in self.index["instances"]}
+
+
 def canonical(value):
     return json.dumps(value,sort_keys=True,separators=(",",":"),ensure_ascii=True,allow_nan=False)
 
 
 def link(ast,envelope):
     """Link an envelope freshly produced from this exact AST, not external JSON."""
-    inventory=occurrence_inventory(ast)
+    return _link_inventory(occurrence_inventory(ast),envelope)
+
+
+def _link_inventory(inventory,envelope):
     groups={n:{**v,"row_ids":[],"record_ids":[]} for n,v in inventory.items()}
     row_to_occ={}
     seen=set()
@@ -127,7 +180,13 @@ def link(ast,envelope):
                      "Overlap/disagreement diagnostics are candidate-level, not proof of circuit conflict."}
 
 
-def collect_linked(ast,index):
-    reports={name:audit(ast,index,include_occurrence=True) for name,audit in PRODUCERS}
+def collect_linked(ast,index,*,shared=True):
+    """Collect fresh evidence; shared=False retains the independent reference."""
+    if not shared:
+        reports={name:audit(ast,index,include_occurrence=True) for name,audit in PRODUCERS}
+        envelope=normalize(reports)
+        return envelope,reports,link(ast,envelope)
+    context=_SharedAudit(ast,index)
+    reports={name:audit(ast,index,include_occurrence=True,_shared=context) for name,audit in PRODUCERS}
     envelope=normalize(reports)
-    return envelope,reports,link(ast,envelope)
+    return envelope,reports,_link_inventory(context.inventory,envelope)

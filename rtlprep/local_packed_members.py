@@ -190,17 +190,20 @@ def expand(node, owner, resolve, declared, types, observed):
     raise Unsupported("unsupported_local_member_assignment")
 
 
-def audit_local_members(ast, index, *, include_occurrence=False):
-    inspect_ast(ast)
+def audit_local_members(ast, index, *, include_occurrence=False, _shared=None):
+    if _shared is None:
+        inspect_ast(ast)
+    else:
+        _shared.check_inputs(ast,index)
     types = local_types(ast)
-    resolver = SignalResolver(ast, index)
-    declared = raw_layouts(index)
-    instances = {i["path"] for i in index["instances"]}
+    resolver = SignalResolver(ast, index) if _shared is None else _shared.resolver
+    declared = raw_layouts(index) if _shared is None else _shared.declared
+    instances = {i["path"] for i in index["instances"]} if _shared is None else _shared.instances
     # Bounded by inspect_ast and the explicit report row budget.
-    sites = list(assignment_sites(ast))
+    sites = list(assignment_sites(ast)) if _shared is None else _shared.sites
     observed = observations(sites, types)
     rows, edges, constants = [], [], []
-    for ordinal, (owner, context, node) in enumerate(sites):
+    for ordinal, (owner, context, node) in (enumerate(sites) if _shared is None else _shared.member_assignments):
         relevant = False
         for side in ("left", "right"):
             e = node.get(side)
