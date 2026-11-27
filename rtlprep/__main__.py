@@ -41,6 +41,16 @@ def main() -> int:
             s.add_argument("--member-combinational", action="store_true", help="constantes et références logiques candidates")
             s.add_argument("--member-sequential", action="store_true", help="relations NBA locales candidates")
             s.add_argument("--member-all", action="store_true", help="activer les trois canaux membres")
+    cb = sub.add_parser("selection-census-build", help="publier un census V1/V2 séparé depuis les artefacts deps existants")
+    cb.add_argument("artifact_dir", type=Path)
+    cb.add_argument("--out", type=Path, required=True)
+    cq = sub.add_parser("selection-census", help="interroger un census stocké, sans EDA")
+    cq.add_argument("report", type=Path)
+    cq.add_argument("--version", type=int, choices=(1,2), required=True)
+    cq.add_argument("--classification", choices=("captured","no_selection_syntax_in_operands","selection_gate_missed_syntax","unsupported_target","not_visited_by_historical_walker"))
+    cq.add_argument("--instance")
+    cq.add_argument("--limit", type=int, default=20)
+    cq.add_argument("--offset", type=int, default=0)
     members = sub.add_parser("member-evidence", help="consulter les candidats membres d'un graphe existant")
     members.add_argument("graph_file", type=Path)
     members.add_argument("--category", choices=("position","local_constant","configuration_constant",
@@ -58,6 +68,7 @@ def main() -> int:
     mcp_cmd.add_argument("--graph", type=Path, default=None, help="rtl_dependencies.json déjà calculé")
     mcp_cmd.add_argument("--manifest", type=Path, default=None, help="design.json autorisant les extraits RTL")
     mcp_cmd.add_argument("--reports-dir", type=Path, default=None, help="dossier des rapports JSON existants")
+    mcp_cmd.add_argument("--selection-census", type=Path, default=None, help="census V1/V2 explicitement autorisé")
     q = sub.add_parser("query", help="interroger un rtl_index.json déjà généré")
     q.add_argument("index_file")
     qsub = q.add_subparsers(dest="query_type", required=True)
@@ -87,7 +98,8 @@ def main() -> int:
             # Import local : les autres commandes n'exigent pas le SDK MCP.
             from .mcp_server import serve
             serve(index_file=args.index, graph_file=args.graph,
-                  manifest_file=args.manifest, reports_dir=args.reports_dir)
+                  manifest_file=args.manifest, reports_dir=args.reports_dir,
+                  **({"census_file":args.selection_census} if args.selection_census is not None else {}))
             return 0
         except (OSError, ValueError, RuntimeError) as exc:
             p.exit(2, f"Erreur MCP : {exc}\\n")
@@ -106,6 +118,16 @@ def main() -> int:
         print(json.dumps(doctor(), ensure_ascii=False, indent=2))
         return 0
     try:
+        if args.cmd == "selection-census-build":
+            from .census_query import export_report
+            print(json.dumps(export_report(args.artifact_dir,args.out),ensure_ascii=False,indent=2))
+            return 0
+        if args.cmd == "selection-census":
+            from .census_query import load_report, query_census
+            result=query_census(load_report(args.report),version=args.version,classification=args.classification,
+                                instance=args.instance,limit=args.limit,offset=args.offset)
+            print(json.dumps(result,ensure_ascii=False,indent=2))
+            return 0
         if args.cmd == "member-evidence":
             from .member_query import load_member_graph, query_members
             graph = load_member_graph(args.graph_file)

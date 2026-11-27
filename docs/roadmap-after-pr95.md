@@ -33,6 +33,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #102** : audit P0 validé ; 13 omissions core (7 appels,5 conditions ternaires,1 pattern), zéro ALU ; 5 cibles CSR non supportées. #103 corrige l'admission en mode opt-in versionné, lignes nouvelles partielles, projection historique exacte ; intégration publique et corpus indépendants ultérieurs. Unions #95–101 inchangées, phases A–H préservées.
 
+**Révision après #103** : admission v2 opt-in validée, core1199→1212, 13 nouvelles lignes partielles, zéro arête et zéro support ajouté, ALU479 inchangé. #104 publication séparée CLI/MCP avec versions explicites, provenance et budgets, corpus indépendants ; historique inchangé. Autres omissions et sémantique restent ouvertes.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

@@ -139,13 +139,20 @@ def create_server(snapshot: ReadOnlyRtl):
         """Lire les statuts de rapports existants, sans exécuter de validation."""
         return snapshot.validations(limit, offset)
 
+    if snapshot.selection_census_report is not None:
+        @server.tool(structured_output=True)
+        def rtl_selection_census(version: int, classification: str | None = None,
+                                 instance: str | None = None, limit: int = 20, offset: int = 0) -> dict[str, Any]:
+            """Lire un census stocké, version 1 ou 2 explicite, sans EDA ni preuve fonctionnelle."""
+            return snapshot.selection_census(version,classification,instance,limit,offset)
+
     return server
 
 
 def serve(*, index_file: Path | None = None, graph_file: Path | None = None,
           manifest_file: Path | None = None,
-          reports_dir: Path | None = None) -> None:
+          reports_dir: Path | None = None, census_file: Path | None = None) -> None:
     """Lancer un serveur stdio : aucune écoute HTTP, stdout réservé à MCP."""
     snapshot = ReadOnlyRtl(index_file=index_file, graph_file=graph_file,
-                           manifest_file=manifest_file, reports_dir=reports_dir)
+                           manifest_file=manifest_file, reports_dir=reports_dir, census_file=census_file)
     create_server(snapshot).run(transport="stdio")
