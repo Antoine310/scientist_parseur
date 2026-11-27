@@ -38,7 +38,7 @@ def check(name,result):
     wanted={"fixed_o":("LogicalShiftLeft",8,8,0,2,None,["d"],[list(range(8))]),
             "left_o":("LogicalShiftLeft",8,8,3,None,None,["d","k"],[list(range(8)),list(range(3))]),
             "right_o":("LogicalShiftRight",8,4,3,None,None,["d","k"],[list(range(8)),list(range(3))]),
-            "mask_o":("LogicalShiftLeft",32,32,5,None,0xfffffffe,["k"],[list(range(5))]) if name=="fixture" else {
+            "mask_o":("LogicalShiftLeft",32,32,5,None,0xfffffffe,["k"],[list(range(5))])} if name=="fixture" else {
             "bmask_first":("LogicalShiftLeft",32,32,5,None,0xfffffffe,["bmask_a_i"],[list(range(5))]),
             "shift_right_result":("LogicalShiftRight",64,32,5,None,None,["shift_op_a_32","shift_amt_int"],[list(range(64)),list(range(5))])}
     observed=set()
