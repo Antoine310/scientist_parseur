@@ -347,6 +347,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_shift_candidates_pr112 --out reports/pr112 --reference "${refs[0]}"
 
+      - name: PR113 controlled signed shift candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_signed_shift_pr113.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_signed_shift_pr113 --out reports/pr113 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -495,3 +504,9 @@ jobs:
             reports/pr112/**/fixture/elaborated_ast.json
             reports/pr112/**/fixture/rtl_index.json
             reports/pr112/**/fixture/rtl_dependencies.json
+            reports/pr113/**/summary.json
+            reports/pr113/**/*.signed-shifts.json
+            reports/pr113/**/simulation_results.xml
+            reports/pr113/**/fixture/elaborated_ast.json
+            reports/pr113/**/fixture/rtl_index.json
+            reports/pr113/**/fixture/rtl_dependencies.json
