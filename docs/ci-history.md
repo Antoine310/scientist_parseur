@@ -46,8 +46,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 94 | PR | 8aabc00 | [45964685033](https://github.com/Antoine310/scientist_parseur/actions/runs/45964685033) | 50/50 | 268 | 14 | 233 | 3 | 2487 | member-writes-pr80 196 s |
 | 94 | main | 5331a85 | [45966309480](https://github.com/Antoine310/scientist_parseur/actions/runs/45966309480) | 50/50 | 224 | 19 | 192 | 4 | 2332 | member-writes-pr80 191 s |
 | 95 | PR initiale | 1382878 | [45966588446](https://github.com/Antoine310/scientist_parseur/actions/runs/45966588446) | 2 échecs,48 ignorés | 21 | 12 | — | 2 | 14 | aucun spécialisé exécuté |
+| 95 | PR finale | 6dd33c5 | [45967267888](https://github.com/Antoine310/scientist_parseur/actions/runs/45967267888) | 50/50 | 202 | 13 | 177 | 2 | 2326 | member-writes-pr80 176 s |
+| 95 | main | 92fb24f | [45968843293](https://github.com/Antoine310/scientist_parseur/actions/runs/45968843293) | 50/50 | 217 | 18 | 186 | 2 | 2111 | member-writes-pr80 185 s |
 
-#95 initiale : 08:33:26→08:33:47 UTC tentative1, Python et verdict en échec, 48 ignorés (timestamps non interprétables, exclus du cumul jobs exécutés 14 s), local 13/15 ciblés,1465/1467 suite ; runner réel passed, fixture incorrecte guards/events absents. Correctif à revalider. #94 main 08:31:16→08:35:00 UTC tentative1, 50/50, partagé191 s. Aucun retry. 
+#95 finale : 08:38:44→08:42:06 UTC tentative1, local1469/1469 6,40 s, partagé176 s, deux heads cumul223 s fenêtre520 s, fusion92fb24f. Main 08:50:48→08:54:25 UTC tentative1, partagé185 s. Aucun retry. #96 conserve 50 jobs attendus.
+
+#95 initiale : 08:33:26→08:33:47 UTC tentative1, Python et verdict en échec, 48 ignorés (timestamps non interprétables, exclus du cumul jobs exécutés 14 s), local 13/15 ciblés,1465/1467 suite ; runner réel passed, fixture incorrecte guards/events absents. Correctif validé (voir #95 finale). #94 main 08:31:16→08:35:00 UTC tentative1, 50/50, partagé191 s. Aucun retry. 
 
 #94 : 08:18:45→08:23:13 UTC tentative1, partagé196 s, local1452/1452 6,26 s, fusion 5331a85, main réussi (voir tableau). #93 main 08:17:07→08:21:18 UTC, partagé187 s. Aucun échec/relance. #95 conserve 50 jobs attendus.
 
