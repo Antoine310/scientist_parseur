@@ -25,6 +25,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #98** : #97/#98 union exacte 31/31 ALU et64/64 core Add résiduelles, pas de promotion historique. #99 traite 2 racines Subtract core (offset LSU, masque shift), cinq imbriquées restent dette ; comparaisons ensuite selon résultats. Phase H conservée.
 
+**Révision après #99** : deux racines Subtract core caractérisées, union arithmétique 31 ALU/66 core, 67/318 résidus restants ; #100 égalités et inégalités directes après inspection AST, comparaisons d'ordre signées composées différées. Aucun gain annoncé avant validation. Les familles A–H restent inchangées.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
@@ -44,6 +46,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 ## G — Agents et démonstration (#146+)
 146 optimisation contexte ; 147 questions gelées indépendantes ; 148 agent RTL brut ; 149 agent RTLPrep ; 150 comparaison précision/abstention/coût/latence, conditions équivalentes et répétitions ; 151+ GhostGate/documentation/reproductibilité. Inclure groupe index seul A/B/C, FUT-AGENT-01 ; pas de gain annoncé sans mesure, pas de garantie concours.
+
+**FUT-MJOLNIR-STUDY-01 · P3** : audit différé de MJOLNIR, [fiche de recherche](research/mjolnir.md). Références utilisateur à vérifier ; aucune étude ou réutilisation immédiate, aucune modification des priorités. Liens FUT-MCP-01, FUT-AGENT-01, FUT-OT-01, FUT-EVIDENCE-BRIDGE-01.
 
 ## H — Documentation, pédagogie et publication (phase finale, numéros à fixer)
 
