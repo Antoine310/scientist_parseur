@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.27 — 27 novembre 2026 (fusion #92, chantier #93)**  
+**Version : 1.28 — 27 novembre 2026 (fusion #93, chantier #94)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #92** (`ea19b3ec0ad8c15eae295891800d44d4f4d4a992`). #92 50/50 CI sur 2ed2e0d, 1409/1409 locaux ; post-fusion à relever. #91 main 50/50 en 225 s.
-**PR en cours : #93**, exposition CLI opt-in et consultation paginée ; validation à effectuer.
+**Dernière PR fusionnée confirmée : #93** (`4bf25f98d860bd417e35d29d5b84fab3c5372ecc`). #93 50/50 CI sur e67a6ab, 1436/1436 locaux ; post-fusion à relever. #92 main 50/50 en 256 s.
+**PR en cours : #94**, exposition MCP lecture seule ; validation à effectuer.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -618,12 +618,20 @@ Validation finale #91 : [preuve](https://github.com/Antoine310/scientist_parseur
 
 Validation #92 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/92#issuecomment-7205432157), SHA exact 2ed2e0d, 11/11 ciblés 0,16 s, 1409/1409 7,74 s, reports/pr92/run-ea7ejg14/summary.json passed. Six designs, dix paires, rapports/enveloppe/linkage et graphes complets identiques. Core 30/1481 ; ALU 0 ; fixtures 2/12/6/24 records. Médianes build indépendante→partagée ALU 1,330794→0,652718 s (-50,95 %, delta apparié -0,678076), core 5,636274→2,969595 s (-47,31 %, delta -2,666679). VmHWM build ALU59348→59380 Kio, core163480→163492 ; après sérialisation core177164→175836, delta -1328 Kio. JSON identique 3161269/21954132 octets ; pas de généralisation. CI #92 50/50 265 s, fusion ea19b3e, #91 main 225 s.
 
-### PR #93 — Exposition CLI opt-in (en cours)
+### PR #93 — Exposition CLI opt-in (fusionnée)
 
-- [~] **PR93-CLI-01 · P1** — `deps --member-positions/--member-combinational/--member-sequential`, raccourci `--member-all`. Défaut historique inchangé, propagation au moteur, provenance/fingerprint conservées, compteurs dans deps.result uniquement sur opt-in, pas de mélange des graphes ni de dénominateurs. Échec de construction sans ancien graphe trompeur.
-- [~] **PR93-QUERY-01 · P1** — Consultation lecture seule `member-evidence GRAPH --category ... --signal ... --limit ... --offset ...` ; catégories distinctes, filtrage exact source ou cible, pagination max100, lecture bornée 64 Mio et gate valeurs/profondeur, absence de canal distincte de zéro publié, contrôle structure/compteurs/provenance sans prétendre revalider les preuves. 27 tests ciblés attendus ; runner vrai CLI huit combinaisons fixture, ALU/core tous canaux, égalité API même AST, pagination, oracle #90. 
+- [x] **PR93-CLI-01 · P1** — `deps --member-positions/--member-combinational/--member-sequential`, raccourci `--member-all`. Défaut historique inchangé, propagation au moteur, provenance/fingerprint conservées, compteurs dans deps.result uniquement sur opt-in, pas de mélange des graphes ni de dénominateurs. Échec de construction sans ancien graphe trompeur.
+- [x] **PR93-QUERY-01 · P1** — Consultation lecture seule `member-evidence GRAPH --category ... --signal ... --limit ... --offset ...` ; catégories distinctes, filtrage exact source ou cible, pagination max100, lecture bornée 64 Mio et gate valeurs/profondeur, absence de canal distincte de zéro publié, contrôle structure/compteurs/provenance sans prétendre revalider les preuves. 27 tests ciblés attendus ; runner vrai CLI huit combinaisons fixture, ALU/core tous canaux, égalité API même AST, pagination, oracle #90. 
 - [ ] **PR93-MCP-SIZE-01 · P1** — MCP existant max 32 Mio graphe ; taille cœur historique 33322406 octets proche de la limite, nouveau JSON indenté à mesurer. #94 exposition lecture seule via module query, réexaminer budget d'admission et bornes réponse sans exposer chemin arbitraire ou exécuter EDA. Les limites historiques de couverture/preuve restent ouvertes.
  
+Validation #93 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/93#issuecomment-7213337324), SHA exact e67a6ab, 27/27 ciblés 0,27 s, 1436/1436 4,37 s, reports/pr93/run-6jaze7c1/summary.json passed. 8 combinaisons fixture 0/5/2/7/5/10/7/12 records, ALU 0, core 1481 ; égalité CLI/API, graphe historique et pagination exacte. Core JSON indenté 35378741 octets contre 33322406 historique, +6,17 %, dépasse plafond MCP 32 Mio de 1824309 octets. Core pipeline historique 4,557208 s, build 2,122867 s, RSS Python/slang 184668/231928 Kio, aucune troncature ; pas de benchmark apparié ni nouvelle simulation. CI 50/50 216 s, fusion 4bf25f9, #92 main 256 s.
+
+### PR #94 — Exposition MCP lecture seule (en cours)
+
+- [~] **PR94-MCP-01 · P1** — Outil `rtl_member_evidence(category,signal,limit,offset)` dans SDK 2.3.0 stdio existant, réutilise query_members #93, signal exact du graphe, provenance/empreinte et statut fraîcheur du snapshot, absent distinct de zéro. 18 outils attendus, aucun fichier choisi par agent, aucune exécution EDA, aucune modification du graphe.
+- [~] **PR94-BUDGET-01 · P1** — Plafond graphe 64 Mio aligné CLI, lecture bornée même si fichier grossit, gate valeurs/profondeur et validation des canaux à l'admission. Page max100, réponse structurée JSON compact ASCII max256 Kio (hors enveloppe protocole), refus explicite si dépassée, sans couper un candidat. Les autres outils MCP conservent leurs budgets historiques de pagination ; plafond global mémoire/CPU et taille des autres réponses restent à étudier.
+- [~] **PR94-VALIDATION-01 · P1** — 16 tests ciblés attendus, SDK réel stdio quatre snapshots #93 (fixture défaut, fixture opt-in, ALU, cœur), pagination complète, comparaison exacte backend CLI, empreintes inchangées, erreurs paramètres, anciennes intégrations maintenues. Même job partagé, 50 jobs. Pas d'association de preuve par signal ni de nouvelle validation formelle. #95 audit des raisons détaillées résiduelles, #96 arithmétique.
+
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
 Le document est introduit par une PR exclusivement documentaire, envisagée #66. Les travaux moteur partent **après fusion effective de #65 et de cette documentation**. Les numéros suivants sont prévisionnels, les IDs de dettes restent permanents.

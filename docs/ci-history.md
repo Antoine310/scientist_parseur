@@ -40,8 +40,12 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 91 | PR finale | 00daf57 | [45901030741](https://github.com/Antoine310/scientist_parseur/actions/runs/45901030741) | 50/50 | 215 | 11 | 191 | 4 | 2045 | member-writes-pr80 120 s |
 | 91 | main | 11cd261 | [45904603287](https://github.com/Antoine310/scientist_parseur/actions/runs/45904603287) | 50/50 | 225 | 15 | 197 | 4 | 2050 | member-writes-pr80 119 s |
 | 92 | PR | 2ed2e0d | [45904793862](https://github.com/Antoine310/scientist_parseur/actions/runs/45904793862) | 50/50 | 265 | 13 | 240 | 3 | 2144 | member-writes-pr80 160 s |
+| 92 | main | ea19b3e | [45963571553](https://github.com/Antoine310/scientist_parseur/actions/runs/45963571553) | 50/50 | 256 | 12 | 210 | 3 | 2065 | member-writes-pr80 155 s |
+| 93 | PR | e67a6ab | [45963846881](https://github.com/Antoine310/scientist_parseur/actions/runs/45963846881) | 50/50 | 216 | 20 | 181 | 5 | 2165 | member-writes-pr80 161 s |
 
-#92 : 22:26:20→22:30:45 UTC tentative1, partagé160 s, local1409/1409 7,74 s, fusion ea19b3e, main à relever. #91 main 22:24:34→22:28:19 UTC, partagé119 s. Aucun échec/relance. #93 conserve 50 jobs attendus.
+#93 : 08:12:06→08:15:42 UTC tentative1, partagé161 s, local1436/1436 4,37 s, fusion 4bf25f9, main à relever. #92 main 08:09:57→08:14:13 UTC, partagé155 s. Aucun échec/relance. #94 conserve 50 jobs attendus.
+
+#92 : 22:26:20→22:30:45 UTC tentative1, partagé160 s, local1409/1409 7,74 s, fusion ea19b3e, main réussi (voir tableau). #91 main 22:24:34→22:28:19 UTC, partagé119 s. Aucun échec/relance. #93 conserve 50 jobs attendus.
 
 #91 finale : 21:52:08→21:55:43 UTC, tentative1, partagé120 s, local1398/1398 7,70 s, RSS corrigé et scientifique passed ; deux heads cumul460 s, fenêtre714 s, aucun échec/relance. Fusion 11cd261, main réussi (voir tableau). #92 conserve 50 jobs attendus.
 

@@ -375,3 +375,7 @@ vers une même cible **dans un même processus**. Une branche sans
 écriture est un **candidat de maintien**, non une preuve fonctionnelle.
 Les constructions non couvertes retournent `partial` / `unknown`.
 Voir [register-flow-mcp.md](register-flow-mcp.md).
+
+## Candidats membres (PR #94)
+
+Voir [CLI et consultation MCP des candidats membres](member-mcp-pr94.md). Outil `rtl_member_evidence` en lecture seule, graphe généré avec `--member-all`, pagination et budget explicites. Redémarrer le serveur après régénération.
