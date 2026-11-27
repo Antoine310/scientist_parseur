@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.39 — 27 novembre 2026 (fusion #104, chantier #105)**  
+**Version : 1.40 — 27 novembre 2026 (fusion #105, chantier #106)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #104** (`cfce52cb503cb121b4af42f6fc64857c8cb23bfd`). #104 CI50/50,1684/1684 locaux ; main [46001942369](https://github.com/Antoine310/scientist_parseur/actions/runs/46001942369) à relever après achèvement.
-**PR en cours : #105**, audit P0 des exclusions du walker ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #105** (`4ec7d64140b84f5eac0f370f94ef5a05b3269f4e`). #105 CI50/50,1703/1703 locaux ; main [46003055540](https://github.com/Antoine310/scientist_parseur/actions/runs/46003055540) à relever après achèvement.
+**PR en cours : #106**, candidats NBA à cibles concaténées scalaires ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -720,13 +720,20 @@ Validation #103 : [commentaire permanent](https://github.com/Antoine310/scientis
 
 Validation #104 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/104#issuecomment-7218707415), head e622dbc3faa91f81b43c8396b631c8f2e43449e2, fusion cfce52cb503cb121b4af42f6fc64857c8cb23bfd. Local29/29 0,21 s et1684/1684 7,34 s ; reports/pr104/run-25vlkfqz/summary.json passed, 4 dépôts/15 fichiers épinglés, 6 cas,43 pages MCP (2/10/25/2/2/2),24 refus attendus, SHA local non affiché dans extrait. Fixture3/1→2, ALU612/479→479, core3811/1199→1212,531 supportées,13 ajoutées partielles, zéro arête. Externes axis_register44/4→4/0 supportée, priority_encoder9/8→8/0, rxuart87/16→16/1,54 sans sélection,15 non visitées,2 cibles non supportées. Parité CLI/MCP, entrées inchangées ; 19 outils avec census,18 sinon. CI50/50,258 s, main #103 50/50,296 s ; artefact15199185312. PR101-CAPTURE-01/PR102-VERSION-01 satisfaites pour l'admission/publication opt-in des 13 sites mesurés, migration défaut/corpus plus larges et autres omissions ouvertes ; ne pas modifier l'historique. 
 
-- [~] **PR104-WALK-01 · P0** — Auditer les 15 non visitées rxuart, toutes Initial d'après artefact #104, 1 sélection de plage ; établir les frontières effectives par traçage, distinguer des 2 cibles concaténées refusées. Aucune promotion.
+- [x] **PR104-WALK-01 · P0** — Auditer les 15 non visitées rxuart, toutes Initial d'après artefact #104, 1 sélection de plage ; établir les frontières effectives par traçage, distinguer des 2 cibles concaténées refusées. Aucune promotion.
 - [ ] **PR104-MCP-ERROR-01 · P2** — Erreurs attendues MCP présentées en UnexpectedToolError ; améliorer messages structurés et lisibles sans masquer les erreurs inattendues, conserver is_error et les contraintes. 24 refus attendus #104, runner passed.
 
-### PR #105 — Audit des exclusions du walker (en cours)
+### PR #105 — Audit des exclusions du walker (fusionnée)
 
-- [~] **PR105-TRACE-01 · P0** — Traçage opt-in des décisions effectives, rapprochement par identité/instance/ancêtre JSON pointer, replay historique exact. Fixture Initial et RepeatLoop, 6 designs épinglés, oracle PR67, refus explicites, non expliqué reste explicite. Attendu rxuart15 exclusions Initial dont1 sélection,2 concaténations refusées ; aucune modification de graphe.
+- [x] **PR105-TRACE-01 · P0** — Traçage opt-in des décisions effectives, rapprochement par identité/instance/ancêtre JSON pointer, replay historique exact. Fixture Initial et RepeatLoop, 6 designs épinglés, oracle PR67, refus explicites, non expliqué reste explicite. Attendu rxuart15 exclusions Initial dont1 sélection,2 concaténations refusées ; aucune modification de graphe.
 - [ ] **PR105-INITIAL-01 · P1** — Étudier sémantique des initialisations et périmètre synthétisable (simulation/formel, état au démarrage, X/Z, priorité et temporalité), ne pas assimiler Initial à Always ni à une constante. **PR105-CONCAT-TARGET-01 · P0** — Auditer et caractériser les cibles concaténées (rxuart2), widths/ordre/alias/positions et refus, corpus indépendants. Les cinq cibles CSR et autres P0 restent ouvertes.
+
+Validation #105 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/105#issuecomment-7218894883), head 7819aa8bce55f5e585e1b987fe7a2a3af971b643, fusion 4ec7d64140b84f5eac0f370f94ef5a05b3269f4e. Local19/19 0,12 s,1703/1703 7,27 s ; reports/pr105/run-ndqfq508/summary.json passed, fixture5 AST/1 capture/3 non visitées (2 Initial,1 RepeatLoop),2 frontières et2 sélections ; ALU612/479,core3811/1199/13 omissions filtre V1/5 cibles refusées, axis44/4,encoder9/8,rxuart87/16/72 tentatives/15 Initial/15 frontières (1 sélection)/2 cibles concaténées/54 sans sélection. Zéro inexpliquée sur six cas, replay exact, aucune promotion ni troncature. Audits0,00223/0,270/1,203/0,00799/0,00616/0,0161 s. CI50/50,330 s, main #104 50/50,241 s ; artefact15198817914. PR104-WALK-01/PR105-TRACE-01 satisfaites dans périmètre testé ; sémantique Initial reste ouverte.
+
+### PR #106 — Cibles concaténées NBA (en cours)
+
+- [~] **PR106-CONCAT-SCALAR-01 · P0** — PR105-CONCAT-TARGET-01 : deux cibles rxuart (lignes179/181), concat scalaires reg/logic distincts, largeur/ordre/identité exacte, copie RHS ou zéro de même largeur. Canal séparé, 2 sites/6 records chacun fixture et rxuart attendus ; 5 CSR hors famille, historique inchangé. Simulation fixture32 transitions +128 préparations, Z3 modèle8 requêtes attendues. Ni temporalité globale ni preuve RTL, pas de promotion.
+- [ ] **PR106-CONCAT-GENERAL-01 · P0** — Cibles vectorielles, sélections, concat imbriquées et alias, autres expressions et contextes, corpus supplémentaires ; PR105-CONCAT-TARGET-01 reste ouverte globalement. Auditer les cinq cibles CSR séparément, vérifier chevauchement avec canaux membres existants ; PR105-INITIAL-01, PR104-MCP-ERROR-01 et autres dettes conservées.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

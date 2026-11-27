@@ -92,6 +92,9 @@ jobs:
       - name: PR101 controlled signed order models (Z3)
         run: python -m scripts.prove_signed_order_pr101 --out reports/pr101-formal
 
+      - name: PR106 scalar concat NBA statement models (Z3)
+        run: python -m scripts.prove_concat_nba_pr106 --out reports/pr106-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -106,6 +109,7 @@ jobs:
             reports/pr99-formal/**
             reports/pr100-formal/**
             reports/pr101-formal/**
+            reports/pr106-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
