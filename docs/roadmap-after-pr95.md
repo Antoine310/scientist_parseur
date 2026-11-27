@@ -37,6 +37,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #104** : publication V1/V2 CLI/MCP validée sur six designs, 1684 tests,50 jobs,43 pages,24 refus attendus. rxuart87 occurrences/16 captures/15 non visitées/2 cibles refusées, contexte Initial selon artefact. #105 audit P0 des arrêts du walker avant extension sémantique ; migration du défaut et présentation erreurs MCP différées. Phases A–H et familles historiques conservées.
 
+**Révision après #105** : audit effectif validé sur six designs, 15 exclusions Initial rxuart (1 avec sélection), 2 cibles concaténées distinctes, aucune inexpliquée dans ce périmètre. #106 cible les NBA scalaires rxuart avec oracle positionnel, simulation fixture et modèle binaire Z3 ; pas de promotion ni preuve temporelle, Initial et 5 cibles CSR restent ouvertes. Phases A–H conservées.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
