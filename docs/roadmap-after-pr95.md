@@ -27,6 +27,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #99** : deux racines Subtract core caractérisées, union arithmétique 31 ALU/66 core, 67/318 résidus restants ; #100 égalités et inégalités directes après inspection AST, comparaisons d'ordre signées composées différées. Aucun gain annoncé avant validation. Les familles A–H restent inchangées.
 
+**Révision après #100** : ALU4/core6 égalités/inégalités caractérisées, union exacte 35/72, reste63/312 ; Z3 188 requêtes, CI50/50. #101 cible 4 GreaterThan par design avec bit de signe masqué et contrôle partagé après inspection AST réelle ; autres comparaisons, compositions et omissions restent ouvertes. Aucun gain avant validation.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

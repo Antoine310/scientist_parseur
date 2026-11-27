@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.34 — 27 novembre 2026 (fusion #99, chantier #100)**  
+**Version : 1.35 — 27 novembre 2026 (fusion #100, chantier #101)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #99** (`164a16e4829045b6b822ca721df926570b349747`). #99 CI 50/50 sur 42ff60a, 1548/1548 locaux ; main 50/50 en 245 s. #98 main 50/50 en 237 s.
-**PR en cours : #100**, égalités et comparaisons résiduelles ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #100** (`ecab557bb5a8bdbfbcc409f88175a9e70f7a7b8a`). #100 CI 50/50 sur bb2c5f2, 1587/1587 locaux. Main #100 : [45982695597](https://github.com/Antoine310/scientist_parseur/actions/runs/45982695597), queued, résultat non encore établi ; relever au prochain bilan.
+**PR en cours : #101**, comparaisons d'ordre signées à contrôle partagé ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -680,11 +680,19 @@ Validation finale #98 [preuve](https://github.com/Antoine310/scientist_parseur/p
 
 Validation finale #99 : [preuve permanente](https://github.com/Antoine310/scientist_parseur/pull/99#issuecomment-7215490068), head exact 42ff60aae36a637b9fa09d758a8a4ae2a97745b8, fusion 164a16e4829045b6b822ca721df926570b349747. 22/22 ciblés 0,16 s, 1548/1548 suite 6,76 s, reports/pr99/run-jldsvi31/summary.json passed, fixture2/2, 48 checks Verilator/cocotb, 135 paires/43 coordonnées ; ALU0 racine Subtract, core2/2, 5 imbriquées non promues. Union exacte core66 IDs, 67472 paires, 4403 coordonnées ; ALU31, restants core318/ALU67. Z3 4.15.5 reports/pr99-formal/run-z5hk7p51/summary.json passed, 1287 requêtes (72 UNSAT, 1215 SAT dont 4 mutants), modèle binaire abstrait seulement. Graphes et fichiers historiques inchangés intra-run ; pas de troncature, pas de benchmark apparié. CI finale 226 s 50/50, main 245 s 50/50 (voir ci-history). PR95-ARITH-01, PR96-COMPOSE-01, PR99-NESTED-01 et dettes P0 restent ouvertes.
 
-### PR #100 — Égalités et comparaisons (en cours)
+### PR #100 — Égalités et comparaisons (fusionnée)
 
-- [~] **PR100-EQUALITY-01 · P1** — Artefact #99 15187058271, ALU 4 Equality +4 GreaterThan, core 5 Equality +1 Inequality +4 GreaterThan ; 12/155 lignes contenant ces opérateurs (union, non additive avec arithmétique). AST réel : quatre comparaisons d'octets à indices lexicaux, décodeur instr_i[1:0] != 2'b11, FIFO status_cnt_q == FIFO_DEPTH[ADDR_DEPTH:0]. Premier périmètre : feuilles exactes indépendantes non signées, littéral défini ou tranche basse de paramètre int unsigned lexicalement identifié, aucun X/Z ni conversion dynamique. Attentes à vérifier : ALU4/core6 nouveaux IDs, 64/68 paires, 68/74 coordonnées. Aucune promotion historique.
+- [x] **PR100-EQUALITY-01 · P1** — Artefact #99 15187058271, ALU 4 Equality +4 GreaterThan, core 5 Equality +1 Inequality +4 GreaterThan ; 12/155 lignes contenant ces opérateurs (union, non additive avec arithmétique). AST réel : quatre comparaisons d'octets à indices lexicaux, décodeur instr_i[1:0] != 2'b11, FIFO status_cnt_q == FIFO_DEPTH[ADDR_DEPTH:0]. Premier périmètre : feuilles exactes indépendantes non signées, littéral défini ou tranche basse de paramètre int unsigned lexicalement identifié, aucun X/Z ni conversion dynamique. Attentes à vérifier : ALU4/core6 nouveaux IDs, 64/68 paires, 68/74 coordonnées. Aucune promotion historique.
 - [ ] **PR100-ORDER-01 · P1** — Quatre GreaterThan par design : véritables AST avec $signed, concaténation et bitwise AND du bit de signe avec cmp_signed ; ne pas traiter comme comparaison unsigned ou opérandes indépendants. Étudier composition et signe ; garder comparaisons imbriquées, alias, comparaisons à quatre états et conversions hors périmètre.
-- [~] **PR100-FORMAL-01 · P1** — Oracle indépendant, tests négatifs, simulation fixture, modèle binaire SMT et mutants, conservation des 50 jobs historiques ; résultats à mesurer, pas une preuve RTL.
+- [x] **PR100-FORMAL-01 · P1** — Oracle indépendant, tests négatifs, simulation fixture, modèle binaire SMT et mutants, conservation des 50 jobs historiques ; résultats à mesurer, pas une preuve RTL.
+
+Validation finale #100 : [preuve permanente](https://github.com/Antoine310/scientist_parseur/pull/100#issuecomment-7215937244), head bb2c5f2a95f358bafa107340325a98fb84049b58, fusion ecab557bb5a8bdbfbcc409f88175a9e70f7a7b8a. Local premier essai 39/39 0,17 s, 1587/1587 7,62 s ; simulation bloquée Verilator 5.008 et Z3 absent du PATH, rapports run-wdbg8re7 et run-457ltsiv conservés. Deuxième essai 39/39 0,11 s, 1587/1587 6,47 s ; Verilator5.055/cocotb2.0.1, slang12.1, Z3 4.15.5. reports/pr100/run-l36zocli/summary.json passed, fixture3/3, 20 paires/23 coordonnées, 2336 assertions, 2320 ns, SHA256 2fa82cfd50a7c618abe75b8c2681480d1373266a57c6cd54679e9b1ef87adb80. ALU4/8,64 paires/68 coordonnées ; core6/10,68/74 ; 4/145 lignes imbriquées non promues. Union exacte disjointe #97–100 : ALU35/core72, restent63/312. Z3 reports/pr100-formal/run-1o8i5sc9/summary.json passed, 188 requêtes (8 UNSAT,172 témoins SAT,8 mutants SAT). CI finale 50/50,255 s ; Main #100 : [45982695597](https://github.com/Antoine310/scientist_parseur/actions/runs/45982695597), queued, résultat non encore établi ; relever au prochain bilan. Aucune promotion historique, pas de couverture globale ni preuve RTL.
+
+### PR #101 — Comparaison d'ordre à signe contrôlé (en cours)
+
+- [~] **PR100-ORDER-01** (suivi du même ID permanent, ouverture globale conservée) — #101 traite exclusivement les 4 racines GreaterThan par design observées dans l'artefact #100 15190255669 (ALU IDs 186–189, core 508–511 dans cet artefact uniquement). Forme $signed({data[MSB] & ctrl,data}) des deux côtés, même bit ctrl ; MSB répété et contrôle partagé dédupliqués, alias non prouvé refusé. Attendu 17 paires/18 coordonnées par octet, 68/72 par design ; union ALU39/core76, restants59/308. Aucun gain avant validation.
+- [~] **PR101-SIGNED-01 · P1** — Oracle indépendant signé/non signé, preuve QF_BV du modèle et témoins bit, mutants signe forcé et comparaison unsigned ; simulation fixture, réconciliation exacte #97–100, rapport séparé. 50 jobs historiques, pas de promotion CLI/MCP.
+- [ ] **PR101-COMPOSE-01 · P1** — Autres formes signées, largeur/conversions, contrôles différents, X/Z, autres ordres, compositions et comparaisons imbriquées restent ouvertes ; ne pas extrapoler aux autres AST. PR95-ARITH-01, PR96-COMPOSE-01, PR99-NESTED-01 et P0 inchangées.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
