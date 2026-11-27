@@ -49,8 +49,15 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 95 | PR finale | 6dd33c5 | [45967267888](https://github.com/Antoine310/scientist_parseur/actions/runs/45967267888) | 50/50 | 202 | 13 | 177 | 2 | 2326 | member-writes-pr80 176 s |
 | 95 | main | 92fb24f | [45968843293](https://github.com/Antoine310/scientist_parseur/actions/runs/45968843293) | 50/50 | 217 | 18 | 186 | 2 | 2111 | member-writes-pr80 185 s |
 | 96 | PR | 07d0937 | [45970503888](https://github.com/Antoine310/scientist_parseur/actions/runs/45970503888) | 50/50 | 235 | 13 | 209 | 3 | 2443 | member-writes-pr80 175 s |
+| 96 | main | 519df7e | [45972213920](https://github.com/Antoine310/scientist_parseur/actions/runs/45972213920) | 50/50 | 209 | 20 | 177 | 2 | 2543 | member-writes-pr80 176 s |
+| 97 | PR | c9249d3 | [45972681195](https://github.com/Antoine310/scientist_parseur/actions/runs/45972681195) | 50/50 | 230 | 17 | 200 | 3 | 2335 | member-writes-pr80 176 s |
+| 97 | main | 43a8ff1 | [45973651373](https://github.com/Antoine310/scientist_parseur/actions/runs/45973651373) | 50/50 | 261 | 15 | 200 | 3 | 2403 | member-writes-pr80 199 s |
 
-#96 : 09:03:19→09:07:14 UTC tentative1, local1488/1488 6,89 s, partagé175 s, formel38 s, fusion519df7e, [main 45972213920](https://github.com/Antoine310/scientist_parseur/actions/runs/45972213920) à relever. Aucun échec/retry. #97 conserve 50 jobs attendus.
+#97 main : 09:25:54→09:30:15 UTC tentative1, partagé199 s, formel39 s. #98 initiale [45974019754](https://github.com/Antoine310/scientist_parseur/actions/runs/45974019754) en cours au relevé ; local 20/20 ciblés,1524/1524,2659 requêtes Z3 réussies, runner failed sur census fixture, correction requise. Résultat final de ce head à relever séparément, y compris annulation éventuelle.
+
+#97 : 09:19:00→09:22:50 UTC tentative1, local1504/1504 6,48 s, partagé176 s, formel36 s, fusion43a8ff1, main réussi (voir tableau). #96 main09:15:36→09:19:05 UTC tentative1, partagé176 s, formel37 s. Aucun échec/retry. #98 conserve 50 jobs attendus.
+
+#96 : 09:03:19→09:07:14 UTC tentative1, local1488/1488 6,89 s, partagé175 s, formel38 s, fusion519df7e, [main 45972213920](https://github.com/Antoine310/scientist_parseur/actions/runs/45972213920) réussi (voir tableau). Aucun échec/retry. #97 conserve 50 jobs attendus.
 
 #95 finale : 08:38:44→08:42:06 UTC tentative1, local1469/1469 6,40 s, partagé176 s, deux heads cumul223 s fenêtre520 s, fusion92fb24f. Main 08:50:48→08:54:25 UTC tentative1, partagé185 s. Aucun retry. #96 conserve 50 jobs attendus.
 

@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.31 — 27 novembre 2026 (fusion #96, chantier #97)**  
+**Version : 1.32 — 27 novembre 2026 (fusion #97, chantier #98)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #96** (`519df7e32a8f080aa2dd195a124f49bd45b38cb1`). #96 50/50 CI sur 07d0937, 1488/1488 locaux ; main à relever.
-**PR en cours : #97**, additions popcnt à extension zéro et sélecteurs élaborés ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #97** (`43a8ff19fe60eb6a7c20f8b0b913e6bc9d7776ef`). #97 50/50 CI sur c9249d3, 1504/1504 locaux ; main à relever. #96 main 50/50 en 209 s.
+**PR en cours : #98**, incréments constants ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -654,12 +654,21 @@ Validation finale #95 : [preuve](https://github.com/Antoine310/scientist_parseur
 
 Validation #96 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/96#issuecomment-7214346028), SHA exact 07d0937, 19/19 ciblés0,12 s,1488/1488 6,89 s, reports/pr96/run-h1cdv18i/summary.json passed ; fixture2/2,1076 paires,108 coordonnées,264 checks simulation. ALU0/31 (30 nonliteral_selection,1 unsupported_selection_chain), core0/64 (62/2), audits0,150924/0,562153 s. Aucun gain RTL réel. Z3 4.15.5 reports/pr96-formal/summary.json passed,36 UNSAT,1076 SAT témoins,2 SAT XOR mutant ; modèle abstrait uniquement. Core historique pipeline3,852750 s, build1,895633 s, RSS184576/225804 Kio, AST/index/graphe47778002/851329/33322406 octets. Aucun changement historique, troncature ou benchmark apparié. CI235 s 50/50, job formel38 s, fusion519df7e, main à relever.
 
-### PR #97 — Popcnt et sélecteurs élaborés (en cours)
+### PR #97 — Popcnt et sélecteurs élaborés (fusionnée)
 
-- [~] **PR97-SELECT-01 · P1** — Artefact CI #96 15184771945 : 31 racines popcnt ALU et cœur, 32 CSR incréments et 1 adresse cœur. Inspecter groupes AST, pas identité par ligne ; replay exact avec constantes lexicales de capture, evaluate sans Power, preuve de chaque sélection, type et identité exacts, refuse runtime, tags seuls et incohérences.
-- [~] **PR97-ZERO-01 · P1** — Deux concaténations zéro MSB littéral+feuille n, résultat n+1, mêmes types d'état, coordonnées non recouvrantes, préfixes bornés. Oracle coordonné indépendant arbre popcnt : 31 lignes,312 paires,202 coordonnées attendues par design, 33 racines restantes cœur. Rapport séparé, aucune promotion au graphe ni CLI/MCP. 16 tests ciblés attendus,1504 suite.
-- [~] **PR97-FORMAL-01 · P1** — Modèle Z3 largeur opérandes1..5 :20 UNSAT,100 SAT témoins,5 SAT mutant perte retenue ; simulation popcnt officiel 196 checks, oracle Python exhaustif, pas de preuve RTL. Même 50 jobs.
+- [x] **PR97-SELECT-01 · P1** — Artefact CI #96 15184771945 : 31 racines popcnt ALU et cœur, 32 CSR incréments et 1 adresse cœur. Inspecter groupes AST, pas identité par ligne ; replay exact avec constantes lexicales de capture, evaluate sans Power, preuve de chaque sélection, type et identité exacts, refuse runtime, tags seuls et incohérences.
+- [x] **PR97-ZERO-01 · P1** — Deux concaténations zéro MSB littéral+feuille n, résultat n+1, mêmes types d'état, coordonnées non recouvrantes, préfixes bornés. Oracle coordonné indépendant arbre popcnt : 31 lignes,312 paires,202 coordonnées attendues par design, 33 racines restantes cœur. Rapport séparé, aucune promotion au graphe ni CLI/MCP. 16 tests ciblés attendus,1504 suite.
+- [x] **PR97-FORMAL-01 · P1** — Modèle Z3 largeur opérandes1..5 :20 UNSAT,100 SAT témoins,5 SAT mutant perte retenue ; simulation popcnt officiel 196 checks, oracle Python exhaustif, pas de preuve RTL. Même 50 jobs.
 - [ ] **PR97-INCR-01 · P1** — #98 proposée : incréments constants CSR (32) et adresse (1), modéliser littéraux/conversions et concaténation sans extrapoler ; soustraction ensuite. Garder PR96-COMPOSE-01 et PR95-ARITH-01 ouvertes.
+
+Validation #97 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/97#issuecomment-7214627976), SHA c9249d3, 16/16 ciblés 0,12 s,1504/1504 6,48 s, reports/pr97/run-4n98wfuj/summary.json passed. ALU31/31 et cœur31/64,312 paires202 coordonnées par design, audit0,189339/0,515684 s ; 33 refus cœur (32 not_single_zero_extended_operand,1 unproven_single_zero_prefix). Popcnt RTL officiel196 checks, Z3 20 UNSAT/100 SAT témoins/5 SAT mutant, modèle abstrait seulement. Graphes historiques et entrées inchangés, aucune troncature, pipeline4,114789 s, graph2,024390 s, RSS184344/211216 Kio, AST/index/graphe47778002/851329/33322406 octets. CI #97 230 s, #96 main209 s, fusion43a8ff1. Pas de preuve RTL ou de couverture globale.
+
+### PR #98 — Incréments constants (en cours)
+- [~] **PR98-INCR-01 · P1** — Artefact CI #97 15184969853 : groupe AST CSR 32 Add 64 bits +1 (ligne1387) et prefetch adresse alignée +4 (ligne138). Exact replay et coordonnées #97 ; littéral défini, conversion unique, refus explicites. Oracle coordonné 33 core, 67025 paires,4158 coordonnées attendues ; ALU0. Union IDs disjointe #97/#98 31/64 racines attendues ; pas de promotion dans historique. 22 tests ciblés/1526 suite attendue après correctif.
+- [~] **PR98-FORMAL-01 · P1** — Oracle Python exhaustif 1–4 bits, fixture réelle slang/cocotb 32 checks, Z3 modèles 4/64/32 bits,100 UNSAT non-interférence +1 alignement,2555 SAT témoins,3 SAT mutant sans retenue ; modèle abstrait uniquement. 50 jobs attendus.
+- [ ] **PR98-NEXT-01 · P1** — Soustraction après validation ; extension générale littéraux, casts, concat, alias, X/Z, gardes et intégration ultérieures. 
+
+Correctif après validation locale initiale bc1dfc3 : 20/20 ciblés 0,10 s, 1524/1524 suite 6,65 s, Z3 2659/2659 (run-ibiaq9b8), mais reports/pr98/run-wy9h2wud/summary.json failed avant simulation et RTL réel. La fixture initiale a deux incréments de vecteurs entiers sans sélection, hors census historique selon bitaccess.extract/_contains_selection ; seul le concat d'adresse est éligible syntaxiquement. Corriger les deux entrées à 5/65 bits avec sélections [3:0]/[63:0], stimuler leur bit supérieur ignoré ; garder oracle trois résidus et mêmes coordonnées, diagnostiquer les comptes et publier détails/AST/graphe même en échec. Deux tests du gate, 22 ciblés/1526 suite attendue. Aucun changement analyseur ni formel. Ne pas réduire le dénominateur de fixture. La reproduction sur vrai slang reste à valider. Main #97 50/50.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -710,6 +719,11 @@ Validation #96 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/9
 | FUT-MCP-01 | Investigation agent : source → écriture → gardes → chemins → evidence | MCP lecture seule, traces sourcées et limites, tests stdio et requêtes bornées |
 | FUT-AGENT-01 | Benchmark agent contrôlé A=RTL brut, B=index, C=hybride RTLPrep | Questions/références gelées, mêmes conditions, exactitude, abstention, contexte, latence/coût, répétitions ; aucune affirmation de gain avant mesure |
 | FUT-DEMO-01 | Démonstration GhostGate / HOST 2027, outil restant généraliste | Scénarios autorisés, résultats reproductibles, limites et validation scientifique ; ne pas présumer règlement/acceptation du concours |
+
+### Phase finale — documentation et publication
+- [ ] **FUT-DOC-USER-01 · P2** — Guides pédagogiques par outil/analyseur, concepts/entrées/sorties/exemples exécutés/limites, tutoriel de bout en bout, glossaire et références CLI/MCP/API/schémas. Version et outils épinglés, validation des commandes/liens et revue.
+- [ ] **FUT-DOC-ARCHIVE-01 · P2** — README public centré sur objectifs, installation, usages et limites ; déplacer historique des PR hors README vers documentation développement, backlog/CI/rapports/changelog. Aucune perte d'IDs, preuves ou provenance.
+- [ ] **FUT-DOC-CODE-01 · P2** — Revoir docstrings/commentaires : remplacer numéros PR inutiles par sémantique/invariants, conserver sécurité, justifications, licences et provenance utile ; aucune modification comportementale, aucune modification du RTL upstream, tests intégraux. Migrations de noms séparées si utiles. Phase H [feuille de route](roadmap-after-pr95.md).
 
 ## 6. Commandes de reprise immédiate (#65 → baseline de diagnostic)
 

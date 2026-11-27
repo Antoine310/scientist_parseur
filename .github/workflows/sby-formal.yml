@@ -80,6 +80,9 @@ jobs:
       - name: PR97 zero extended addition model (Z3)
         run: python -m scripts.prove_zero_extended_addition_pr97 --out reports/pr97-formal
 
+      - name: PR98 constant increment model (Z3)
+        run: python -m scripts.prove_constant_increments_pr98 --out reports/pr98-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,6 +93,7 @@ jobs:
           path: |
             reports/pr96-formal/**
             reports/pr97-formal/**
+            reports/pr98-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
