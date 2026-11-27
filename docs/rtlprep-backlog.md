@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.30 — 27 novembre 2026 (fusion #95, chantier #96)**  
+**Version : 1.31 — 27 novembre 2026 (fusion #96, chantier #97)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #95** (`92fb24fcea45902f6c641534790f8fe9464f44e1`). #95 50/50 CI sur 6dd33c5, 1469/1469 locaux ; main 50/50 en 217 s.
-**PR en cours : #96**, addition modulaire bornée ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #96** (`519df7e32a8f080aa2dd195a124f49bd45b38cb1`). #96 50/50 CI sur 07d0937, 1488/1488 locaux ; main à relever.
+**PR en cours : #97**, additions popcnt à extension zéro et sélecteurs élaborés ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -647,10 +647,19 @@ Première campagne #95, SHA exact 1382878 : 13/15 ciblés 0,18 s, 1465/1467 suit
 
 Validation finale #95 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/95#issuecomment-7213882972), SHA exact 6dd33c5, 17/17 ciblés 0,09 s, 1469/1469 6,40 s, reports/pr95/run-nndndxhp/summary.json passed. ALU98/98 0,113753 s, core384/384 0,620102 s ; distributions identiques initiale, replay exact, zéro scan limité, entrées et graphes inchangés. 33 ALU et94 core array candidates non liés +10 core partial non ajoutés. Core pipeline4,107074 s, graph2,016933 s, RSS Python/slang184220/227820 Kio, AST/index/graphe47778002/851329/33322406 octets. CI finale50/50 202 s, initiale21 s, cumul223 s, fenêtre520 s ; fusion92fb24f, main50/50 217 s.
 
-### PR #96 — Addition modulaire (en cours)
-- [~] **PR96-ADD-01 · P1** — Racines Add résiduelles #95, replay exact et sélection bornée blocking continu/AlwaysComb, deux opérandes directs ou sélections packed littérales fixes, identité/type exact, mêmes largeur/état non signé logic/bit, 1–64 bits, sans conversion ni alias recouvrants. Préfixes LSB compacts, paires potentielles, aucun ajout historique ni promesse d'éligibilité réelle. Rapport séparé, compteurs et refus.
-- [~] **PR96-FORMAL-01 · P1** — Oracle exhaustif Python 1–4, fixture slang+cocotb 264 checks, Z3 modèle abstrait 4/32 bits, 36 UNSAT non-interférence et 1076 SAT témoins, 2 SAT mutant XOR ; pas de preuve RTL, X/Z, garde ou temporelle. 19 tests ciblés attendus, 1488 suite attendue, 50 jobs avec job formel existant. Garder logs/SMT2.
+### PR #96 — Addition modulaire (fusionnée)
+- [x] **PR96-ADD-01 · P1** — Racines Add résiduelles #95, replay exact et sélection bornée blocking continu/AlwaysComb, deux opérandes directs ou sélections packed littérales fixes, identité/type exact, mêmes largeur/état non signé logic/bit, 1–64 bits, sans conversion ni alias recouvrants. Préfixes LSB compacts, paires potentielles, aucun ajout historique ni promesse d'éligibilité réelle. Rapport séparé, compteurs et refus.
+- [x] **PR96-FORMAL-01 · P1** — Oracle exhaustif Python 1–4, fixture slang+cocotb 264 checks, Z3 modèle abstrait 4/32 bits, 36 UNSAT non-interférence et 1076 SAT témoins, 2 SAT mutant XOR ; pas de preuve RTL, X/Z, garde ou temporelle. 19 tests ciblés attendus, 1488 suite attendue, 50 jobs avec job formel existant. Garder logs/SMT2.
 - [ ] **PR96-COMPOSE-01 · P1** — Conversions, littéraux, signedness, expressions imbriquées, alias, X/Z, paramètres et indices runtime à traiter séparément après mesure ; intégration des nouveaux canaux et preuves dans CLI/MCP ultérieure. PR95-ARITH-01 reste ouverte jusqu'à bilan. 
+
+Validation #96 : [preuve](https://github.com/Antoine310/scientist_parseur/pull/96#issuecomment-7214346028), SHA exact 07d0937, 19/19 ciblés0,12 s,1488/1488 6,89 s, reports/pr96/run-h1cdv18i/summary.json passed ; fixture2/2,1076 paires,108 coordonnées,264 checks simulation. ALU0/31 (30 nonliteral_selection,1 unsupported_selection_chain), core0/64 (62/2), audits0,150924/0,562153 s. Aucun gain RTL réel. Z3 4.15.5 reports/pr96-formal/summary.json passed,36 UNSAT,1076 SAT témoins,2 SAT XOR mutant ; modèle abstrait uniquement. Core historique pipeline3,852750 s, build1,895633 s, RSS184576/225804 Kio, AST/index/graphe47778002/851329/33322406 octets. Aucun changement historique, troncature ou benchmark apparié. CI235 s 50/50, job formel38 s, fusion519df7e, main à relever.
+
+### PR #97 — Popcnt et sélecteurs élaborés (en cours)
+
+- [~] **PR97-SELECT-01 · P1** — Artefact CI #96 15184771945 : 31 racines popcnt ALU et cœur, 32 CSR incréments et 1 adresse cœur. Inspecter groupes AST, pas identité par ligne ; replay exact avec constantes lexicales de capture, evaluate sans Power, preuve de chaque sélection, type et identité exacts, refuse runtime, tags seuls et incohérences.
+- [~] **PR97-ZERO-01 · P1** — Deux concaténations zéro MSB littéral+feuille n, résultat n+1, mêmes types d'état, coordonnées non recouvrantes, préfixes bornés. Oracle coordonné indépendant arbre popcnt : 31 lignes,312 paires,202 coordonnées attendues par design, 33 racines restantes cœur. Rapport séparé, aucune promotion au graphe ni CLI/MCP. 16 tests ciblés attendus,1504 suite.
+- [~] **PR97-FORMAL-01 · P1** — Modèle Z3 largeur opérandes1..5 :20 UNSAT,100 SAT témoins,5 SAT mutant perte retenue ; simulation popcnt officiel 196 checks, oracle Python exhaustif, pas de preuve RTL. Même 50 jobs.
+- [ ] **PR97-INCR-01 · P1** — #98 proposée : incréments constants CSR (32) et adresse (1), modéliser littéraux/conversions et concaténation sans extrapoler ; soustraction ensuite. Garder PR96-COMPOSE-01 et PR95-ARITH-01 ouvertes.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

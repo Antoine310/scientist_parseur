@@ -19,6 +19,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 | 103 | Composition arithmétique, mux, sélections |
 | 104 | Bilan et audit des résidus |
 
+**Révision après #96 (27/11/2026)** : résultat 0/31 ALU et 0/64 cœur, modèle/fixture validés. Artefact CI #96 : popcnt 31 dans chaque design, incréments CSR32 et adresse1 cœur. #97 sélecteurs lexicaux + zéro-extension popcnt, #98 incréments constants/composition, #99 soustraction proposée ensuite ; autres familles décalées selon résultats. Le tableau initial reste historique, toutes les familles et phases conservées. Aucun gain avant validation.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

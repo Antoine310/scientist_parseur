@@ -72,7 +72,7 @@ def expand(node,resolve,raw,declared):
             "model_domain":"defined_binary_inputs_only"}
 
 
-def audit_additions(ast,index,graph):
+def audit_additions(ast,index,graph,*,_expand=None):
     inspect_ast(ast)
     if graph["analysis_limits"]["truncated_analyzers"]:
         raise ValueError("truncated_historical_analyzers")
@@ -84,6 +84,7 @@ def audit_additions(ast,index,graph):
     if json.loads(json.dumps(build_bit_dependency_graph(replay,index)))!=graph["bit_dependency_graph"]:
         raise ValueError("flat_replay_disagreement")
     capture=reconcile_capture(replay,captured)
+    constants_by_id={i:constants for i,_,_,_,constants,_ in captured}
     resolve=SignalResolver(ast,index)
     raw,declared=raw_layouts(index),layouts(index)
     rows=[]
@@ -105,13 +106,16 @@ def audit_additions(ast,index,graph):
         try:
             if partial or (f["assignment_kind"]!="continuous" and f.get("procedure_kind")!="AlwaysComb"):
                 raise Unsupported("unsupported_assignment_context")
-            candidate=expand(node,lambda e:resolve.resolve_exact(owner,e),raw,declared)
+            exact=lambda e:resolve.resolve_exact(owner,e)
+            candidate=(expand(node,exact,raw,declared) if _expand is None else
+                       _expand(node,exact,raw,declared,constants_by_id[i]))
             if candidate["target"]["signal"]!=f["target"]:
                 raise Unsupported("assignment_target_identity_mismatch")
         except Unsupported as exc:
             row["reason"]=str(exc)
             continue
-        coordinates+=3*candidate["width"]
+        coordinates+=sum(len(e["bits_lsb_first"]) for e in
+                         [candidate["target"],*candidate["operands"]])
         if coordinates>MAX_COORDINATES:
             raise ValueError("addition_coordinate_budget")
         row.update(coverage="addition_candidates",candidate=candidate)
