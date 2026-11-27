@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.51 — 27 novembre 2026 (fusion #116, chantier #117)**  
+**Version : 1.52 — 27 novembre 2026 (fusion #117, chantier #118)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #116** (fc6be0b2dcc1be06ed1f9c9b353fa1020790f68f). CI PR/main 50/50 ; 2025/2025 locaux SHA confirmé.
-**PR en cours : #117**, conversions enum de package, validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #117** (bef7404312ca5f4e71d151493fc3f34e3f124ebe). CI PR/main 50/50 ; 2061/2061 locaux SHA confirmé.
+**PR en cours : #118**, conversions explicites bit/logic, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -906,3 +906,7 @@ Prochaine action : ...
 - [~] **PR115-CONVERSION-GENERAL-01 · P0** — #116 fusionnée, 2025 locaux, CI PR/main50/50, 1 CSR dynamique hors flat, 16 paires +16 zéros. [Validation](https://github.com/Antoine310/scientist_parseur/pull/116#issuecomment-7221658679). #117 vise 92 constantes enum hors flat (318 valeurs) et ID314 (2 paires) après preuve exacte de déclaration/encodage et domaine binaire complet. Enum général, conversions imbriquées, signe ambigu, X/Z, compositions, recouvrements et intégration restent ouverts. [Périmètre](enum-conversions-pr117.md).
 
 - #117 première validation : fixture 4 références enum taguées exclues à tort ; correction bornée par identité et valeur indépendante. Cœur 97 racines attendues, 96 constantes (330 valeurs), 1 dynamique (2 paires), ID314 uniquement dans les résiduels. Dette générale inchangée.
+
+### PR #118 — Conversions 2/4 états (en cours)
+
+- [~] **PR115-CONVERSION-GENERAL-01 · P0** — #117 fusionnée, 2061 locaux, CI PR/main50/50, 96 constantes enum/330 valeurs + ID314/2 paires. #118 : 81/1296 littéraux même largeur ALU/core (160/4022 positions expression), 31 recouvrements #115, 42 refus core attendus. Fixture dynamique et oracle Icarus quatre états distinct de Verilator binaire. Aucune nouvelle arête/ID historique revendiqués. X/Z généralisé, compositions, tailles/signe mixtes, intégration et recouvrements restent ouverts. [Périmètre](state-conversions-pr118.md).
