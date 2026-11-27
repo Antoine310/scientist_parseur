@@ -45,6 +45,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #107 (fusionnée, 1751 tests et 50 jobs)** : 3/5 refus CSR déjà représentés PR80/88, 2 scopes generate. #108 traite ces deux sites avant les concat vectorielles (PR106-CONCAT-GENERAL-01 reste ouverte). Numéros prévisionnels suivants à décaler selon résultats ; bilan #123 indicatif. Aucune modification des dénominateurs historiques.
 
+**Révision après #108** : 1785 tests,50 jobs, deux cibles generate CSR/33 candidats séparés, simulation768 et Z3 modèle43 ; trois positions membre existantes non recomptées. #109 concat vectorielles et sélection fixe, puis #110 Initial ; corpus plus larges et intégration restent ouverts. Bilan cœur #123 indicatif ou ultérieur.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
