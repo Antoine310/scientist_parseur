@@ -42,8 +42,16 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 92 | PR | 2ed2e0d | [45904793862](https://github.com/Antoine310/scientist_parseur/actions/runs/45904793862) | 50/50 | 265 | 13 | 240 | 3 | 2144 | member-writes-pr80 160 s |
 | 92 | main | ea19b3e | [45963571553](https://github.com/Antoine310/scientist_parseur/actions/runs/45963571553) | 50/50 | 256 | 12 | 210 | 3 | 2065 | member-writes-pr80 155 s |
 | 93 | PR | e67a6ab | [45963846881](https://github.com/Antoine310/scientist_parseur/actions/runs/45963846881) | 50/50 | 216 | 20 | 181 | 5 | 2165 | member-writes-pr80 161 s |
+| 93 | main | 4bf25f9 | [45964479371](https://github.com/Antoine310/scientist_parseur/actions/runs/45964479371) | 50/50 | 251 | 14 | 187 | 4 | 2461 | member-writes-pr80 187 s |
+| 94 | PR | 8aabc00 | [45964685033](https://github.com/Antoine310/scientist_parseur/actions/runs/45964685033) | 50/50 | 268 | 14 | 233 | 3 | 2487 | member-writes-pr80 196 s |
+| 94 | main | 5331a85 | [45966309480](https://github.com/Antoine310/scientist_parseur/actions/runs/45966309480) | 50/50 | 224 | 19 | 192 | 4 | 2332 | member-writes-pr80 191 s |
+| 95 | PR initiale | 1382878 | [45966588446](https://github.com/Antoine310/scientist_parseur/actions/runs/45966588446) | 2 échecs,48 ignorés | 21 | 12 | — | 2 | 14 | aucun spécialisé exécuté |
 
-#93 : 08:12:06→08:15:42 UTC tentative1, partagé161 s, local1436/1436 4,37 s, fusion 4bf25f9, main à relever. #92 main 08:09:57→08:14:13 UTC, partagé155 s. Aucun échec/relance. #94 conserve 50 jobs attendus.
+#95 initiale : 08:33:26→08:33:47 UTC tentative1, Python et verdict en échec, 48 ignorés (timestamps non interprétables, exclus du cumul jobs exécutés 14 s), local 13/15 ciblés,1465/1467 suite ; runner réel passed, fixture incorrecte guards/events absents. Correctif à revalider. #94 main 08:31:16→08:35:00 UTC tentative1, 50/50, partagé191 s. Aucun retry. 
+
+#94 : 08:18:45→08:23:13 UTC tentative1, partagé196 s, local1452/1452 6,26 s, fusion 5331a85, main réussi (voir tableau). #93 main 08:17:07→08:21:18 UTC, partagé187 s. Aucun échec/relance. #95 conserve 50 jobs attendus.
+
+#93 : 08:12:06→08:15:42 UTC tentative1, partagé161 s, local1436/1436 4,37 s, fusion 4bf25f9, main réussi (voir tableau). #92 main 08:09:57→08:14:13 UTC, partagé155 s. Aucun échec/relance. #94 conserve 50 jobs attendus.
 
 #92 : 22:26:20→22:30:45 UTC tentative1, partagé160 s, local1409/1409 7,74 s, fusion ea19b3e, main réussi (voir tableau). #91 main 22:24:34→22:28:19 UTC, partagé119 s. Aucun échec/relance. #93 conserve 50 jobs attendus.
 
