@@ -87,7 +87,7 @@ def execute(out,reference=None):
         census=audit_residuals(ast,idx,g)
         roots={r["assignment_id"] for r in census["rows"] if r["rhs_syntax"]["root_operator"]=="GreaterThan"}
         all_ids={r["assignment_id"] for r in census["rows"] if "BinaryOp:GreaterThan" in r["rhs_syntax"]["operators"]}
-        assert {r["flat_assignment_id"] for r in result["items"]}==roots
+        assert all_ids==roots and {r["flat_assignment_id"] for r in result["items"]}==roots
         good={r["flat_assignment_id"] for r in result["items"] if r["coverage"]=="signed_order_candidates"}
         union=None
         if name!="fixture":
