@@ -97,3 +97,25 @@ def test_refusals(bad):
 def test_runner_top():
     from scripts.run_enum_conversions_pr117 import TOP,FIXTURE
     assert ("module "+TOP+"(") in FIXTURE.read_text()
+
+
+@pytest.mark.parametrize("tagged",["leaf","rhs","both"])
+def test_enum_tags_corroborate_only(tagged):
+    args=setup(); rhs=args[0]["right"]; leaf=rhs["operand"]
+    if tagged in ("leaf","both"): leaf["constant"]="2'b10"
+    if tagged in ("rhs","both"): rhs["constant"]="2'b10"
+    assert expand(*args)["value"]==2
+    if tagged in ("leaf","both"): leaf["constant"]="2'b11"
+    else: rhs["constant"]="2'b11"
+    with pytest.raises(Unsupported,match="enum_folded_disagreement"): expand(*args)
+
+
+def test_tag_does_not_resolve_enum_symbol():
+    args=setup(); leaf=args[0]["right"]["operand"]
+    leaf.update(symbol="999 E2",constant="2'b10")
+    with pytest.raises(Unsupported,match="unproven_enum_value_identity"): expand(*args)
+
+
+def test_dynamic_cast_rejects_folded_leaf():
+    args=setup(True); args[0]["right"]["operand"]["constant"]="2'b10"
+    with pytest.raises(Unsupported,match="unsupported_dynamic_enum_target"): expand(*args,linked=True)

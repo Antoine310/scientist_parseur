@@ -904,3 +904,5 @@ Prochaine action : ...
 ### PR #117 — Conversions enum directes (en cours)
 
 - [~] **PR115-CONVERSION-GENERAL-01 · P0** — #116 fusionnée, 2025 locaux, CI PR/main50/50, 1 CSR dynamique hors flat, 16 paires +16 zéros. [Validation](https://github.com/Antoine310/scientist_parseur/pull/116#issuecomment-7221658679). #117 vise 92 constantes enum hors flat (318 valeurs) et ID314 (2 paires) après preuve exacte de déclaration/encodage et domaine binaire complet. Enum général, conversions imbriquées, signe ambigu, X/Z, compositions, recouvrements et intégration restent ouverts. [Périmètre](enum-conversions-pr117.md).
+
+- #117 première validation : fixture 4 références enum taguées exclues à tort ; correction bornée par identité et valeur indépendante. Cœur 97 racines attendues, 96 constantes (330 valeurs), 1 dynamique (2 paires), ID314 uniquement dans les résiduels. Dette générale inchangée.

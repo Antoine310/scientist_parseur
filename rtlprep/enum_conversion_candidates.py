@@ -109,7 +109,7 @@ def expand(node, context, types, resolve, raw, declared, constants, *, linked=Fa
     require(isinstance(lhs,dict) and isinstance(rhs,dict) and rhs.get("kind")=="Conversion"
             and node.get("type")==lhs.get("type")==rhs.get("type"),"not_exact_result_conversion")
     leaf=rhs.get("operand")
-    require(isinstance(leaf,dict) and leaf.get("kind") in LEAVES and "constant" not in leaf,
+    require(isinstance(leaf,dict) and leaf.get("kind") in LEAVES,
             "unsupported_direct_enum_leaf")
     source_enum=enum_definition(leaf.get("type"),types)
     target_enum=enum_definition(lhs.get("type"),types)
@@ -123,6 +123,7 @@ def expand(node, context, types, resolve, raw, declared, constants, *, linked=Fa
         require(lhs.get("type")==typ,"enum_result_layout_disagreement")
         dst=endpoint(lhs,resolve,raw)
         name,value,method=table[leaf["symbol"]]
+        corroborate(leaf,value,n)
         corroborate(rhs,value,n)
         return {"family":"enum_constant","enum_type":token.split(" ",1)[1],
                 "enum_value":name,"encoding_method":method,"target":dst,
@@ -133,7 +134,7 @@ def expand(node, context, types, resolve, raw, declared, constants, *, linked=Fa
     token,enum=target_enum
     typ,n,table=enum_table(enum)
     require(len(table)==1<<n,"enum_binary_domain_incomplete")
-    require("constant" not in rhs and lhs.get("kind")=="NamedValue" and "constant" not in lhs,
+    require("constant" not in rhs and "constant" not in leaf and lhs.get("kind")=="NamedValue" and "constant" not in lhs,
             "unsupported_dynamic_enum_target")
     dst=resolve(lhs)
     require(dst is not None and raw.get(dst)==lhs.get("type"),"unproven_exact_enum_target")
@@ -176,7 +177,7 @@ def audit_enum_conversions(ast,index,graph):
         if not isinstance(rhs,dict) or rhs.get("kind")!="Conversion":
             continue
         leaf=rhs.get("operand")
-        if not isinstance(leaf,dict) or leaf.get("kind") not in LEAVES or "constant" in leaf:
+        if not isinstance(leaf,dict) or leaf.get("kind") not in LEAVES:
             continue
         if not any(isinstance(t,str) and TOKEN.fullmatch(t) for t in (rhs.get("type"),leaf.get("type"))):
             continue

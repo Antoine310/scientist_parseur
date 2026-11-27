@@ -25,7 +25,7 @@ def extract_fixture(folder):
 def check(name,result):
     c=result["counts"]
     expected={"fixture":(5,5,0,2,14,1,4),"alu":(0,0,0,0,0,0,0),
-              "core":(93,93,0,2,318,1,92)}[name]
+              "core":(97,97,0,2,330,1,96)}[name]
     assert tuple(c[k] for k in ("roots","supported","partial","potential_pairs","value_records",
                                  "supported_residual","supported_without_flat_id"))==expected,c
     assert result["historical_replay_exact"] and not result["historical_graph_promoted"]
@@ -40,10 +40,10 @@ def check(name,result):
                 "fpu_int_fmt_o":{"INT8":0,"INT16":1,"INT32":2},
                 "fpu_src_fmt_o":{"FP32":0,"FP64":1,"FP16":2,"FP8":3,"FP16ALT":4},
                 "fpu_dst_fmt_o":{"FP32":0,"FP64":1,"FP16":2,"FP8":3,"FP16ALT":4}}
-        wanted=Counter({("fpu_op",v):n for v,n in zip(values["fpu_op"],[5,2,4,3,2,2,7,3,7,2,2,2,2,1,1])})
-        wanted.update({("fpu_int_fmt_o",v):1 for v in values["fpu_int_fmt_o"]})
-        wanted.update({("fpu_src_fmt_o",v):n for v,n in zip(values["fpu_src_fmt_o"],[4,3,3,3,9])})
-        wanted.update({("fpu_dst_fmt_o",v):n for v,n in zip(values["fpu_dst_fmt_o"],[5,2,3,3,9])})
+        wanted=Counter({("fpu_op",v):n for v,n in zip(values["fpu_op"],[5,2,4,3,2,2,8,3,7,2,2,2,2,1,1])})
+        wanted.update({("fpu_int_fmt_o",v):n for v,n in zip(values["fpu_int_fmt_o"],[1,1,2])})
+        wanted.update({("fpu_src_fmt_o",v):n for v,n in zip(values["fpu_src_fmt_o"],[5,3,3,3,9])})
+        wanted.update({("fpu_dst_fmt_o",v):n for v,n in zip(values["fpu_dst_fmt_o"],[6,2,3,3,9])})
         assert (c["ast_occurrences"],c["historical_rows"])==(3811,1199)
     else:
         values={}; wanted=Counter()
