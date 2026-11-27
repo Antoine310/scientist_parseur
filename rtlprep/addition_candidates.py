@@ -73,6 +73,12 @@ def expand(node,resolve,raw,declared):
 
 
 def audit_additions(ast,index,graph,*,_expand=None):
+    return _audit_arithmetic(ast,index,graph,operator="Add",coverage="addition_candidates",expand_candidate=_expand)
+
+
+def _audit_arithmetic(ast,index,graph,*,operator,coverage,expand_candidate):
+    if (operator,coverage) not in (("Add","addition_candidates"),("Subtract","subtraction_candidates")):
+        raise ValueError("unsupported_arithmetic_audit_family")
     inspect_ast(ast)
     if graph["analysis_limits"]["truncated_analyzers"]:
         raise ValueError("truncated_historical_analyzers")
@@ -94,7 +100,7 @@ def audit_additions(ast,index,graph,*,_expand=None):
         rhs=syntax(node.get("right"))
         if not rhs["scan_complete"]:
             raise ValueError("incomplete_residual_syntax")
-        if (rhs["root_after_conversions"],rhs["root_operator"])!=("BinaryOp","Add"):
+        if (rhs["root_after_conversions"],rhs["root_operator"])!=("BinaryOp",operator):
             continue
         if len(rows)>=MAX_ROWS:
             raise ValueError("addition_row_budget")
@@ -107,8 +113,8 @@ def audit_additions(ast,index,graph,*,_expand=None):
             if partial or (f["assignment_kind"]!="continuous" and f.get("procedure_kind")!="AlwaysComb"):
                 raise Unsupported("unsupported_assignment_context")
             exact=lambda e:resolve.resolve_exact(owner,e)
-            candidate=(expand(node,exact,raw,declared) if _expand is None else
-                       _expand(node,exact,raw,declared,constants_by_id[i]))
+            candidate=(expand(node,exact,raw,declared) if expand_candidate is None else
+                       expand_candidate(node,exact,raw,declared,constants_by_id[i]))
             if candidate["target"]["signal"]!=f["target"]:
                 raise Unsupported("assignment_target_identity_mismatch")
         except Unsupported as exc:
@@ -118,8 +124,8 @@ def audit_additions(ast,index,graph,*,_expand=None):
                          [candidate["target"],*candidate["operands"]])
         if coordinates>MAX_COORDINATES:
             raise ValueError("addition_coordinate_budget")
-        row.update(coverage="addition_candidates",candidate=candidate)
-    good=[r for r in rows if r["coverage"]=="addition_candidates"]
+        row.update(coverage=coverage,candidate=candidate)
+    good=[r for r in rows if r["coverage"]==coverage]
     return {"schema_version":1,"scope":"residual_flat_addition_roots_only",
             "counts":{"residual_ids":len(residual),"roots":len(rows),"supported":len(good),
                       "partial":len(rows)-len(good),"potential_pairs":sum(r["candidate"]["potential_pairs"] for r in good),
