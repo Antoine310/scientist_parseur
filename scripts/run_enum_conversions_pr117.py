@@ -48,6 +48,7 @@ def check(name,result):
     else:
         values={}; wanted=Counter()
         assert (c["ast_occurrences"],c["historical_rows"])==(612,479)
+    assert len(result["items"])==c["roots"],"missing_or_extra_site_details"
     for row in result["items"]:
         x=row["candidate"]; t=x["target"]["signal"].rsplit(".",1)[1]
         assert x["target"]["signal"]==row["instance"]+"."+t

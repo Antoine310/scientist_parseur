@@ -119,3 +119,40 @@ def test_tag_does_not_resolve_enum_symbol():
 def test_dynamic_cast_rejects_folded_leaf():
     args=setup(True); args[0]["right"]["operand"]["constant"]="2'b10"
     with pytest.raises(Unsupported,match="unsupported_dynamic_enum_target"): expand(*args,linked=True)
+
+
+@pytest.mark.parametrize("refused",[False,True])
+def test_audit_preserves_site_details(monkeypatch,refused):
+    """Exercise the public report boundary, not only expand()."""
+    import json
+    import rtlprep.enum_conversion_candidates as module
+    args=setup()
+    node=args[0]
+    if refused:
+        node["right"]["operand"]["symbol"]="999 E2"
+    ast={"node":node}
+    occurrence={"ast_path":"/node","instance":"fixture","context":"AlwaysComb",
+                "source":{"file":"fixture.sv","line":1},
+                "historical_status":"selection_gate_negative","flat_assignment_id":None}
+    monkeypatch.setattr(module,"audit_capture",lambda *a:{"items":[occurrence],
+                       "counts":{"ast_occurrences":1,"historical_rows":0}})
+    monkeypatch.setattr(module,"exact_links",lambda *a:(None,None,set(),None,None,None))
+    monkeypatch.setattr(module,"build_bit_access_index",lambda *a,**kw:{})
+    monkeypatch.setattr(module,"reconcile_capture",lambda *a:{})
+    monkeypatch.setattr(module,"Types",lambda *a:SimpleNamespace(types=args[2].types,truncated=False))
+    monkeypatch.setattr(module,"SignalResolver",lambda *a:SimpleNamespace(resolve_exact=lambda owner,e:args[3](e)))
+    monkeypatch.setattr(module,"raw_layouts",lambda *a:args[4])
+    monkeypatch.setattr(module,"layouts",lambda *a:args[5])
+    result=module.audit_enum_conversions(ast,{"top":"fixture"},{"bit_accesses":{}})
+    report=json.loads(json.dumps(result))
+    assert len(report["items"])==report["counts"]["roots"]==1
+    row=report["items"][0]
+    assert row["ast_path"]=="/node" and row["flat_assignment_id"] is None
+    if refused:
+        assert row["coverage"]=="partial"
+        assert row["reason"]=="unproven_enum_value_identity"
+        assert "candidate" not in row
+    else:
+        assert row["candidate"]["values_lsb_first"]==[0,1]
+        assert row["candidate"]["value"]==2
+        assert row["coverage"]=="enum_conversion_candidates"

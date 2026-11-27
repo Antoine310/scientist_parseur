@@ -214,6 +214,7 @@ def audit_enum_conversions(ast,index,graph):
                       "supported_residual":sum(r["historical_residual"] for r in good),
                       "supported_without_flat_id":sum(r["flat_assignment_id"] is None for r in good),
                       "potential_pairs":pairs,"value_records":values,"stored_coordinates":pairs+values,"truncated":False},
+            "items":rows,
             "partial_reasons":dict(Counter(r["reason"] for r in rows if "reason" in r)),
             "historical_replay_exact":True,"historical_graph_promoted":False,"new_historical_edges":0,
             "design_coverage":"not_measured","functional_influence":"not_proven",
