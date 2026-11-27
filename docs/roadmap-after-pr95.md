@@ -90,3 +90,5 @@ FUT-DOC-USER-01, FUT-DOC-ARCHIVE-01, FUT-DOC-CODE-01. Après maturité fonctionn
 
 ## Transversal
 P0 omissions, corpus indépendants, budgets/reproductibilité ; P1 provenance preuve, identité champs, sémantique, transitions ; P2 CI/caches/installations, limite des workflows réutilisables, erreurs MCP PR94-ERROR-01 et budgets PR94-GLOBAL-BUDGET-01, profils et optimisation. P3 exécuteur Linux déterministe autorisé via GitHub et machine utilisateur, outils EDA locaux ; aucun contournement quota/service ou exécution libre de contenu non fiable. Historique CI chaque head/attempt et main, temps mur, somme jobs exécutés, échecs/annulations/skips, local séparé. Priorités révisées selon mesures et dettes sans renumérotation.
+
+**Révision après #115** : fusion confirmée, CI PR/main50/50, 1995 tests locaux (SHA non imprimé), 93 sites core/3024 valeurs, ALU32/160, union indicative187/384 et79/98 à recalculer. #116 audit direct dynamique hors résiduels (1 CSR attendu), enum ID314 et conversions imbriquées/ambiguës/XZ restent ouvertes. Jalon cœur indicatif, aucune dette supprimée.

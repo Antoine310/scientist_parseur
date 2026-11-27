@@ -119,6 +119,8 @@ jobs:
       - name: PR115 constant conversion binary models (Z3)
         run: python -m scripts.prove_constant_conversions_pr115 --out reports/pr115-formal
 
+      - name: PR116 dynamic conversion binary models (Z3)
+        run: python -m scripts.prove_dynamic_conversions_pr116 --out reports/pr116-formal
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -142,6 +144,7 @@ jobs:
             reports/pr113-formal/**
             reports/pr114-formal/**
             reports/pr115-formal/**
+            reports/pr116-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json

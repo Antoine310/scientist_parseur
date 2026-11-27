@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.49 — 27 novembre 2026 (fusion #114, chantier #115)**  
+**Version : 1.50 — 27 novembre 2026 (fusion #115, chantier #116)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #114** (1254826e67d5c4da8853d1e979876be4c335687d). #114 CI50/50,1965/1965 locaux ; CI main #114 à relever.
-**PR en cours : #115**, conversions constantes directes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #115** (91d705f573181079f4f0cff484a3ca0a6d802860). CI PR et main 50/50 ; 1995/1995 locaux (SHA local non imprimé dans l'extrait).
+**PR en cours : #116**, conversions dynamiques directes, validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -895,3 +895,8 @@ Prochaine action : ...
 - Logs locaux #55–62, notamment `reports/pr62/run-*/analysis_budgets.result.json` (copie fournie `Texte collé(20261125-093753).txt`) ; #63 `reports/pr63/run-hmavjqd5/multi_unit.result.json` ; #64 `reports/pr64/run-e23jsimh/ex_stage.result.json` ; #65 `reports/pr65/run-z8ycwvw9/core.result.json` (résumé terminal fourni).
 - GitHub : descriptions des PR #1–48 et #50–65 relues (64 PR), issue #49 identifiée et fermée. Sources : https://github.com/Antoine310/scientist_parseur/pull/NUMERO (remplacer NUMERO par le numéro réel) et https://github.com/Antoine310/scientist_parseur/issues/49. Les descriptions historiques peuvent être antérieures aux corrections : elles renseignent le périmètre et les limites déclarées, non la validation actuelle. Audit des descriptions, pas audit exhaustif du code, des commentaires, des logs CI ou de chaque ancien commit. #65–67 : fusions effectives confirmées, voir en-tête et sections par PR.
 - Les tâches, priorités et critères de clôture sont des propositions d'ingénierie, pas des défauts tous reproduits ni des preuves déjà réalisées. Les éléments non vérifiés sont volontairement marqués comme audit/mesure à effectuer.
+
+### PR #116 — Conversions dynamiques directes (en cours)
+
+- [~] **PR115-CONSTANT-CONVERSION-01 · P0** — #115 fusionnée, 93 sites core/3024 valeurs, ALU32/160, 1995 locaux, CI50/50 PR/main ; conserver l'ancienne entrée et confirmer SHA local. [Validation](https://github.com/Antoine310/scientist_parseur/pull/115#issuecomment-7221307450).
+- [~] **PR115-CONVERSION-GENERAL-01 · P0** — Sous-périmètre #116 : audit AST #102 distinct des résiduels, 1 extension CSR hors flat ID attendue, 93 refus dont enum ID314 ; pas de gain résiduel attendu. Conversions imbriquées, signe ambigu, enum, X/Z, compositions et intégration restent ouvertes. [Périmètre](dynamic-conversions-pr116.md).

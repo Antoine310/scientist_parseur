@@ -1,0 +1,11 @@
+# PR116 — Conversions dynamiques directes (P0)
+
+## Evidence before implementation
+Archived artifact 15198817914, PR95 residual IDs and PR102 JSON-pointer census joined to the actual elaborated ALU/core AST. Direct leading Conversion to a NamedValue/ElementSelect/RangeSelect with no leaf constant tag: ALU 0, core 94 (92 enum-typed named leaves, one enum destination ID314, one named integral assignment). No direct integral dynamic conversion in the historical residuals. Core CSR line 521: csr_rdata_int (logic[31:0]) = tinfo_types (logic[15:0]), AlwaysComb, selection_gate_negative, no historical flat ID. The declaration addresses in the same AST identify both variables; no name/line join. The 92 enum named leaves are syntactic candidates, not established runtime signals (many are enumerators). ID314 remains refused. No claim of 94 dynamic runtime conversions.
+
+## Scope
+One Conversion, exact declared NamedValue endpoints, explicit descending single packed logic/bit/reg types up to 64 bits, blocking continuous or AlwaysComb, same-state binary semantics; use existing conservative conversion_mode. Widening requires equal signedness, narrowing keeps low bits even when signedness differs. No selections, nested conversion, enum, folded tags, compound/NBA/timed assignments, X/Z or ambiguous widening. AlwaysComb candidate is statement-local, with guard and timing not proven. Zero-fill coordinates are not permanent constants. No historical admission or graph promotion, no residual gain expected. Source position relation is not global influence.
+
+Reuse PR102 occurrence reconciliation, historical replay and exact semantic identity. 2000 rows and 32768 stored coordinates fail closed. Full input hashes checked unchanged; unique reports. Expected core 94 roots/1 supported/93 refusals, 16 pairs +16 zero fills; ALU 0. Fixture 3 roots, 16 pairs +4 zeros, 768 cocotb word checks. Z3 5 UNSAT +3 SAT mutants; compares positional model to built-in bitvector operations, not RTL equivalence. All results pending execution, counts are hypotheses derived from archived AST, not CI/local results.
+
+Nested conversions, enum identity, X/Z, guard feasibility, composition, integration and broader corpora remain open.
