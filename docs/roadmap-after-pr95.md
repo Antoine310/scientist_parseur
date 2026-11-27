@@ -55,6 +55,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #112** : fusionnée1905 tests/50 jobs,2 décalages logiques/1313 paires par design ALU/core. #113 signe conditionnel des six shifts restants, puis multiplication #114 indicative. Les numéros ultérieurs sont décalés à titre indicatif ; jalon cœur #124 ou ultérieur.
 
+**Révision après #113** : 1935 tests/50 jobs, six shifts signés traités, 698 paires par design, 8/8 racines historiques shift avec #112, union indicative88/384. #114 six produits signés pleine largeur, #115 conversions, suite selon backlog ; jalon cœur #124 indicatif.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

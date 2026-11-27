@@ -113,6 +113,9 @@ jobs:
       - name: PR113 controlled signed shift binary models (Z3)
         run: python -m scripts.prove_signed_shift_pr113 --out reports/pr113-formal
 
+      - name: PR114 full signed product binary models (Z3)
+        run: python -m scripts.prove_signed_multiply_pr114 --out reports/pr114-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -134,6 +137,7 @@ jobs:
             reports/pr111-formal/**
             reports/pr112-formal/**
             reports/pr113-formal/**
+            reports/pr114-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json

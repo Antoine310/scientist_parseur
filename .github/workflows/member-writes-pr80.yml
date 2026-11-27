@@ -356,6 +356,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_signed_shift_pr113 --out reports/pr113 --reference "${refs[0]}"
 
+      - name: PR114 full signed product candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_signed_multiply_pr114.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_signed_multiply_pr114 --out reports/pr114 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -510,3 +519,9 @@ jobs:
             reports/pr113/**/fixture/elaborated_ast.json
             reports/pr113/**/fixture/rtl_index.json
             reports/pr113/**/fixture/rtl_dependencies.json
+            reports/pr114/**/summary.json
+            reports/pr114/**/*.signed-multiplies.json
+            reports/pr114/**/simulation_results.xml
+            reports/pr114/**/fixture/elaborated_ast.json
+            reports/pr114/**/fixture/rtl_index.json
+            reports/pr114/**/fixture/rtl_dependencies.json
