@@ -121,6 +121,8 @@ jobs:
 
       - name: PR116 dynamic conversion binary models (Z3)
         run: python -m scripts.prove_dynamic_conversions_pr116 --out reports/pr116-formal
+      - name: PR117 enum conversion binary models (Z3)
+        run: python -m scripts.prove_enum_conversions_pr117 --out reports/pr117-formal
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -145,6 +147,7 @@ jobs:
             reports/pr114-formal/**
             reports/pr115-formal/**
             reports/pr116-formal/**
+            reports/pr117-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json

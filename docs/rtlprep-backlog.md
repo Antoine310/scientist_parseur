@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.50 — 27 novembre 2026 (fusion #115, chantier #116)**  
+**Version : 1.51 — 27 novembre 2026 (fusion #116, chantier #117)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #115** (91d705f573181079f4f0cff484a3ca0a6d802860). CI PR et main 50/50 ; 1995/1995 locaux (SHA local non imprimé dans l'extrait).
-**PR en cours : #116**, conversions dynamiques directes, validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #116** (fc6be0b2dcc1be06ed1f9c9b353fa1020790f68f). CI PR/main 50/50 ; 2025/2025 locaux SHA confirmé.
+**PR en cours : #117**, conversions enum de package, validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -900,3 +900,9 @@ Prochaine action : ...
 
 - [~] **PR115-CONSTANT-CONVERSION-01 · P0** — #115 fusionnée, 93 sites core/3024 valeurs, ALU32/160, 1995 locaux, CI50/50 PR/main ; conserver l'ancienne entrée et confirmer SHA local. [Validation](https://github.com/Antoine310/scientist_parseur/pull/115#issuecomment-7221307450).
 - [~] **PR115-CONVERSION-GENERAL-01 · P0** — Sous-périmètre #116 : audit AST #102 distinct des résiduels, 1 extension CSR hors flat ID attendue, 93 refus dont enum ID314 ; pas de gain résiduel attendu. Conversions imbriquées, signe ambigu, enum, X/Z, compositions et intégration restent ouvertes. [Périmètre](dynamic-conversions-pr116.md).
+
+### PR #117 — Conversions enum directes (en cours)
+
+- [~] **PR115-CONVERSION-GENERAL-01 · P0** — #116 fusionnée, 2025 locaux, CI PR/main50/50, 1 CSR dynamique hors flat, 16 paires +16 zéros. [Validation](https://github.com/Antoine310/scientist_parseur/pull/116#issuecomment-7221658679). #117 vise 92 constantes enum hors flat (318 valeurs) et ID314 (2 paires) après preuve exacte de déclaration/encodage et domaine binaire complet. Enum général, conversions imbriquées, signe ambigu, X/Z, compositions, recouvrements et intégration restent ouverts. [Périmètre](enum-conversions-pr117.md).
+
+- #117 première validation : fixture 4 références enum taguées exclues à tort ; correction bornée par identité et valeur indépendante. Cœur 97 racines attendues, 96 constantes (330 valeurs), 1 dynamique (2 paires), ID314 uniquement dans les résiduels. Dette générale inchangée.
