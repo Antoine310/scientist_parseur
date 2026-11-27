@@ -77,7 +77,10 @@ def audit_additions(ast,index,graph,*,_expand=None):
 
 
 def _audit_arithmetic(ast,index,graph,*,operator,coverage,expand_candidate):
-    if (operator,coverage) not in (("Add","addition_candidates"),("Subtract","subtraction_candidates")):
+    comparison_ops=("Equality","Inequality","LessThan","LessThanEqual","GreaterThan","GreaterThanEqual",
+                    "CaseEquality","CaseInequality","WildcardEquality","WildcardInequality")
+    if (operator,coverage) not in (("Add","addition_candidates"),("Subtract","subtraction_candidates"),
+                                   (comparison_ops,"comparison_candidates")):
         raise ValueError("unsupported_arithmetic_audit_family")
     inspect_ast(ast)
     if graph["analysis_limits"]["truncated_analyzers"]:
@@ -100,7 +103,8 @@ def _audit_arithmetic(ast,index,graph,*,operator,coverage,expand_candidate):
         rhs=syntax(node.get("right"))
         if not rhs["scan_complete"]:
             raise ValueError("incomplete_residual_syntax")
-        if (rhs["root_after_conversions"],rhs["root_operator"])!=("BinaryOp",operator):
+        operators=(operator,) if isinstance(operator,str) else operator
+        if rhs["root_after_conversions"]!="BinaryOp" or rhs["root_operator"] not in operators:
             continue
         if len(rows)>=MAX_ROWS:
             raise ValueError("addition_row_budget")

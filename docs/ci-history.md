@@ -54,6 +54,11 @@ Les durées murales sont création→dernière mise à jour d'un run terminé (U
 | 97 | main | 43a8ff1 | [45973651373](https://github.com/Antoine310/scientist_parseur/actions/runs/45973651373) | 50/50 | 261 | 15 | 200 | 3 | 2403 | member-writes-pr80 199 s |
 | 98 | PR initiale | bc1dfc3 | [45974019754](https://github.com/Antoine310/scientist_parseur/actions/runs/45974019754) | 48/50,2 échecs | 265 | 14 | 237 | 4 | 2340 | member-writes-pr80 167 s |
 | 98 | PR finale | 371dc57 | [45974697416](https://github.com/Antoine310/scientist_parseur/actions/runs/45974697416) | 50/50 | 296 | 13 | 270 | 2 | 2193 | member-writes-pr80 203 s |
+| 98 | main | 36e6ca3 | [45975861034](https://github.com/Antoine310/scientist_parseur/actions/runs/45975861034) | 50/50 | 237 | 14 | 206 | 3 | 2336 | member-writes-pr80 205 s |
+| 99 | PR finale | 42ff60a | [45976244510](https://github.com/Antoine310/scientist_parseur/actions/runs/45976244510) | 50/50 | 226 | 16 | 197 | 3 | 2279 | member-writes-pr80 196 s |
+| 99 | main | 164a16e | [45979353778](https://github.com/Antoine310/scientist_parseur/actions/runs/45979353778) | 50/50 | 245 | 22 | 211 | 3 | 2107 | member-writes-pr80 184 s |
+
+#99 : tentative1, 09:44:38–09:48:24 UTC, head 42ff60aae36a637b9fa09d758a8a4ae2a97745b8, formel38 s ; local 22/22 ciblés 0,16 s, 1548/1548 6,76 s ; [preuve](https://github.com/Antoine310/scientist_parseur/pull/99#issuecomment-7215490068). Main tentative1 10:07:00–10:11:05 UTC, SHA 164a16e4829045b6b822ca721df926570b349747, 50/50, gate Python job 22 s (étape pytest 3 s), fenêtre spécialisée 10:07:28–10:10:59 UTC, verdict 10:11:01–10:11:04, formel35 s ; somme des durées des 50 jobs 2107 s. #98 main tentative1 09:41:53–09:45:50 UTC, formel39 s. Aucun retry ni échec signalé pour #99. #100 conserve les 50 jobs attendus.
 
 #98 initiale : 09:28:36→09:33:01 UTC tentative1, partagé167 s échec étape27 fixture, gate échec, formel35 s réussi. Finale 09:33:27→09:38:23 UTC tentative1, partagé203 s, formel41 s, local1526/1526 6,48 s, cumul deux heads561 s fenêtre587 s sans retry/annulation. Fusion36e6ca3, main à relever. #99 conserve 50 jobs attendus.
 

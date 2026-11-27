@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.33 — 27 novembre 2026 (fusion #98, chantier #99)**  
+**Version : 1.34 — 27 novembre 2026 (fusion #99, chantier #100)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #98** (`36e6ca3a1f31f901f524e777a828ad3f2a3cecc9`). #98 50/50 CI sur 371dc57, 1526/1526 locaux ; main à relever. #97 main50/50 en261 s.
-**PR en cours : #99**, soustraction et masque de décalage ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #99** (`164a16e4829045b6b822ca721df926570b349747`). #99 CI 50/50 sur 42ff60a, 1548/1548 locaux ; main 50/50 en 245 s. #98 main 50/50 en 237 s.
+**PR en cours : #100**, égalités et comparaisons résiduelles ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -672,11 +672,19 @@ Correctif après validation locale initiale bc1dfc3 : 20/20 ciblés 0,10 s, 1524
 
 Validation finale #98 [preuve](https://github.com/Antoine310/scientist_parseur/pull/98#issuecomment-7214932274) : SHA371dc57, 22/22 ciblés 0,10 s,1526/1526 6,48 s, reports/pr98/run-d4mm9vfy/summary.json passed. Fixture3/3,2555 paires198 coordonnées, 32 checks simulation ; core33/64,67025 paires4158 coordonnées, ALU0/31 ; union exacte disjointe #97/#98 31 ALU64 core, 67337 paires4360 coordonnées core, aucun ajout historique. Audits fixture/ALU/core0,002454/0,133651/0,549817 s, aucun tronqué, graphes inchangés. Z3 4.15.5 reports/pr98-formal/run-1s28ifro/summary.json passed 2659 requêtes abstraites (101 UNSAT,2558 SAT). Core24 instances1597 nœuds3566 arêtes15 warnings39 TP8 TN0 FP/FN annotés7 chemins ; pipeline3,926017 s, graphe1,894055 s, RSS ancien worker184316/slang217548 Kio, AST/index/graphe47778002/851329/33322406 octets. CI initiale48/50 265 s, finale50/50 296 s, cumul561 s fenêtre587 s ; main à relever. PR95-ARITH-01 et PR96-COMPOSE-01 restent ouvertes globalement.
 
-### PR #99 — Soustraction et masque (en cours)
-- [~] **PR99-SUB-01 · P1** — Artefact #98 15186144129, 0 ALU/2 core racines Subtract, 5 core imbriquées. Exact replay partagé sans changement Add, soustraction modulo 1–64, coordonnées fixes exactes et états/largeurs égaux ; oracle LSU offset 2 bits,6 paires/6 coordonnées. 
-- [~] **PR99-MASK-01 · P1** — Forme exacte (1<<k)-1 avec k 5 bits, résultat32, littéraux 1 prouvés, support seuil t=i+1 : suffixe à partir de v2(t), bit31 constant0,129 paires37 coordonnées. Oracle exhaustif indépendant ; union core66 racines arithmétiques et318 résidus, ALU31 et67, aucun ajout graphe. 
-- [~] **PR99-FORMAL-01 · P1** — 22 nouveaux tests ciblés (1548 suite attendue), fixture48 checks, Z3 1287 requêtes (soustraction2/4/32 et masque5→32), modèle abstrait binaire, pas preuve RTL. 50 jobs existants.
+### PR #99 — Soustraction et masque (fusionnée)
+- [x] **PR99-SUB-01 · P1** — Artefact #98 15186144129, 0 ALU/2 core racines Subtract, 5 core imbriquées. Exact replay partagé sans changement Add, soustraction modulo 1–64, coordonnées fixes exactes et états/largeurs égaux ; oracle LSU offset 2 bits,6 paires/6 coordonnées. 
+- [x] **PR99-MASK-01 · P1** — Forme exacte (1<<k)-1 avec k 5 bits, résultat32, littéraux 1 prouvés, support seuil t=i+1 : suffixe à partir de v2(t), bit31 constant0,129 paires37 coordonnées. Oracle exhaustif indépendant ; union core66 racines arithmétiques et318 résidus, ALU31 et67, aucun ajout graphe. 
+- [x] **PR99-FORMAL-01 · P1** — 22 nouveaux tests ciblés (1548 suite attendue), fixture48 checks, Z3 1287 requêtes (soustraction2/4/32 et masque5→32), modèle abstrait binaire, pas preuve RTL. 50 jobs existants.
 - [ ] **PR99-NESTED-01 · P1** — Cinq lignes Subtract imbriquées et autres compositions/omissions non promues ; poursuivre comparaisons après validation, conserver phases indicatives et dettes.
+
+Validation finale #99 : [preuve permanente](https://github.com/Antoine310/scientist_parseur/pull/99#issuecomment-7215490068), head exact 42ff60aae36a637b9fa09d758a8a4ae2a97745b8, fusion 164a16e4829045b6b822ca721df926570b349747. 22/22 ciblés 0,16 s, 1548/1548 suite 6,76 s, reports/pr99/run-jldsvi31/summary.json passed, fixture2/2, 48 checks Verilator/cocotb, 135 paires/43 coordonnées ; ALU0 racine Subtract, core2/2, 5 imbriquées non promues. Union exacte core66 IDs, 67472 paires, 4403 coordonnées ; ALU31, restants core318/ALU67. Z3 4.15.5 reports/pr99-formal/run-z5hk7p51/summary.json passed, 1287 requêtes (72 UNSAT, 1215 SAT dont 4 mutants), modèle binaire abstrait seulement. Graphes et fichiers historiques inchangés intra-run ; pas de troncature, pas de benchmark apparié. CI finale 226 s 50/50, main 245 s 50/50 (voir ci-history). PR95-ARITH-01, PR96-COMPOSE-01, PR99-NESTED-01 et dettes P0 restent ouvertes.
+
+### PR #100 — Égalités et comparaisons (en cours)
+
+- [~] **PR100-EQUALITY-01 · P1** — Artefact #99 15187058271, ALU 4 Equality +4 GreaterThan, core 5 Equality +1 Inequality +4 GreaterThan ; 12/155 lignes contenant ces opérateurs (union, non additive avec arithmétique). AST réel : quatre comparaisons d'octets à indices lexicaux, décodeur instr_i[1:0] != 2'b11, FIFO status_cnt_q == FIFO_DEPTH[ADDR_DEPTH:0]. Premier périmètre : feuilles exactes indépendantes non signées, littéral défini ou tranche basse de paramètre int unsigned lexicalement identifié, aucun X/Z ni conversion dynamique. Attentes à vérifier : ALU4/core6 nouveaux IDs, 64/68 paires, 68/74 coordonnées. Aucune promotion historique.
+- [ ] **PR100-ORDER-01 · P1** — Quatre GreaterThan par design : véritables AST avec $signed, concaténation et bitwise AND du bit de signe avec cmp_signed ; ne pas traiter comme comparaison unsigned ou opérandes indépendants. Étudier composition et signe ; garder comparaisons imbriquées, alias, comparaisons à quatre états et conversions hors périmètre.
+- [~] **PR100-FORMAL-01 · P1** — Oracle indépendant, tests négatifs, simulation fixture, modèle binaire SMT et mutants, conservation des 50 jobs historiques ; résultats à mesurer, pas une preuve RTL.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
@@ -724,6 +732,7 @@ Validation finale #98 [preuve](https://github.com/Antoine310/scientist_parseur/p
 | FUT-OT-01 | Première IP OpenTitan autonome et autorisée | Elaborer, indexer, annoter, tests positifs/négatifs ; dépendances et paramètres documentés |
 | FUT-FORMAL-01 | Catalogue de propriétés matérielles de sécurité (CSR, verrouillage, non-interférence, équivalence) | SBY/Yosys/Z3/EQY, hypothèses, contre-exemples, mutants, portée exacte |
 | FUT-EVIDENCE-BRIDGE-01 | P3 — Relier automatiquement graphes de dépendances statiques, preuves SBY/EQY/Z3 et observations dynamiques Verilator/cocotb VCD/FST | Correspondance exacte hiérarchie/signaux/bits/configuration et provenance des sources ; reconstruire cycles par fronts d'horloge et phases explicites, traces bornées, témoins et contre-exemples, distinguer observation, corrélation, preuve et inconclusif ; oracle indépendant et mutants ; aucune preuve d'influence déduite de la seule corrélation, absence de trace non assimilée à absence de signal. Étudier après l'intégration actuelle, sans changement de priorité. |
+| FUT-MJOLNIR-STUDY-01 | P3 — Étude différée de MJOLNIR ; références fournies à vérifier, [fiche](research/mjolnir.md) | Audit technique et juridique, provenance/licences, inventaire, comparaison RTLPrep et propositions testables ; liens FUT-MCP-01, FUT-AGENT-01, FUT-OT-01, FUT-EVIDENCE-BRIDGE-01 ; aucun import immédiat |
 | FUT-MCP-01 | Investigation agent : source → écriture → gardes → chemins → evidence | MCP lecture seule, traces sourcées et limites, tests stdio et requêtes bornées |
 | FUT-AGENT-01 | Benchmark agent contrôlé A=RTL brut, B=index, C=hybride RTLPrep | Questions/références gelées, mêmes conditions, exactitude, abstention, contexte, latence/coût, répétitions ; aucune affirmation de gain avant mesure |
 | FUT-DEMO-01 | Démonstration GhostGate / HOST 2027, outil restant généraliste | Scénarios autorisés, résultats reproductibles, limites et validation scientifique ; ne pas présumer règlement/acceptation du concours |
