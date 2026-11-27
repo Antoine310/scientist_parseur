@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.36 — 27 novembre 2026 (fusion #101, chantier #102)**  
+**Version : 1.37 — 27 novembre 2026 (fusion #102, chantier #103)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #101** (`a84d885b57084f4cbd9beb80c8faf86a28f4ed86`). #101 CI finale 50/50, 1609/1609 locaux ; main [45985374733](https://github.com/Antoine310/scientist_parseur/actions/runs/45985374733) à relever après achèvement.
-**PR en cours : #102**, audit P0 du census historique ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #102** (`b75c9ecce8b594f909c7cf5121219e5ce1cf7afc`). #102 CI 50/50,1630/1630 locaux ; main [45999143379](https://github.com/Antoine310/scientist_parseur/actions/runs/45999143379) à relever après achèvement.
+**PR en cours : #103**, correction versionnée opt-in du filtre de sélection ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -699,10 +699,17 @@ Premier head #101 ef11507e8058379f0035188b9da73a22ad2399d1 : local22/22 0,10 s,1
 
 Validation finale #101 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/101#issuecomment-7216325288), head 1c5d2688776746607859c9d028767e4417634951, fusion a84d885b57084f4cbd9beb80c8faf86a28f4ed86. Local22/22 0,09 s,1609/1609 7,12 s ; reports/pr101/run-bkh5cpbb/summary.json passed, fixture1/1,17 paires/18 coordonnées,131072 assertions/131072 ns/2,80 s, SHA256 3ce2861793e9cfa9c64971812c90bc21706a0ec627967cf321124bb165083e09 ; ALU/core4/4 chacun68 paires/72 coordonnées, aucune troncature, union39/76 reste59/308. Z3 reports/pr101-formal/run-d3fpetsx/summary.json passed,112 requêtes (4 UNSAT,96 témoins SAT,12 mutants SAT). CI finale50/50,253 s ; premier head47/50 conservé ; pas de promotion historique, ni preuve RTL. PR100-ORDER-01 reste ouvert globalement.
 
-### PR #102 — Audit P0 du census (en cours)
+### PR #102 — Audit P0 du census (fusionnée)
 
-- [~] **PR102-AUDIT-01 · P0** — Traçage opt-in des décisions historiques, replay exact, rapprochement par identité objet et JSON pointer local à l'artefact, partition par occurrence et instance ; fixture scalaire manquante, sélection explicite et absence de sélection. Attentes 3/1 fixture, 612/479 ALU,3811/1199 core (AST/lignes historiques), classifications à mesurer. Aucun changement du filtre historique ou promotion. PR101-CAPTURE-01, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouverts.
-- [ ] **PR102-VERSION-01 · P0** — Après audit, corriger le filtre de sélection avec nouveau dénominateur versionné, réconciliation des IDs, impact sur budgets et corpus, refus explicites ; aucun gain avant validation. Ne pas modifier rétrospectivement les dénominateurs #95.
+- [x] **PR102-AUDIT-01 · P0** — Traçage opt-in des décisions historiques, replay exact, rapprochement par identité objet et JSON pointer local à l'artefact, partition par occurrence et instance ; fixture scalaire manquante, sélection explicite et absence de sélection. Attentes 3/1 fixture, 612/479 ALU,3811/1199 core (AST/lignes historiques), classifications à mesurer. Aucun changement du filtre historique ou promotion. PR101-CAPTURE-01, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouverts.
+- [~] **PR102-VERSION-01 · P0** — Après audit, corriger le filtre de sélection avec nouveau dénominateur versionné, réconciliation des IDs, impact sur budgets et corpus, refus explicites ; aucun gain avant validation. Ne pas modifier rétrospectivement les dénominateurs #95.
+
+Validation #102 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/102#issuecomment-7218313125), head 35290a8632a6d47547ba0e9ea11e8926be78a433, fusion b75c9ecce8b594f909c7cf5121219e5ce1cf7afc. Local21/21 0,12 s et1630/1630 6,96 s ; reports/pr102/run-u9jikssa/summary.json passed ; fixture3/1/1 omission/1 sans sélection, ALU612/479/133 sans sélection/0 omission, core3811/1199/2594 sans sélection/13 omissions/5 cibles non supportées/0 non visitées. 7 omissions avec Call.arguments, 5 conditions ternaires,1 pattern structuré (artefact15190879320). Audits0,00156/0,201/0,758 s, visites160/21217/73214, sélections17/1248/2490, replay exact et PR67 réconcilié, aucune troncature. CI50/50,321 s ; main #101 50/50,269 s. Pas de promotion ni nouvelle simulation/formel. PR101-CAPTURE-01 reste ouvert.
+
+### PR #103 — Correction versionnée opt-in (en cours)
+
+- [~] **PR103-GATE-01 · P0** — Corriger les omissions de sélection après résultat négatif v1 par parcours borné des conteneurs hors métadonnées, refus explicite au budget. Mode opt-in, rapport v2 distinct, projection exacte IDs/lignes/arêtes v1. Attentes fixture1→2, ALU479→479, core1199→1212, 13 nouvelles lignes strictement partielles, zéro arête ajoutée ; aucun gain avant validation. PR101-CAPTURE-01 et PR102-VERSION-01 restent ouverts globalement.
+- [ ] **PR103-PUBLIC-01 · P0** — Intégration versionnée au pipeline public, corpus indépendants et budgets ; définir stratégie de migration des consommateurs CLI/MCP, maintenir lecture historique et IDs #95. Les cinq cibles non supportées CSR, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouvertes. Sémantique des nouveaux sites à traiter séparément.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

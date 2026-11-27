@@ -390,6 +390,37 @@ def _contains_selection(node: Any, budget: list[int], depth: int = 0) -> bool:
     return False
 
 
+def _contains_selection_v2(node: Any, *, max_nodes=4096, max_depth=64) -> bool:
+    """Conservative syntax admission only; never evaluate a selector.
+
+    Traverse container fields beyond the historical whitelist. Fail closed on
+    budget exhaustion instead of treating an incomplete scan as negative.
+    """
+    if (type(max_nodes) is not int or not 1<=max_nodes<=4096
+            or type(max_depth) is not int or not 1<=max_depth<=64):
+        raise ValueError("invalid_selection_v2_budget")
+    metadata={"type","definition","internalSymbol","symbol","addr","subroutine"}
+    stack=[(iter((node,)),0)]
+    visited=0
+    found=False
+    while stack:
+        children,depth=stack[-1]
+        try:
+            obj=next(children)
+        except StopIteration:
+            stack.pop()
+            continue
+        visited+=1
+        if visited>max_nodes or depth>max_depth:
+            raise ValueError("selection_v2_scan_budget")
+        if isinstance(obj,dict):
+            found |= obj.get("kind") in ("ElementSelect","RangeSelect","Concatenation")
+            stack.append((iter(v for k,v in obj.items() if k not in metadata and isinstance(v,(dict,list))),depth+1))
+        elif isinstance(obj,list):
+            stack.append((iter(v for v in obj if isinstance(v,(dict,list))),depth+1))
+    return found
+
+
 def _target_name(node: Any, known: set[str], path: str,
                  resolver: SignalResolver | None = None) -> str | None:
     current = node
@@ -472,8 +503,11 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            enable_width_conversions: bool = True,
                            enable_width_literals: bool = True,
                            captured_assignments: list | None = None,
-                           capture_trace: list | None = None) -> dict[str, Any]:
+                           capture_trace: list | None = None,
+                           selection_census_v2: bool = False) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
+    if type(selection_census_v2) is not bool:
+        raise ValueError("invalid_selection_census_version")
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
         raise ValueError("Index RTL v1/top incompatible avec bit_accesses")
@@ -518,9 +552,15 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             trace(path,node,"not_assignment")
             return
         lhs, rhs = node.get("left"), node.get("right")
+        recovered_selection=False
         if not (_contains_selection(lhs, [0]) or _contains_selection(rhs, [0])):
-            trace(path,node,"selection_gate_negative")
-            return
+            if selection_census_v2:
+                left_found=_contains_selection_v2(lhs)
+                right_found=_contains_selection_v2(rhs)
+                recovered_selection=left_found or right_found
+            if not recovered_selection:
+                trace(path,node,"selection_gate_negative")
+                return
         target = _target_name(lhs, known[path], path, resolver)
         if target is None:
             counts["unsupported_targets"] += 1
@@ -557,6 +597,19 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 "guards": list(guards), "events": list(events),
                 "timing_scope": timing_scope,
             })
+        if recovered_selection:
+            # The census extension is deliberately not a semantic extension.
+            # Do not publish segments or edges for newly admitted occurrences.
+            item.update(coverage="partial",bit_graph_eligible=False,
+                        reason="selection_census_v2_semantics_not_validated")
+            counts["partial"]+=1
+            rows.append(item)
+            trace(path,node,"captured")
+            if captured_assignments is not None:
+                captured_assignments.append((item,node,path,
+                    dict(procedural_constants or selector_constants or {}),context_partial))
+            return
+
         def populate(candidate, *, additional=False, lhs=lhs, rhs=rhs):
             dest, select, dest_width = _selection(lhs, known[path], path, resolver)
             assert dest == target
