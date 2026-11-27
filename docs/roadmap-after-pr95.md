@@ -39,6 +39,10 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #105** : audit effectif validé sur six designs, 15 exclusions Initial rxuart (1 avec sélection), 2 cibles concaténées distinctes, aucune inexpliquée dans ce périmètre. #106 cible les NBA scalaires rxuart avec oracle positionnel, simulation fixture et modèle binaire Z3 ; pas de promotion ni preuve temporelle, Initial et 5 cibles CSR restent ouvertes. Phases A–H conservées.
 
+**Révision après #106** : deux cibles concat scalaires rxuart caractérisées,6 records,160 checks fixture et8 Z3 modèle, CI50/50,1731 tests ; 5 cibles CSR restantes. #107 audit du recouvrement PR80/88 et scopes generate. 
+
+**Découpage indicatif convenu après #106, jusqu'au prochain bilan statique cœur :** #107 audit CSR ; #108 concat vectorielles/sélections/alias (correction generate à intercaler si nécessaire) ; #109 Initial ; #110 logique/réductions ; #111 shifts ; #112 multiplication ; #113 conversions largeur/signe/X/Z ; #114 composition ; #115 fonctions/arguments ; #116 branches/appels imbriqués ; #117 boucles bornées ; #118 boucles imbriquées/écritures multiples ; #119 tableaux/register file ; #120 structures/unions/champs ; #121 conditions complexes/casez/casex/Inside ; #122 audit consolidé ; **#123 bilan scientifique cœur complet**. Puis #124–131 hiérarchie/temporalité, #132–138 simulation CPU/oracle ISA. Numéros non contractuels, toutes dettes et phases A–H préservées, P0 avancées si nécessaire. Ne pas assimiler le bilan statique à une simulation du CPU.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 

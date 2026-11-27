@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.40 — 27 novembre 2026 (fusion #105, chantier #106)**  
+**Version : 1.41 — 27 novembre 2026 (fusion #106, chantier #107)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #105** (`4ec7d64140b84f5eac0f370f94ef5a05b3269f4e`). #105 CI50/50,1703/1703 locaux ; main [46003055540](https://github.com/Antoine310/scientist_parseur/actions/runs/46003055540) à relever après achèvement.
-**PR en cours : #106**, candidats NBA à cibles concaténées scalaires ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #106** (`04f2f516f0d17e24767dc8cde38534ff4f6413f1`). #106 CI50/50,1731/1731 locaux ; main [46004218559](https://github.com/Antoine310/scientist_parseur/actions/runs/46004218559) à relever après achèvement.
+**PR en cours : #107**, audit des cinq cibles CSR et recouvrement des preuves existantes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -730,10 +730,17 @@ Validation #104 : [commentaire permanent](https://github.com/Antoine310/scientis
 
 Validation #105 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/105#issuecomment-7218894883), head 7819aa8bce55f5e585e1b987fe7a2a3af971b643, fusion 4ec7d64140b84f5eac0f370f94ef5a05b3269f4e. Local19/19 0,12 s,1703/1703 7,27 s ; reports/pr105/run-ndqfq508/summary.json passed, fixture5 AST/1 capture/3 non visitées (2 Initial,1 RepeatLoop),2 frontières et2 sélections ; ALU612/479,core3811/1199/13 omissions filtre V1/5 cibles refusées, axis44/4,encoder9/8,rxuart87/16/72 tentatives/15 Initial/15 frontières (1 sélection)/2 cibles concaténées/54 sans sélection. Zéro inexpliquée sur six cas, replay exact, aucune promotion ni troncature. Audits0,00223/0,270/1,203/0,00799/0,00616/0,0161 s. CI50/50,330 s, main #104 50/50,241 s ; artefact15198817914. PR104-WALK-01/PR105-TRACE-01 satisfaites dans périmètre testé ; sémantique Initial reste ouverte.
 
-### PR #106 — Cibles concaténées NBA (en cours)
+### PR #106 — Cibles concaténées NBA (fusionnée)
 
-- [~] **PR106-CONCAT-SCALAR-01 · P0** — PR105-CONCAT-TARGET-01 : deux cibles rxuart (lignes179/181), concat scalaires reg/logic distincts, largeur/ordre/identité exacte, copie RHS ou zéro de même largeur. Canal séparé, 2 sites/6 records chacun fixture et rxuart attendus ; 5 CSR hors famille, historique inchangé. Simulation fixture32 transitions +128 préparations, Z3 modèle8 requêtes attendues. Ni temporalité globale ni preuve RTL, pas de promotion.
+- [x] **PR106-CONCAT-SCALAR-01 · P0** — PR105-CONCAT-TARGET-01 : deux cibles rxuart (lignes179/181), concat scalaires reg/logic distincts, largeur/ordre/identité exacte, copie RHS ou zéro de même largeur. Canal séparé, 2 sites/6 records chacun fixture et rxuart attendus ; 5 CSR hors famille, historique inchangé. Simulation fixture32 transitions +128 préparations, Z3 modèle8 requêtes attendues. Ni temporalité globale ni preuve RTL, pas de promotion.
 - [ ] **PR106-CONCAT-GENERAL-01 · P0** — Cibles vectorielles, sélections, concat imbriquées et alias, autres expressions et contextes, corpus supplémentaires ; PR105-CONCAT-TARGET-01 reste ouverte globalement. Auditer les cinq cibles CSR séparément, vérifier chevauchement avec canaux membres existants ; PR105-INITIAL-01, PR104-MCP-ERROR-01 et autres dettes conservées.
+
+Validation #106 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/106#issuecomment-7219057869), head 54ff17d1827b415dd275030c3b155e7b47816516, fusion 04f2f516f0d17e24767dc8cde38534ff4f6413f1. Local28/28 0,09 s,1731/1731 7,04 s (SHA local non visible dans extrait), reports/pr106/run-ag3mffvb/summary.json passed, fixture/rxuart2 sites/6 records chacun (3 sampled,3 zéro),5 autres CSR, 6 designs, replay exact. Cocotb1/1,320 ns,160 tuples (32 transitions,128 préparations), SHA256 fixture 7e9e6bb96c3a1b55ea3fa325ef70842b635052b39333d20dda3ffc3b61928357. reports/pr106-formal/run-wofn8rph/summary.json passed,8 Z3 (2 UNSAT équivalence modèle,3 SAT sensibilité,3 SAT mutants), aucune preuve RTL/temporelle. CI50/50,337 s, main #105 50/50,246 s, artefacts15201005092/15198493897. Pas de promotion ou nouvelle arête historique ; autres concat et dettes conservées.
+
+### PR #107 — Audit cibles CSR (en cours)
+
+- [~] **PR107-CSR-AUDIT-01 · P0** — Réconcilier cinq cibles refusées core avec positions membres existantes et résolution exacte des scopes generate. Trois champs DCSR déjà présents PR80/88, deux cibles gen_trigger_regs. Joindre uniquement identité AST+instance→ordinal, replay historique, aucune promotion/double comptage. Fixture 2 champs+2 cibles generate, six designs, refus explicites, pas de nouvelle preuve sémantique. 
+- [ ] **PR107-SCOPE-01 · P0** — Étudier admission versionnée des cibles generate et positions NBA avec oracle indépendant, préserver identités et dénominateurs ; aucune assimilation aux signaux directs. PR106-CONCAT-GENERAL-01 et PR105-INITIAL-01 restent ouvertes ; réordonner selon mesures. 
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
