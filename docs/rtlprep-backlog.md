@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.43 — 27 novembre 2026 (fusion #108, chantier #109)**  
+**Version : 1.44 — 27 novembre 2026 (fusion #109, chantier #110)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #108** (`e2a65ba1d1a8b15e26619d75663637d1669b4633`). #108 CI50/50,1785/1785 locaux ; main [46007356091](https://github.com/Antoine310/scientist_parseur/actions/runs/46007356091) à relever après achèvement.
-**PR en cours : #109**, concaténations vectorielles NBA à sélections fixes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #109** (`d6db176da58a722881a6f669a271779078e6debe`). #109 CI50/50,1815/1815 locaux ; CI post-fusion à relever après achèvement.
+**PR en cours : #110**, initialisations directes à zéro ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -751,10 +751,17 @@ Validation locale #107 corrigée : head 7fc056994cd2f97506553b5a9d75656e8e479049
 
 Validation #108 : [local](https://github.com/Antoine310/scientist_parseur/pull/108#issuecomment-7219482048), [CI](https://github.com/Antoine310/scientist_parseur/pull/108#issuecomment-7219510930), head a272b4cd1f20fa90ca76802081e2db17456c8ea8, fusion e2a65ba1d1a8b15e26619d75663637d1669b4633. Local34/34 0,20 s,1785/1785 6,89 s, reports/pr108/run-6qcqfont/summary.json passed, 6 designs, fixture4/4 sites/10 records,core2/2/33,3 PR80/88 non recomptées ; replay exact. Cocotb1/1,1536 ns,768 tuples, SHA256 fixture0855e77d00932bac6b28d3157bf953a50c2eb9251ee098def43d43a83bb3473d. reports/pr108-formal/run-zhr6g8pr/summary.json passed,43 Z3 (3 UNSAT modèles,37 SAT sensibilités,3 SAT mutants). Initiale fcb93ef :1781/1781,6,97 s, fixture3/4,6/10, failed run-gyukruvf ; correctif bornes RangeSelect, cause initiale précise inférée, oracle inchangé. CI initiale annulée189 s (37 succès/12 annulés/1 échec), intermédiaire annulée35 s (1 annulé/48 skipped/1 échec), finale50/50,353 s ; main #107 50/50,265 s. Artefacts15201912795/15201816919. PR107-SCOPE-01 et PR108-SCOPE-GENERAL-01 restent ouvertes globalement.
 
-### PR #109 — Concaténations vectorielles NBA (en cours)
+### PR #109 — Concaténations vectorielles NBA (fusionnée)
 
-- [~] **PR109-VECTOR-CONCAT-01 · P0** — Concat plate de scalaires/vecteurs/sélections fixes, largeur et type exacts, ordre LSB, chevauchement destination (signal,bit) refusé, identité exacte, PR106 d'abord pour éviter recompte. Fixture2 sites/9 records,768 assertions simulation,20 Z3 modèle attendus. Six designs, aucun nouveau site réel attendu ; rxuart2/6 déjà PR106, core5 hors famille. Pas de promotion.
+- [x] **PR109-VECTOR-CONCAT-01 · P0** — Concat plate de scalaires/vecteurs/sélections fixes, largeur et type exacts, ordre LSB, chevauchement destination (signal,bit) refusé, identité exacte, PR106 d'abord pour éviter recompte. Fixture2 sites/9 records,768 assertions simulation,20 Z3 modèle attendus. Six designs, aucun nouveau site réel attendu ; rxuart2/6 déjà PR106, core5 hors famille. Pas de promotion.
 - [ ] **PR109-CONCAT-CORPUS-01 · P0** — Corpus indépendant comportant des concat vectorielles pertinentes, nested/alias/dynamique/conversions et sémantique quatre états restent ouverts ; PR106-CONCAT-GENERAL-01 globale non close. Initial PR105-INITIAL-01 ensuite ; préserver toutes dettes et bilan cœur indicatif.
+
+Validation locale #109 : head attendu fbb047a6be1a1cb2f836a00c29f61e0fc279fd8d (SHA non réaffiché), 30/30 0,23 s,1815/1815 7,14 s, reports/pr109/run-154r96mt/summary.json passed, six designs, fixture2 sites/9 records, rxuart2/6 PR106 existants, core5 hors famille, zéro promotion historique. Simulation768 assertions,512 ns, source SHA256 5bf7cc52da28963a0d374d50ab33077dd9c9a20a309e0a3ffe9616c73f90d896 ; reports/pr109-formal/run-_3vxccxr/summary.json passed,20 Z3 (9 UNSAT,11 SAT). CI50/50,394 s, artefacts15202329074/15200784680, [verdict permanent](https://github.com/Antoine310/scientist_parseur/pull/109#issuecomment-7219716884). Fusion d6db176da58a722881a6f669a271779078e6debe. Corpus vectoriel réel P0 ouvert.
+
+### PR #110 — Initialisations directes à zéro (en cours)
+
+- [~] **PR110-INITIAL-ZERO-01 · P1** — Audit PR105 des 15 Initial rxuart ; 13 affectations directes à zéro /47 bits attendus, deux références paramètres partielles. Aucun invariant permanent, aucune preuve état global ou synthèse. Fixture5 sites/3 supportés/13 bits,771 assertions simulation,12 Z3 modèles. Six designs, replay historique exact.
+- [ ] **PR110-INITIAL-GENERAL-01 · P1** — Paramètres, valeurs non nulles/X/Z, initialisations de déclaration, blocs/délais/concurrence/ordonnancement, synthèse et état global ; PR105-INITIAL-01 globale reste ouverte. PR109-CONCAT-CORPUS-01 P0 et autres dettes préservées.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 

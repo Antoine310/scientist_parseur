@@ -101,6 +101,9 @@ jobs:
       - name: PR109 vector concat NBA models (Z3)
         run: python -m scripts.prove_vector_concat_pr109 --out reports/pr109-formal
 
+      - name: PR110 direct Initial zero conversion models (Z3)
+        run: python -m scripts.prove_initial_zero_pr110 --out reports/pr110-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -118,6 +121,7 @@ jobs:
             reports/pr106-formal/**
             reports/pr108-formal/**
             reports/pr109-formal/**
+            reports/pr110-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json

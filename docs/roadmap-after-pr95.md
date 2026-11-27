@@ -47,6 +47,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #108** : 1785 tests,50 jobs, deux cibles generate CSR/33 candidats séparés, simulation768 et Z3 modèle43 ; trois positions membre existantes non recomptées. #109 concat vectorielles et sélection fixe, puis #110 Initial ; corpus plus larges et intégration restent ouverts. Bilan cœur #123 indicatif ou ultérieur.
 
+**Révision après #109** : #109 fusionnée,1815 tests,9 candidats fixture,768 assertions,20 Z3 ; CI50/50,394 s. Initial directes zéro, 13 sites/47 bits rxuart attendus ; paramètres séparés, aucune constante permanente ni preuve globale. Bilan cœur #123 indicatif.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
