@@ -80,7 +80,8 @@ def _audit_arithmetic(ast,index,graph,*,operator,coverage,expand_candidate):
     comparison_ops=("Equality","Inequality","LessThan","LessThanEqual","GreaterThan","GreaterThanEqual",
                     "CaseEquality","CaseInequality","WildcardEquality","WildcardInequality")
     if (operator,coverage) not in (("Add","addition_candidates"),("Subtract","subtraction_candidates"),
-                                   (comparison_ops,"comparison_candidates")):
+                                   (comparison_ops,"comparison_candidates"),
+                                   ("GreaterThan","signed_order_candidates")):
         raise ValueError("unsupported_arithmetic_audit_family")
     inspect_ast(ast)
     if graph["analysis_limits"]["truncated_analyzers"]:

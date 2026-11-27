@@ -89,6 +89,9 @@ jobs:
       - name: PR100 independent equality models (Z3)
         run: python -m scripts.prove_comparison_pr100 --out reports/pr100-formal
 
+      - name: PR101 controlled signed order models (Z3)
+        run: python -m scripts.prove_signed_order_pr101 --out reports/pr101-formal
+
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -102,6 +105,7 @@ jobs:
             reports/pr98-formal/**
             reports/pr99-formal/**
             reports/pr100-formal/**
+            reports/pr101-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
