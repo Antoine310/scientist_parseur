@@ -504,7 +504,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            enable_width_literals: bool = True,
                            captured_assignments: list | None = None,
                            capture_trace: list | None = None,
-                           selection_census_v2: bool = False) -> dict[str, Any]:
+                           selection_census_v2: bool = False,
+                           walk_exclusions: list | None = None) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
     if type(selection_census_v2) is not bool:
         raise ValueError("invalid_selection_census_version")
@@ -538,6 +539,13 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             if len(capture_trace) >= 20000:
                 raise ValueError("capture_trace_budget")
             capture_trace.append((path,node,status))
+
+    def exclusion(path, node, reason):
+        # Only record actual stop decisions; never descend here.
+        if walk_exclusions is not None:
+            if len(walk_exclusions) >= 20000:
+                raise ValueError("walk_exclusion_trace_budget")
+            walk_exclusions.append((path,node,reason))
 
     def extract(path: str, node: Any, *,
                 procedure_kind: str | None = None,
@@ -792,7 +800,9 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             assignment = node.get("expr")
             if not isinstance(assignment, dict) or assignment.get("kind") != "Assignment":
                 counts["unsupported_statements"] += 1
+                exclusion(path,node,"non_assignment_expression_statement")
                 return
+            exclusion(path,assignment,"assignment_expression_boundary")
             extract(path, assignment, procedure_kind=procedure_kind,
                     guards=guards, events=events, timing_scope=timing_scope,
                     context_partial=partial,procedural_constants=procedural_constants)
@@ -900,6 +910,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
             # Loops, task calls and opaque statement kinds are NOT silently
             # analyzed by descending through their children.
             counts["unsupported_statements"] += 1
+            exclusion(path,node,"unsupported_statement_kind")
 
     def visit(members: Any, parent: str | None = None,
               inherited_constants: dict | None = None, *,
@@ -937,6 +948,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                                procedural_constants=local_constants)
                 else:
                     counts["procedural_blocks_skipped"] += 1
+                    exclusion(parent,node,"excluded_procedure_kind")
 
     visit(ast.get("design", {}).get("members"))
     rows.sort(key=lambda item: (item["target"], str(item.get("source"))))
