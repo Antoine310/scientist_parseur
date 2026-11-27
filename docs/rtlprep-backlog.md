@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.48 — 27 novembre 2026 (fusion #113, chantier #114)**  
+**Version : 1.49 — 27 novembre 2026 (fusion #114, chantier #115)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #113** (bb7d0c98b3804809d0d1ea7e82e2b0333740830f). #113 CI50/50,1935/1935 locaux ; CI main #113 à relever.
-**PR en cours : #114**, produits signés pleine largeur ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #114** (1254826e67d5c4da8853d1e979876be4c335687d). #114 CI50/50,1965/1965 locaux ; CI main #114 à relever.
+**PR en cours : #115**, conversions constantes directes ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -786,10 +786,17 @@ Validation #112 : [initiale](https://github.com/Antoine310/scientist_parseur/pul
 
 Validation #113 : [local](https://github.com/Antoine310/scientist_parseur/pull/113#issuecomment-7220516993), [CI](https://github.com/Antoine310/scientist_parseur/pull/113#issuecomment-7220606930). SHA exact151e286b4692142c0265a4f7a4cffb7d0608e7fe, fusion bb7d0c98b3804809d0d1ea7e82e2b0333740830f. 30/30 0,18 s,1935/1935 7,63 s, reports/pr113/run-qalurw3e/summary.json passed, fixture2/2/88 paires/31 coords, ALU/core6/6/698/154 chacun ; simulation8192 assertions,4096 ns, deux WIDTHTRUNC intentionnels, source SHA256 7c151463136dfe62fdbdaac0b4905682f0b0c7084b9ebd35a73e0536205528be ; 469 Z3 modèles (160 UNSAT,309 SAT). CI50/50,296 s, artefacts15205611277/15206090433 ; main #112 50/50,380 s. Union indicative88/384 non recalculée, aucune promotion.
 
-### PR #114 — Produits signés pleine largeur (en cours)
+### PR #114 — Produits signés pleine largeur (fusionnée)
 
-- [~] **PR114-MULTIPLY-01 · P0** — Six racines core IDs805–808/817–818, quatre produits9×9→18 et deux17×17→34, 2776 paires/280 coords attendues. 38 nested-only ALU/core, ALU0 racine. Fixture4/1240/136,800 assertions,123 Z3 modèles,30 tests ciblés/1965 suite. Coordonnées packed préservées, opérande pré-négativé direct, pas de composition ou promotion.
+- [x] **PR114-MULTIPLY-01 · P0** — Six racines core IDs805–808/817–818, quatre produits9×9→18 et deux17×17→34, 2776 paires/280 coords attendues. 38 nested-only ALU/core, ALU0 racine. Fixture4/1240/136,800 assertions,123 Z3 modèles,30 tests ciblés/1965 suite. Coordonnées packed préservées, opérande pré-négativé direct, pas de composition ou promotion.
 - [ ] **PR114-MULTIPLY-GENERAL-01 · P0** — Multiplications imbriquées, produits tronqués/mixtes, autres largeurs et conversions, X/Z, intégration, corpus supplémentaires ; conversions #115 ensuite, bilan cœur #124 ou ultérieur. Préserver toutes dettes.
+
+Validation #114 : [local](https://github.com/Antoine310/scientist_parseur/pull/114#issuecomment-7220721433), [CI](https://github.com/Antoine310/scientist_parseur/pull/114#issuecomment-7220812727). SHA exact8b87ec2b3a68804f0302c86dd1baff6b10839c6a, fusion 1254826e67d5c4da8853d1e979876be4c335687d. 30/30 0,19 s,1965/1965 7,55 s, reports/pr114/run-cdbs2ff6/summary.json passed, fixture4/4/1240 paires/136 coords, ALU0 racine,core6/6/2776/280,38 nested-only chacun. Simulation800 assertions,400 ns,source SHA256739907f5c1446dd357c45bae0dca0440ae2f33473b474d2be71f31e18abdd80e ; reports/pr114-formal/run-_ikxvcfw/summary.json passed,123 Z3 modèles (57 UNSAT,66 SAT). CI50/50,302 s, artefacts15205932538/15206286747 ; main #113 50/50,335 s. Union indicative94/384 non recalculée, aucune promotion.
+
+### PR #115 — Conversions constantes directes (en cours)
+
+- [~] **PR115-CONSTANT-CONVERSION-01 · P0** — Core61 zéros CSR/2864 coordonnées et32 LUT unsigned/160 coordonnées,93 sites/3024 valeurs ; ALU32/160. Enum FS_t ID314 explicitement refusé. Fixture12/388,48 assertions,38 Z3 modèles,30 tests/1995 suite attendus. Zéro paire dynamique, pas de constante permanente ni promotion.
+- [ ] **PR115-CONVERSION-GENERAL-01 · P0** — Conversions dynamiques signe/largeur/état, ambiguïté ConversionKind, enum, X/Z, appels et compositions ; évaluer avant composition générale. Conserver toutes dettes. Jalon cœur indicatif #124 ou ultérieur.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
