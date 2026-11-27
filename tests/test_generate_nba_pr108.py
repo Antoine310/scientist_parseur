@@ -12,7 +12,7 @@ def lit(value):
 
 def node(vector=False):
     typ="logic[3:0]" if vector else "logic"
-    rhs={"kind":"RangeSelect","type":typ,"value":named("top.data","logic[7:0]"),
+    rhs={"kind":"RangeSelect","type":"logic[7:4]","value":named("top.data","logic[7:0]"),
          "selectionKind":"Simple","left":lit(7),"right":lit(4)} if vector else {
          "kind":"ElementSelect","type":typ,"value":named("top.data","logic[7:0]"),"selector":lit(2)}
     return {"kind":"Assignment","type":typ,"isNonBlocking":True,
@@ -92,3 +92,17 @@ def test_fixture_runner_top(monkeypatch,tmp_path):
     monkeypatch.setattr(runner,"extract",lambda directory,top,sources:calls.append((directory,top,sources)))
     runner.extract_fixture(tmp_path)
     assert declared==["generate_nba_pr108"] and calls==[(tmp_path,declared[0],[runner.FIXTURE])]
+
+
+@pytest.mark.parametrize("wrong_type",["logic[3:0]","logic[6:3]","logic[7:5]"])
+def test_range_serialized_bounds_must_match_selection(wrong_type):
+    n=node(True)
+    n["right"]["type"]=wrong_type
+    with pytest.raises(Refusal,match="selection_width_or_type_disagreement"):
+        run(n)
+
+
+def test_zero_based_range_remains_supported():
+    n=node(True)
+    n["right"].update(type="logic[3:0]",left=lit(3),right=lit(0))
+    assert [(r["source"]["bit"],r["target"]["bit"]) for r in run(n)]==[(i,i) for i in range(4)]

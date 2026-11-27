@@ -62,7 +62,11 @@ def expand(node,context,owner,expected_target,resolve,declared,scoped_variables,
         hi,lo=literal(rhs.get("left")),literal(rhs.get("right"))
     require(src[1]<=lo<=hi<=src[0],"selection_out_of_range_or_reversed")
     n=hi-lo+1
-    require(width(dst)==n and shape(rhs)==(n-1,0,False,True),"selection_width_or_type_disagreement")
+    # slang preserves the declared indices on a Simple RangeSelect, e.g.
+    # data[7:4] has logic[7:4], not logic[3:0]. Assignment copies values
+    # by ordinal (LSB to LSB), independently of destination indices.
+    expected_rhs=(0,0,False,True) if rhs["kind"]=="ElementSelect" else (hi,lo,False,True)
+    require(width(dst)==n and shape(rhs)==expected_rhs,"selection_width_or_type_disagreement")
     return [{"relation":"generate_nba_sampled_position_candidate",
              "source":{"signal":source,"bit":lo+i},"target":{"signal":target,"bit":dst[1]+i}}
             for i in range(n)]
