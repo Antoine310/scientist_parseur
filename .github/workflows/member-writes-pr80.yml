@@ -212,6 +212,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_zero_extended_addition_pr97 --out reports/pr97 --reference "${refs[0]}"
 
+      - name: PR98 constant increment candidates and fixture
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_constant_increments_pr98.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_constant_increments_pr98 --out reports/pr98 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -272,3 +281,6 @@ jobs:
             reports/pr97/**/summary.json
             reports/pr97/**/*.zero-additions.json
             reports/pr97/**/simulation_results.xml
+            reports/pr98/**/summary.json
+            reports/pr98/**/*.increments.json
+            reports/pr98/**/simulation_results.xml

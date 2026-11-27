@@ -21,6 +21,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #96 (27/11/2026)** : résultat 0/31 ALU et 0/64 cœur, modèle/fixture validés. Artefact CI #96 : popcnt 31 dans chaque design, incréments CSR32 et adresse1 cœur. #97 sélecteurs lexicaux + zéro-extension popcnt, #98 incréments constants/composition, #99 soustraction proposée ensuite ; autres familles décalées selon résultats. Le tableau initial reste historique, toutes les familles et phases conservées. Aucun gain avant validation.
 
+**Révision après #97** : 31/31 ALU et 31/64 cœur admissibles, 33 incréments cœur à traiter (#98). #99 soustraction proposée ensuite. Phase H ajoutée sur demande utilisateur, voir ci-dessous.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
@@ -40,6 +42,13 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 ## G — Agents et démonstration (#146+)
 146 optimisation contexte ; 147 questions gelées indépendantes ; 148 agent RTL brut ; 149 agent RTLPrep ; 150 comparaison précision/abstention/coût/latence, conditions équivalentes et répétitions ; 151+ GhostGate/documentation/reproductibilité. Inclure groupe index seul A/B/C, FUT-AGENT-01 ; pas de gain annoncé sans mesure, pas de garantie concours.
+
+## H — Documentation, pédagogie et publication (phase finale, numéros à fixer)
+
+FUT-DOC-USER-01, FUT-DOC-ARCHIVE-01, FUT-DOC-CODE-01. Après maturité fonctionnelle et benchmark, sans retarder la documentation minimale de chaque PR. Trois chantiers séparés :
+- README public : objectifs, public, installation, quickstart reproductible, architecture, CLI/MCP, exemples et limites ; retirer récit par PR, sans perte d'historique. Déplacer vers docs/development/ ou index de liens backlog, ci-history, changelog, rapports et preuves ; conserver IDs, provenance et liens.
+- Guides pédagogiques par outil et analyseur : slang/AST, Python/graphes, Verilator/cocotb, VCD/FST, Yosys, SBY, EQY, Z3, CLI/MCP. Concepts, fonctionnement, entrées/sorties, options vérifiées, exemples exécutés, interprétation et limites ; tutoriel complet, glossaire, architecture, API/schémas et méthodologie scientifique. Documenter seulement capacités réelles de la version publiée. Organisation cible docs/getting-started/, tools/, architecture/, science/, reference/, development/, validation/.
+- Commentaires et docstrings RTLPrep : remplacer références PR superflues par explications sémantiques/invariants, conserver justification scientifique, hypothèses, provenance utile, sécurité et licences. Pas de modifications RTL upstream. Ne pas supprimer tests/rapports/IDs. Garder noms historiques si stabilité utile, migrations séparées. Revue pédagogique, liens valides, commandes et exemples exécutés sur version épinglée, non-régression intégrale ; aucun changement comportemental dans PR de nettoyage.
 
 ## Transversal
 P0 omissions, corpus indépendants, budgets/reproductibilité ; P1 provenance preuve, identité champs, sémantique, transitions ; P2 CI/caches/installations, limite des workflows réutilisables, erreurs MCP PR94-ERROR-01 et budgets PR94-GLOBAL-BUDGET-01, profils et optimisation. P3 exécuteur Linux déterministe autorisé via GitHub et machine utilisateur, outils EDA locaux ; aucun contournement quota/service ou exécution libre de contenu non fiable. Historique CI chaque head/attempt et main, temps mur, somme jobs exécutés, échecs/annulations/skips, local séparé. Priorités révisées selon mesures et dettes sans renumérotation.
