@@ -284,3 +284,6 @@ jobs:
             reports/pr98/**/summary.json
             reports/pr98/**/*.increments.json
             reports/pr98/**/simulation_results.xml
+            reports/pr98/**/fixture/elaborated_ast.json
+            reports/pr98/**/fixture/rtl_index.json
+            reports/pr98/**/fixture/rtl_dependencies.json

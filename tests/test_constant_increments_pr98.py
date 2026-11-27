@@ -88,3 +88,20 @@ def test_missing_carry_mutant():
     c=m.expand(*fixture(4))
     c["prefix_lengths"]=[1]*4
     assert {(j,i) for i,p in enumerate(c["prefix_lengths"]) for j in range(p)}!=oracle(4)
+
+
+@pytest.mark.parametrize("n",[4,64])
+def test_capture_gate_requires_selection(n):
+    # A whole-vector increment is outside the historical flat census.
+    # The integration fixture uses a proper subrange of a wider declaration.
+    from rtlprep.bitaccess import _contains_selection
+    node,_,_,_,_=fixture(n)
+    assert not _contains_selection(node["left"],[0])
+    assert not _contains_selection(node["right"],[0])
+    rhs=node["right"]
+    rhs["left"]={"kind":"RangeSelect","type":f"logic[{n-1}:0]",
+                 "selectionKind":"Simple",
+                 "value":{"kind":"NamedValue","type":f"logic[{n}:0]","symbol":"a"},
+                 "left":{"kind":"IntegerLiteral","type":"int","value":str(n-1)},
+                 "right":{"kind":"IntegerLiteral","type":"int","value":"0"}}
+    assert _contains_selection(rhs,[0])

@@ -12,3 +12,6 @@ python -m pytest -q
 python -m scripts.run_constant_increments_pr98 --out reports/pr98
 python -m scripts.prove_constant_increments_pr98 --out reports/pr98-formal
 ```
+
+## Correctif fixture
+Correctif après validation locale initiale bc1dfc3 : 20/20 ciblés 0,10 s, 1524/1524 suite 6,65 s, Z3 2659/2659 (run-ibiaq9b8), mais reports/pr98/run-wy9h2wud/summary.json failed avant simulation et RTL réel. La fixture initiale a deux incréments de vecteurs entiers sans sélection, hors census historique selon bitaccess.extract/_contains_selection ; seul le concat d'adresse est éligible syntaxiquement. Corriger les deux entrées à 5/65 bits avec sélections [3:0]/[63:0], stimuler leur bit supérieur ignoré ; garder oracle trois résidus et mêmes coordonnées, diagnostiquer les comptes et publier détails/AST/graphe même en échec. Deux tests du gate, 22 ciblés/1526 suite attendue. Aucun changement analyseur ni formel. Ne pas réduire le dénominateur de fixture. La reproduction sur vrai slang reste à valider. Main #97 50/50.

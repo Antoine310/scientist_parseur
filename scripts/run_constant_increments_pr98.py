@@ -40,7 +40,10 @@ def check(result,name):
         expected={expected_row(TOP+".small_next",TOP+".a",4),
                   expected_row(TOP+".counter_next",TOP+".counter",64),
                   expected_row(TOP+".address_next",TOP+".address",32,shift=2)}
-    assert {signature(r["candidate"]) for r in good}==expected and len(good)==len(expected)
+    actual={signature(r["candidate"]) for r in good}
+    assert actual==expected and len(good)==len(expected), {
+        "missing":sorted(expected-actual),"unexpected":sorted(actual-expected),
+        "rows":len(good),"counts":result["counts"]}
     for r in good:
         c=r["candidate"]
         assert c["potential_pairs"]==sum(c["prefix_lengths"])
@@ -74,7 +77,12 @@ def execute(out,reference=None):
         start=perf_counter()
         result=audit_increments(ast,idx,g)
         elapsed=perf_counter()-start
-        assert result["counts"]["residual_ids"]==expected_residual
+        detail=run/(name+".increments.json")
+        detail.write_text(json.dumps(result,indent=2),encoding="utf-8")
+        assert result["counts"]["residual_ids"]==expected_residual, {
+            "design":name,"expected_residual_ids":expected_residual,
+            "actual_counts":result["counts"],"flat_rows":g["bit_dependency_graph"]["counts"],
+            "targets":[r["target"] for r in g["bit_dependency_graph"]["items"]] if name=="fixture" else None}
         check(result,name)
         union=None
         if name!="fixture":
@@ -88,8 +96,6 @@ def execute(out,reference=None):
             union={"pr97":len(prior),"pr98":len(new),"unique_addition_roots":len(prior|new),
                    "remaining_addition_roots":0,"historical_graph_promoted":False}
         assert digest(g)==before and hashes=={f:file_hash(folder/f) for f in files}
-        detail=run/(name+".increments.json")
-        detail.write_text(json.dumps(result,indent=2),encoding="utf-8")
         report["cases"].append({"name":name,"input_sha256":hashes,"audit_seconds":elapsed,
             "historical_unchanged":True,"detail_file":detail.name,"addition_union":union,
             **{k:v for k,v in result.items() if k!="items"}})
