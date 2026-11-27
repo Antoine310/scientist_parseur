@@ -471,7 +471,8 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                            index: dict[str, Any] | None = None,
                            enable_width_conversions: bool = True,
                            enable_width_literals: bool = True,
-                           captured_assignments: list | None = None) -> dict[str, Any]:
+                           captured_assignments: list | None = None,
+                           capture_trace: list | None = None) -> dict[str, Any]:
     """Décrire les positions sur la RHS, et sur la LHS si explicitement sélectionnée."""
     structural = index if index is not None else build_index(ast, expected_top=expected_top)
     if structural.get("schema_version") != 1 or structural.get("top") != expected_top:
@@ -497,6 +498,13 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
     basic_bounds=declared_bounds(structural)
     extended_bounds=declared_bounds(structural,extended=True)
 
+    def trace(path, node, status):
+        # Opt-in audit only: no change to historical graph or counts.
+        if capture_trace is not None:
+            if len(capture_trace) >= 20000:
+                raise ValueError("capture_trace_budget")
+            capture_trace.append((path,node,status))
+
     def extract(path: str, node: Any, *,
                 procedure_kind: str | None = None,
                 guards: tuple[dict[str, Any], ...] = (),
@@ -507,16 +515,20 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                 procedural_constants: dict | None = None) -> None:
         counts["assignments_seen"] += 1
         if not isinstance(node, dict) or node.get("kind") != "Assignment":
+            trace(path,node,"not_assignment")
             return
         lhs, rhs = node.get("left"), node.get("right")
         if not (_contains_selection(lhs, [0]) or _contains_selection(rhs, [0])):
+            trace(path,node,"selection_gate_negative")
             return
         target = _target_name(lhs, known[path], path, resolver)
         if target is None:
             counts["unsupported_targets"] += 1
+            trace(path,node,"unsupported_target")
             return
         if len(rows) >= MAX_RECORDS:
             counts["truncated"] = True
+            trace(path,node,"row_budget")
             return
         # Only continuous assignments use lexical constant normalization in
         # this phase. Keep the legacy extraction untouched if the strict
@@ -666,6 +678,7 @@ def build_bit_access_index(ast: dict[str, Any], *, expected_top: str,
                     item=trial
         counts["partial" if item["coverage"]=="partial" else "precise"]+=1
         rows.append(item)
+        trace(path,node,"captured")
         if captured_assignments is not None:
             captured_assignments.append((item,node,path,
                 dict(procedural_constants or selector_constants or {}),context_partial))

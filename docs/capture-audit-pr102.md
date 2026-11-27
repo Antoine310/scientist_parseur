@@ -1,0 +1,13 @@
+# Audit indépendant des omissions du census historique (#102)
+
+Le défaut PR101-CAPTURE-01 P0 est reproductible : une affectation scalaire avec sélections uniquement sous Call.arguments peut être rejetée par le filtre de sélection historique. L'artefact #101 final [15191416146](https://github.com/Antoine310/scientist_parseur/actions/runs/45984186742/artifacts/15191416146) confirme les dénominateurs PR67/95 : 612 occurrences AST /479 lignes bit ALU, 3811/1199 cœur. Ne pas considérer la différence comme un nombre d'erreurs : la plupart des affectations peuvent être hors du périmètre positionnel historique.
+
+Le census indépendant traverse les sous-arbres actifs des processus et affectations continues (même périmètre syntaxique que PR67, sans réutiliser son walker), et parcourt tous les champs conteneurs des opérandes hors métadonnées pour relever les sélections et concaténations. L'identité est l'objet du même AST parsé et son instance, publié en JSON pointer (local à l'artefact, empreinte du fichier). Pas de rapprochement par nom ou ligne. Les tentatives historiques sont tracées opt-in au point de décision, sans changer leur résultat. Replay exact bit_accesses et bit_dependency_graph, partition exclusive captured / no_selection_syntax_in_operands / selection_gate_missed_syntax / unsupported_target / not_visited_by_historical_walker. Le sous-compte call_argument_selection est un attribut syntaxique, pas une preuve d'influence ou d'une cause unique. Une tentative étrangère, un doublon, une divergence ou une troncature arrête la publication de résultat réussi. Les rapports d'échec sont conservés. Budgets séparés 2M visites de conteneurs/valeurs racines, 20k sites, profondeur128, 100k sélections, admission AST historique, trace20k ; pas un quota CPU/RSS.
+
+Fixture : 3 occurrences, 1 capture avec cible explicitement sélectionnée, 1 omission avec sélections sous Call.arguments, 1 sans sélection. Oracle PR67 par instance et dénominateurs réels indépendants ; classification détaillée à mesurer, pas anticipée. Aucun nouveau bit supporté, pas de modification historique, ni CLI/MCP. Déclarations, initialisateurs, fonctions/tâches hors processus, exécution des boucles, X/Z et connexions de ports ne sont pas couverts. Le correctif du filtre et le versionnement des nouveaux dénominateurs restent un chantier P0 suivant après mesure ; PR101-CAPTURE-01 reste ouvert. Simulation/formel non pertinents pour ce rapprochement syntaxique (aucun nouveau modèle fonctionnel) ; les validations historiques restent dans la CI.
+
+```bash
+python -m pytest -q tests/test_capture_audit_pr102.py
+python -m pytest -q
+python -m scripts.run_capture_audit_pr102 --out reports/pr102
+```

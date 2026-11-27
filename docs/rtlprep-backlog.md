@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.35 — 27 novembre 2026 (fusion #100, chantier #101)**  
+**Version : 1.36 — 27 novembre 2026 (fusion #101, chantier #102)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #100** (`ecab557bb5a8bdbfbcc409f88175a9e70f7a7b8a`). #100 CI 50/50 sur bb2c5f2, 1587/1587 locaux. Main #100 : [45982695597](https://github.com/Antoine310/scientist_parseur/actions/runs/45982695597), 50/50, tentative1, 216 s.
-**PR en cours : #101**, comparaisons d'ordre signées à contrôle partagé ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
+**Dernière PR fusionnée confirmée : #101** (`a84d885b57084f4cbd9beb80c8faf86a28f4ed86`). #101 CI finale 50/50, 1609/1609 locaux ; main [45985374733](https://github.com/Antoine310/scientist_parseur/actions/runs/45985374733) à relever après achèvement.
+**PR en cours : #102**, audit P0 du census historique ; validation à effectuer. [Feuille de route actualisée #96–151+](roadmap-after-pr95.md), formel transversal dès #96.
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -688,14 +688,21 @@ Validation finale #99 : [preuve permanente](https://github.com/Antoine310/scient
 
 Validation finale #100 : [preuve permanente](https://github.com/Antoine310/scientist_parseur/pull/100#issuecomment-7215937244), head bb2c5f2a95f358bafa107340325a98fb84049b58, fusion ecab557bb5a8bdbfbcc409f88175a9e70f7a7b8a. Local premier essai 39/39 0,17 s, 1587/1587 7,62 s ; simulation bloquée Verilator 5.008 et Z3 absent du PATH, rapports run-wdbg8re7 et run-457ltsiv conservés. Deuxième essai 39/39 0,11 s, 1587/1587 6,47 s ; Verilator5.055/cocotb2.0.1, slang12.1, Z3 4.15.5. reports/pr100/run-l36zocli/summary.json passed, fixture3/3, 20 paires/23 coordonnées, 2336 assertions, 2320 ns, SHA256 2fa82cfd50a7c618abe75b8c2681480d1373266a57c6cd54679e9b1ef87adb80. ALU4/8,64 paires/68 coordonnées ; core6/10,68/74 ; 4/145 lignes imbriquées non promues. Union exacte disjointe #97–100 : ALU35/core72, restent63/312. Z3 reports/pr100-formal/run-1o8i5sc9/summary.json passed, 188 requêtes (8 UNSAT,172 témoins SAT,8 mutants SAT). CI finale 50/50,255 s ; Main #100 : [45982695597](https://github.com/Antoine310/scientist_parseur/actions/runs/45982695597), 50/50, tentative1, 216 s. Aucune promotion historique, pas de couverture globale ni preuve RTL.
 
-### PR #101 — Comparaison d'ordre à signe contrôlé (en cours)
+### PR #101 — Comparaison d'ordre à signe contrôlé (fusionnée)
 
-- [~] **PR101-SIGNED-01 · P1** — Oracle indépendant signé/non signé, preuve QF_BV du modèle et témoins bit, mutants signe forcé et comparaison unsigned ; simulation fixture, réconciliation exacte #97–100, rapport séparé. 50 jobs historiques, pas de promotion CLI/MCP.
+- [x] **PR101-SIGNED-01 · P1** — Oracle indépendant signé/non signé, preuve QF_BV du modèle et témoins bit, mutants signe forcé et comparaison unsigned ; simulation fixture, réconciliation exacte #97–100, rapport séparé. 50 jobs historiques, pas de promotion CLI/MCP.
 - [ ] **PR101-COMPOSE-01 · P1** — Autres formes signées, largeur/conversions, contrôles différents, X/Z, autres ordres, compositions et comparaisons imbriquées restent ouvertes ; ne pas extrapoler aux autres AST. PR95-ARITH-01, PR96-COMPOSE-01, PR99-NESTED-01 et P0 inchangées.
 
 - [ ] **PR101-CAPTURE-01 · P0** — Omission de census observée sur fixture scalaire `greater = $signed({a[7]&mode[0],a[7:0]}) > ...`. AST réel et graphe CI artefact 15189859595 : assignments_seen=1, captured=0, aucune troncature. `_contains_selection` ne traverse pas Call.arguments ; cible scalaire sans sélection explicite. Correctif fixture #101 : cible packed [0:0] avec sélection explicite [0], même fonction binaire et même oracle ; ne pas modifier le census historique pour cette PR. Clôture : inventaire indépendant des omissions Call.arguments et autres champs, analyse conservatrice bornée, IDs/dénominateurs et réconciliation nouvelle version, tests positifs/négatifs, effets sur graphes historiques et budgets documentés. PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 liés.
 
 Premier head #101 ef11507e8058379f0035188b9da73a22ad2399d1 : local22/22 0,10 s,1609/1609 7,27 s, fixture échec 0 résidu (reports/pr101/run-wzo4knhc/summary.json), simulation/formel locaux non exécutés par set -e. CI 47/50, 3 échecs : fixture, bitwise-pr72 téléchargement slang HTTP403 (curl22), gate final ; étape Z3 #101 réussie. Artefact 15189859595 conservé. Correction sans assouplir oracle ni changer moteur historique.
+
+Validation finale #101 : [commentaire permanent](https://github.com/Antoine310/scientist_parseur/pull/101#issuecomment-7216325288), head 1c5d2688776746607859c9d028767e4417634951, fusion a84d885b57084f4cbd9beb80c8faf86a28f4ed86. Local22/22 0,09 s,1609/1609 7,12 s ; reports/pr101/run-bkh5cpbb/summary.json passed, fixture1/1,17 paires/18 coordonnées,131072 assertions/131072 ns/2,80 s, SHA256 3ce2861793e9cfa9c64971812c90bc21706a0ec627967cf321124bb165083e09 ; ALU/core4/4 chacun68 paires/72 coordonnées, aucune troncature, union39/76 reste59/308. Z3 reports/pr101-formal/run-d3fpetsx/summary.json passed,112 requêtes (4 UNSAT,96 témoins SAT,12 mutants SAT). CI finale50/50,253 s ; premier head47/50 conservé ; pas de promotion historique, ni preuve RTL. PR100-ORDER-01 reste ouvert globalement.
+
+### PR #102 — Audit P0 du census (en cours)
+
+- [~] **PR102-AUDIT-01 · P0** — Traçage opt-in des décisions historiques, replay exact, rapprochement par identité objet et JSON pointer local à l'artefact, partition par occurrence et instance ; fixture scalaire manquante, sélection explicite et absence de sélection. Attentes 3/1 fixture, 612/479 ALU,3811/1199 core (AST/lignes historiques), classifications à mesurer. Aucun changement du filtre historique ou promotion. PR101-CAPTURE-01, PR23-COV-01, PR67-CENSUS-01, PR53-CPLX-01 restent ouverts.
+- [ ] **PR102-VERSION-01 · P0** — Après audit, corriger le filtre de sélection avec nouveau dénominateur versionné, réconciliation des IDs, impact sur budgets et corpus, refus explicites ; aucun gain avant validation. Ne pas modifier rétrospectivement les dénominateurs #95.
 
 ## 4. Feuille de route révisée — propositions de découpage, non engagements de numéros
 
