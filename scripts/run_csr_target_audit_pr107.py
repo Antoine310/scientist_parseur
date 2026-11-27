@@ -14,6 +14,11 @@ from scripts.cv32e40p_pr67 import ast_inventory
 
 ROOT=Path(__file__).resolve().parents[1]
 FIXTURE=ROOT/"tests/fixtures/csr_target_audit_pr107.sv"
+FIXTURE_TOP=FIXTURE.stem
+
+
+def extract_fixture(directory):
+    return extract(directory,FIXTURE_TOP,[FIXTURE])
 
 
 def check(name,result):
@@ -77,7 +82,7 @@ def execute(out,reference=None):
         detail.write_text(json.dumps(result,indent=2),encoding="utf-8")
         check(name,result)
         prior=ast_inventory(ast,{r["path"]:r["module"] for r in idx["instances"]})
-        assert prior["assignment_count"]>=result["counts"]["historical_unsupported_targets"]
+        assert prior["assignment_count"]==result["counts"]["ast_occurrences"]
         assert before=={k:file_sha(folder/k) for k in INPUTS}
         report["cases"].append({"name":name,"status":"passed","input_sha256":before,
              "detail_file":detail.name,"detail_sha256":file_sha(detail),"audit_seconds":elapsed,
@@ -85,7 +90,7 @@ def execute(out,reference=None):
              **{k:v for k,v in result.items() if k not in ("items",)}})
         save()
     try:
-        extract(run/"fixture","walker_exclusions_pr105",[FIXTURE])
+        extract_fixture(run/"fixture")
         case("fixture",run/"fixture")
         ref=diagnostics(run/"reference") if reference is None else reference.resolve()
         d=json.loads(ref.read_text())

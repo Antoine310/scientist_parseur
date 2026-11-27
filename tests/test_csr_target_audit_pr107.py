@@ -93,3 +93,14 @@ def test_overlap_refusals(bad):
 
 def test_absence_not_an_edge():
     assert select_existing(0,{"exact_target":"top.gen.q","field":None},[])==[]
+
+
+def test_runner_uses_declared_fixture_top(monkeypatch,tmp_path):
+    from scripts import run_csr_target_audit_pr107 as runner
+    import re
+    declared=re.findall(r"(?m)^module\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",runner.FIXTURE.read_text())
+    assert declared==["csr_target_audit_pr107"]
+    calls=[]
+    monkeypatch.setattr(runner,"extract",lambda directory,top,sources:calls.append((directory,top,sources)))
+    runner.extract_fixture(tmp_path)
+    assert calls==[(tmp_path,declared[0],[runner.FIXTURE])]

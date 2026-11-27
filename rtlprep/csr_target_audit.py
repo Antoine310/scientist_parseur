@@ -118,7 +118,8 @@ def audit_targets(ast,index,graph):
                        "member_channel_status":"existing_position_evidence" if positions else "no_linked_position_evidence",
                        "new_records":0})
     return {"schema_version":1,"scope":"historical_unsupported_target_identity_and_existing_member_overlap",
-            "counts":{"historical_unsupported_targets":len(result),
+            "counts":{"ast_occurrences":prior["counts"]["ast_occurrences"],
+                      "historical_unsupported_targets":len(result),
                       "reason_counts":dict(Counter(r["reason"] for r in result)),
                       "existing_position_occurrences":sum(bool(r["existing_typed_positions"]) for r in result),
                       "existing_position_records":sum(len(r["existing_typed_positions"]) for r in result),
