@@ -18,9 +18,13 @@ from .index import (
 from .manifest import load_design
 from .runner import fingerprint
 from .evidence import build_evidence_view
+from .analysis_budgets import DEFAULT_BUDGET, measure_tree
+from .member_query import (MAX_GRAPH_BYTES as MEMBER_GRAPH_BYTES, member_summary,
+                           query_members)
 
 MAX_INDEX_BYTES = 12 * 1024 * 1024
-MAX_GRAPH_BYTES = 32 * 1024 * 1024
+MAX_GRAPH_BYTES = MEMBER_GRAPH_BYTES
+MAX_MEMBER_RESPONSE_BYTES = 256 * 1024
 MAX_REPORT_BYTES = 1024 * 1024
 MAX_ITEMS = 100
 REPORT_NAMES = (
@@ -41,7 +45,14 @@ REPORT_FIELDS = frozenset({
 def _load_json(path: Path, *, max_bytes: int) -> dict[str, Any]:
     if not path.is_file() or path.stat().st_size > max_bytes:
         raise ValueError(f"Rapport absent ou trop volumineux : {path.name}")
-    value = json.loads(path.read_text(encoding="utf-8"))
+    with path.open("rb") as stream:
+        raw = stream.read(max_bytes + 1)
+    if len(raw) > max_bytes:
+        raise ValueError(f"Rapport trop volumineux : {path.name}")
+    try:
+        value = json.loads(raw.decode("utf-8"))
+    except RecursionError as exc:
+        raise ValueError(f"Profondeur JSON excessive : {path.name}") from exc
     if not isinstance(value, dict):
         raise ValueError(f"Rapport JSON invalide (objet attendu) : {path.name}")
     return value
@@ -79,6 +90,14 @@ class ReadOnlyRtl:
             raise ValueError("Index RTL non compatible (attendu : v1)")
         if self.graph is not None and self.graph.get("schema_version") != GRAPH_SCHEMA_VERSION:
             raise ValueError("Graphe RTL non compatible (attendu : v1)")
+        if self.graph is not None:
+            measure_tree(self.graph, stage="mcp_graph_read",
+                         max_values=DEFAULT_BUDGET.max_graph_values,
+                         max_depth=DEFAULT_BUDGET.max_graph_depth)
+            # Validate member structure once at snapshot admission; no EDA.
+            self._member_channels = member_summary(self.graph)
+        else:
+            self._member_channels = {}
         if self.index is not None and self.graph is not None:
             if self.index.get("top") != self.graph.get("top"):
                 raise ValueError("Index et graphe : modules top différents")
@@ -121,6 +140,12 @@ class ReadOnlyRtl:
             "index_available": self.index is not None,
             "graph_available": self.graph is not None,
             "evidence_available": self.graph is not None,
+            "member_evidence_available": any(c["status"] == "published"
+                                             for c in self._member_channels.values()),
+            "member_channel_status": {k: c["status"] for k,c in self._member_channels.items()},
+            "member_query_limits": {"graph_bytes": MAX_GRAPH_BYTES,
+                                    "page_items": MAX_ITEMS,
+                                    "response_compact_json_bytes": MAX_MEMBER_RESPONSE_BYTES},
             "expressions_available": isinstance(
                 self.graph.get("expressions"), dict) if self.graph else False,
             "sequential_candidates_available": (
@@ -422,6 +447,25 @@ class ReadOnlyRtl:
             **view,
             "origin": "stored_reports_not_reexecuted",
         }
+
+    def member_evidence(self, category: str | None = None, signal: str | None = None,
+                        limit: int = 20, offset: int = 0) -> dict[str, Any]:
+        """Stored candidates only, with an explicit result byte gate."""
+        graph = self._graph()
+        if signal is not None and (not isinstance(signal, str) or
+                not 1 <= len(signal) <= 1024 or signal not in graph.get("nodes", [])):
+            raise ValueError("Member evidence : signal exact du graphe requis")
+        result = query_members(graph, category=category, signal=signal,
+                               limit=limit, offset=offset)
+        result.update(origin="stored_member_candidates_not_reexecuted",
+                      source_snapshot_status=self._source_snapshot_status(),
+                      artifact_fingerprint=self.artifact_fingerprint)
+        # Bound the structured data, not the SDK's transport framing.
+        size = len(json.dumps(result, ensure_ascii=True, separators=(",", ":"),
+                              allow_nan=False).encode("utf-8"))
+        if size > MAX_MEMBER_RESPONSE_BYTES:
+            raise ValueError("Member evidence : réponse trop volumineuse, réduire limit")
+        return result
 
     def validations(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         items = [{

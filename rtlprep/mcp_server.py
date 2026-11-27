@@ -123,6 +123,18 @@ def create_server(snapshot: ReadOnlyRtl):
         return snapshot.evidence(signal, limit, offset)
 
     @server.tool(structured_output=True)
+    def rtl_member_evidence(category: str | None = None, signal: str | None = None,
+                            limit: int = 20, offset: int = 0) -> dict[str, Any]:
+        """Candidats membres stockés, filtrés et paginés, sans recalcul.
+
+        Six catégories distinctes : position, local_constant,
+        configuration_constant, logical_reference, nba_sampled, nba_constant.
+        Signal exact source ou cible. Canal absent != zéro publié.
+        Ni preuve fonctionnelle, ni transition globale, ni preuve formelle.
+        """
+        return snapshot.member_evidence(category, signal, limit, offset)
+
+    @server.tool(structured_output=True)
     def rtl_validations(limit: int = 20, offset: int = 0) -> dict[str, Any]:
         """Lire les statuts de rapports existants, sans exécuter de validation."""
         return snapshot.validations(limit, offset)

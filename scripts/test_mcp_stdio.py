@@ -33,7 +33,7 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
             "rtl_module", "rtl_instance", "rtl_signal", "rtl_find_signals",
             "rtl_trace", "rtl_expressions", "rtl_register_flow",
             "rtl_bit_accesses", "rtl_coverage", "rtl_sequential_candidates",
-            "rtl_warnings", "rtl_source", "rtl_validations", "rtl_evidence",
+            "rtl_warnings", "rtl_source", "rtl_validations", "rtl_evidence", "rtl_member_evidence",
         }
         assert names == required, (names, required)
         assert not any(
@@ -56,6 +56,10 @@ async def run(index: Path, graph: Path, manifest: Path, reports: Path) -> None:
         assert caps["sequential_candidates_available"] is True
         assert caps["evidence_available"] is True
 
+        assert caps["member_evidence_available"] is False
+        missing = await call("rtl_member_evidence", category="position")
+        assert missing["total"] == 0 and missing["category_published"] is False
+        assert missing["source_snapshot_status"] == "matching"
         modules = await call("rtl_modules", limit=10)
         assert set(modules["items"]) == {"leaf", "hierarchy_top"}, modules
         tree = await call("rtl_instances", limit=2)
