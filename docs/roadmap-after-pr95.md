@@ -31,6 +31,8 @@ Proposition approuvée pour démarrer #96. Numéros indicatifs, non engagements 
 
 **Révision après #101** : 4 GreaterThan par design caractérisées, union39/76, reste59/308 ; local1609/1609, CI50/50, simulation131072 et Z3 112. Omission historique Call.arguments détectée, dette PR101-CAPTURE-01 P0 : #102 audit indépendant et traçage des décisions sans changer les dénominateurs, puis correction versionnée selon résultats. Reprendre les autres familles arithmétiques ensuite. Phases A–H conservées.
 
+**Révision après #102** : audit P0 validé ; 13 omissions core (7 appels,5 conditions ternaires,1 pattern), zéro ALU ; 5 cibles CSR non supportées. #103 corrige l'admission en mode opt-in versionné, lignes nouvelles partielles, projection historique exacte ; intégration publique et corpus indépendants ultérieurs. Unions #95–101 inchangées, phases A–H préservées.
+
 ## B — Sémantique SV (#105–113)
 105 fonctions et arguments ; 106 branches/appels imbriqués ; 107 boucles bornées ; 108 boucles imbriquées/écritures multiples ; 109 tableaux/register file ; 110 structures imbriquées/unions/identité champs ; 111 conditions complexes/casez/casex/Inside ; 112 inventaire exclusions bit ; 113 réévaluation cœur. Les omissions silencieuses P0 ne doivent pas attendre #112 : avancer les audits lorsque nécessaire.
 
