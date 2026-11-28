@@ -410,6 +410,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_decoder_composition_pr119 --out reports/pr119 --reference "${refs[0]}"
 
+      - name: PR120 CSR composition candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_csr_composition_pr120.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_csr_composition_pr120 --out reports/pr120 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -600,3 +609,9 @@ jobs:
             reports/pr119/**/fixture/elaborated_ast.json
             reports/pr119/**/fixture/rtl_index.json
             reports/pr119/**/fixture/rtl_dependencies.json
+            reports/pr120/**/summary.json
+            reports/pr120/**/*.csr-composition.json
+            reports/pr120/**/simulation_results.xml
+            reports/pr120/**/fixture/elaborated_ast.json
+            reports/pr120/**/fixture/rtl_index.json
+            reports/pr120/**/fixture/rtl_dependencies.json
