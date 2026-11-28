@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.52 — 27 novembre 2026 (fusion #117, chantier #118)**  
+**Version : 1.53 — 28 novembre 2026 (fusion #118, chantier #119)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #117** (bef7404312ca5f4e71d151493fc3f34e3f124ebe). CI PR/main 50/50 ; 2061/2061 locaux SHA confirmé.
-**PR en cours : #118**, conversions explicites bit/logic, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #118** (7c5fd478bf4d691c6e3df96f7bc8c06b11814fd0). CI PR/main 50/50 ; 2099/2099 locaux, SHA non imprimé dans l'extrait.
+**PR en cours : #119**, composition décodeur écriture, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -910,3 +910,8 @@ Prochaine action : ...
 ### PR #118 — Conversions 2/4 états (en cours)
 
 - [~] **PR115-CONVERSION-GENERAL-01 · P0** — #117 fusionnée, 2061 locaux, CI PR/main50/50, 96 constantes enum/330 valeurs + ID314/2 paires. #118 : 81/1296 littéraux même largeur ALU/core (160/4022 positions expression), 31 recouvrements #115, 42 refus core attendus. Fixture dynamique et oracle Icarus quatre états distinct de Verilator binaire. Aucune nouvelle arête/ID historique revendiqués. X/Z généralisé, compositions, tailles/signe mixtes, intégration et recouvrements restent ouverts. [Périmètre](state-conversions-pr118.md).
+
+### PR #119 — Composition décodeur d'écriture (en cours)
+
+- [~] **PR115-CONVERSION-GENERAL-01 · P0** — #118 fusionnée, 2099 tests, CI PR/main50/50, Icarus128 checks, 81/1296 expressions ALU/core (160/4022 positions), 31 recouvrements #115, 42 refus core. Dette générale maintenue.
+- [~] **PR96-COMPOSE-01 / PR111-LOGICAL-COMPOSE-01 · P0** — #119 64 résiduels core1044–1107 (448 paires attendues), composition extension non signée + égalité lexicale + mux scalaire, 0 ALU, oracle indépendant. PR74-IDX-02 et autres dettes restent ouvertes ; ne pas généraliser composition, X/Z, gardes, appels, boucles, preuve RTL, promotion/intégration historique. [Périmètre](decoder-composition-pr119.md).
