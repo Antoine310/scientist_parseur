@@ -1,0 +1,127 @@
+"""Independent localparam range concat oracle, real slang and binary simulation."""
+import argparse
+from collections import Counter
+import json
+from pathlib import Path
+import tempfile
+from time import perf_counter
+from rtlprep.analysis_budgets import read_ast
+from rtlprep.census_query import file_sha,INPUTS
+from rtlprep.localparam_range_concat_candidates import audit_localparam_range_concat
+from scripts.run_analysis_budgets_pr62 import extract
+from scripts.run_cv32e40p_diagnostics_pr67 import execute as diagnostics
+from scripts.rtl_fixtures import load_lock,verify_checkout
+from scripts.run_priority_pr47 import simulate
+
+ROOT=Path(__file__).resolve().parents[1]
+TOP="localparam_range_concat_pr123"
+FIXTURE=ROOT/"tests/fixtures/localparam_range_concat_pr123.sv"
+
+
+def extract_fixture(folder):
+    return extract(folder,FIXTURE.stem,[FIXTURE])
+
+
+def check(name,result):
+    c=result["counts"]
+    expected=(0,0,0,0,0,0,0) if name=="alu" else (6,6,0,36,18,18,36)
+    assert tuple(c[k] for k in ("roots","supported","partial","potential_pairs","matched_historical_edges",
+                                "residual_candidate_pairs","stored_coordinates"))==expected,c
+    assert len(result["items"])==c["roots"]
+    assert result["historical_replay_exact"] and not result["historical_graph_promoted"]
+    assert result["new_historical_edges"]==0 and not c["truncated"] and not result["partial_reasons"]
+    lines=[11,12,15,16,17,21] if name=="fixture" else [520,521,527,528,529,536]
+    spec={line:(j,d,s,lo,param,proc) for j,(line,d,s,lo,param,proc) in enumerate(zip(
+        lines,["ra","rb","rc","rc","rc","w"],["a","b","c","c","c","d"],
+        [15,20,7,15,27,7],["S1","S2","D","S1","S4","D"],[False,False,True,True,True,False]))}
+    seen=set(); ids=set()
+    for row in result["items"]:
+        i=row["flat_assignment_id"]; owner=row["instance"]; line=row["source"]["line"]
+        assert type(i) is int and i not in ids and line in spec and line not in seen
+        ids.add(i); seen.add(line)
+        j,d,s,lo,param,proc=spec[line]
+        assert row["historical_status"]=="captured" and row["context"]==("AlwaysComb" if proc else "continuous")
+        assert owner==(TOP if name=="fixture" else "cv32e40p_core.id_stage_i")
+        if name=="core": assert i==940+j
+        assert row["historical_residual"]==proc and row["matched_historical_edges"]==(0 if proc else 6)
+        dst=owner+(".regfile_waddr_id" if d=="w" else f".regfile_addr_{d}_id")
+        scalar=owner+f".regfile_fp_{s}"; src=owner+".instr"
+        x=row["candidate"]
+        assert x["target"]==dst and x["scalar_source"]==scalar and x["range_source"]==src
+        assert x["model"]=={"msb":lo+4,"lsb":lo,"range_width":5,"result_width":6,
+                           "scalar_target_bit":5,"domain":"defined_binary_inputs_only"}
+        assert x["bounds"]==[{"instance":owner,"parameter":f"REG_{param}_{suffix}","value":v,
+                             "method":"direct_typed_literal_localparam"} for suffix,v in [("MSB",lo+4),("LSB",lo)]]
+        assert x["pairs"]==[{"source":src,"source_bit":lo+k,"target":dst,"target_bit":k}
+                             for k in range(5)]+[{"source":scalar,"source_bit":0,"target":dst,"target_bit":5}]
+        assert x["potential_pairs"]==6 and x["permanent_constant"]=="not_inferred"
+    assert seen==(set() if name=="alu" else set(lines))
+    if name=="core":
+        assert (c["ast_occurrences"],c["historical_rows"],c["supported_residual"])==(3811,1199,3)
+    elif name=="alu":
+        assert (c["ast_occurrences"],c["historical_rows"],c["supported_residual"])==(612,479,0)
+    else:
+        assert c["supported_residual"]==3
+
+
+def execute(out,reference=None):
+    out=out.resolve()
+    lock=load_lock()
+    for e in lock:
+        root=(ROOT/e["destination"]).resolve()
+        if out==root or out.is_relative_to(root):
+            raise ValueError("output cannot be inside official RTL")
+    out.mkdir(parents=True,exist_ok=True)
+    run=Path(tempfile.mkdtemp(prefix="run-",dir=out))
+    path=run/"summary.json"
+    report={"status":"incomplete","cases":[],"design_coverage":"not_measured",
+            "functional_influence":"not_proven","rtl_equivalence":"not_performed"}
+    def save(): path.write_text(json.dumps(report,indent=2),encoding="utf-8")
+    save()
+    def case(name,folder,upstream=None):
+        before={k:file_sha(folder/k) for k in INPUTS}
+        ast=read_ast(folder/INPUTS[0])
+        idx=json.loads((folder/INPUTS[1]).read_text())
+        g=json.loads((folder/INPUTS[2]).read_text())
+        start=perf_counter()
+        result=audit_localparam_range_concat(ast,idx,g)
+        elapsed=perf_counter()-start
+        detail=run/(name+".localparam-range-concat.json")
+        detail.write_text(json.dumps(result,indent=2),encoding="utf-8")
+        check(name,result)
+        assert before=={k:file_sha(folder/k) for k in INPUTS}
+        report["cases"].append({"name":name,"input_sha256":before,"detail_file":detail.name,
+             "detail_sha256":file_sha(detail),"audit_seconds":elapsed,"upstream":upstream,
+             "historical_unchanged":True,**{k:v for k,v in result.items() if k not in ("items",)}})
+        save()
+    try:
+        extract_fixture(run/"fixture")
+        case("fixture",run/"fixture")
+        counts,_=simulate([FIXTURE],TOP,"rtlprep.sim_tests.localparam_range_concat_pr123",run/"simulation")
+        assert (counts["tests"],counts["passed"],counts["failed"],counts["skipped"])==(1,1,0,0)
+        report["fixture_simulation"]={"status":"passed","input_vectors":4096,"word_checks_per_vector":4,
+            "total_checks":16384,"source_sha256":file_sha(FIXTURE)}
+        save()
+        ref=diagnostics(run/"reference") if reference is None else reference.resolve()
+        d=json.loads(ref.read_text())
+        assert d["status"]=="passed"
+        case("alu",ref.parent/"alu")
+        case("core",Path(d["core_reference_report"]).parent/"static")
+        assert len(report["cases"])==3
+        report["status"]="passed"
+    except Exception as exc:
+        report.update(status="failed",error=f"{type(exc).__name__}: {exc}"[:3000])
+        raise
+    finally:
+        save()
+        print(path.read_text(),flush=True)
+        print(f"Summary: {path}",flush=True)
+    return path
+
+
+if __name__=="__main__":
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--reference",type=Path)
+    a=p.parse_args()
+    execute(a.out,a.reference)

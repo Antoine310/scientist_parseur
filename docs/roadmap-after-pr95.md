@@ -104,3 +104,5 @@ P0 omissions, corpus indépendants, budgets/reproductibilité ; P1 provenance pr
 **Révision après #120** : fusion confirmée, CI PR/main50/50,2184 locaux SHA exact,64 résiduels core/864 paires, union rapports79/98 et316/384. #121 lane concat 8 ALU/8 core, 8 paires et8 valeurs locales par design, objectif87/98 et324/384 conditionnel. Jalon statique indicatif ; préserver toutes dettes et phases A–H.
 
 **Révision après #121** : fusion confirmée, CI PR/main50/50,2233 locaux SHA exact,8 résiduels ALU/8 core,8 paires et8 valeurs locales chacun, union rapports87/98 et324/384. #122 cible six mux CSR paramétrés, objectif330/384 conditionnel, valeurs locales/alternatives inactives distinctes. Conserver toutes phases A–H et dettes, jalon statique indicatif.
+
+**Révision après #122** : fusion confirmée, CI PR/main50/50,2286 locaux SHA exact,6 résiduels core/192 valeurs locales zéro/192 alternatives inactives, union rapports87/98 et330/384. #123 concat avec plages localparam,6 sites core dont3 résiduels et3 contrôles historiques, objectif333/384 conditionnel. Conserver phases A–H et dettes, jalon statique indicatif.
