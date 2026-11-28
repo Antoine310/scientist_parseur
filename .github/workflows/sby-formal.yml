@@ -125,6 +125,8 @@ jobs:
         run: python -m scripts.prove_enum_conversions_pr117 --out reports/pr117-formal
       - name: PR118 four-state fixture (Icarus) and encoded models (Z3)
         run: python -m scripts.prove_state_conversions_pr118 --out reports/pr118-formal
+      - name: PR119 decoder composition binary models (Z3)
+        run: python -m scripts.prove_decoder_composition_pr119 --out reports/pr119-formal
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -151,6 +153,7 @@ jobs:
             reports/pr116-formal/**
             reports/pr117-formal/**
             reports/pr118-formal/**
+            reports/pr119-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
