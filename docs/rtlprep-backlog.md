@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.58 — 28 novembre 2026 (fusion #123, chantier #124)**  
+**Version : 1.59 — 28 novembre 2026 (fusion #124, chantier #125)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #123** (0b0b39fb290de77a2c21c877e887db288343900f). CI PR/main50/50 ; 2346 locaux SHA exact.
-**PR en cours : #124**, mux de concaténation paramétré, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #124** (91165d5e7f38148c0ddc2119435edcd94899a263). CI PR/main50/50 ; 2403 locaux SHA exact.
+**PR en cours : #125**, plages arithmétiques à paramètres locaux, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -938,3 +938,8 @@ Prochaine action : ...
 
 - [~] **PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 / PR115-CONVERSION-GENERAL-01 · P0** — #123 fusionnée,2346 locaux SHA exact,CI PR/main50/50,3 résiduels core/18 paires candidates et18 arêtes historiques corroborées, union87/98 et333/384. #124 cible3 sites CSR core0–2 ; FPU0,96 valeurs locales zéro/16 alternatives dynamiques inactives/80 valeurs préfixe inactives. Variante1 fixture, pas de généralisation ni promotion. Toutes dettes conservées. [Périmètre](parameter-concat-mux-pr124.md).
 - [?] **PR123-PERF-OBS-01 · P1** — Ralentissement local observé #123 : suite25,00s/pipeline14,83s vs7,92/3,98 #122 ; RSS Python184436 KiB identique, phases historiques également ralenties. CI unit13s vs18s, partagé284s vs288s, non appariés. Ne pas attribuer causalité. Mesurer répétitions SHA/outils/conditions comparables avant conclusion ; conserver résultats historiques et non-régression fonctionnelle distincte.
+
+### PR #125 — Plages arithmétiques à localparam (en cours)
+
+- [~] **PR57-IDX-01 / PR96-COMPOSE-01 · P0** — #124 fusionnée,2403 locaux SHA exact,CI PR/main50/50,3 résiduels core/96 valeurs locales zéro/16 positions dynamiques inactives/80 préfixes inactifs, union87/98 et336/384. #125 cible4 sites CSR17–20,16 paires locales attendues ; preuves des bornes Add/Subtract, résolution exacte et budgets. Pas de généralisation aux autres types/opérateurs, gardes, priorités, X/Z ou promotion. Toutes dettes conservées. [Périmètre](arithmetic-range-pr125.md).
+- **PR123-PERF-OBS-01 (toujours ouverte)** : #124 suite8,55s/pipeline4,07s, proches de #122 ; ralentissement #123 non persistant dans ce nouvel échantillon, causalité non démontrée. Répétitions appariées nécessaires.
