@@ -31,7 +31,7 @@ def setup(case="upper"):
           "left":named("dst",dst,1),"right":rhs}
     raw={"top.dst":dst,"top.src":"logic[31:0]"}
     resolve=lambda owner,e:{"1 dst":"top.dst","2 src":"top.src"}.get(e.get("symbol")) if owner=="top" else None
-    inv=({"top":None},{"10":("top",param("C_FFLAG",10,5)),"11":("top",param("C_RM",11,3))})
+    inv=({"top":None},{"10":("top",param("C_FFLAG",10,5)),"11":("top",param("C_RM",11,3))},{})
     return [node,"AlwaysComb","top",resolve,raw,{n:layout(t) for n,t in raw.items()},inv]
 
 
@@ -178,7 +178,8 @@ def test_report_contract(monkeypatch,supported):
     monkeypatch.setattr(m,"SignalResolver",lambda *x:SimpleNamespace(resolve_exact=a[3]))
     monkeypatch.setattr(m,"raw_layouts",lambda *x:a[4])
     monkeypatch.setattr(m,"layouts",lambda *x:a[5])
-    monkeypatch.setattr(m,"inventory",lambda *x:a[6])
+    monkeypatch.setattr(m,"inventory",lambda *x:a[6][:2])
+    monkeypatch.setattr(m,"package_bounds",lambda *x:a[6][2])
     r=m.audit_arithmetic_range({"node":n},{"top":"top"},graph)
     c=r["counts"]
     assert len(r["items"])==c["roots"]==c["supported"]==1
@@ -186,3 +187,79 @@ def test_report_contract(monkeypatch,supported):
     assert c["residual_candidate_pairs"]==3*(not supported)
     monkeypatch.setattr(m,"MAX_COORDINATES",2)
     with pytest.raises(ValueError,match="budget"): m.audit_arithmetic_range({"node":n},{"top":"top"},graph)
+
+
+def package_setup(case="upper"):
+    a=setup(case)
+    parents,local,pkg=a[6]
+    for addr,(_,decl) in local.items(): pkg[addr]=("pkg",decl)
+    local.clear()
+    return a
+
+
+@pytest.mark.parametrize("case",["flags","rm","upper"])
+def test_package_positive(case):
+    a=package_setup(case); x=expand(*a); local=expand(*setup(case))
+    assert x["pairs"]==local["pairs"] and x["model"]==local["model"]
+    assert all(p["package"]=="pkg" and p["reference_instance"]=="top"
+               and p["method"]=="direct_typed_literal_package_localparam"
+               for p in x["parameter_proofs"])
+    assert x["bound_proofs"]["msb"]["value"]==local["bound_proofs"]["msb"]["value"]
+
+
+@pytest.mark.parametrize("bad",["missing","name","addr","kind","type","local","port","body",
+                                "initializer","initializer_type","value","tag","runtime","collision","pkg_name"])
+def test_package_refusal(bad):
+    a=package_setup(); parents,local,pkg=a[6]
+    _,decl=pkg["10"]; ref=a[0]["right"]["left"]["left"]["right"]
+    if bad=="missing": del pkg["10"]
+    elif bad=="name": decl["name"]="OTHER"
+    elif bad=="addr": decl["addr"]=12
+    elif bad=="kind": decl["kind"]="Variable"
+    elif bad=="type": decl["type"]="int"
+    elif bad=="local": decl["isLocal"]=False
+    elif bad=="port": decl["isPort"]=True
+    elif bad=="body": decl["isBody"]=False
+    elif bad=="initializer": decl["initializer"]["operand"]["kind"]="Call"
+    elif bad=="initializer_type": decl["initializer"]["type"]="int"
+    elif bad=="value": decl["value"]="6"
+    elif bad=="tag": ref["constant"]="6"
+    elif bad=="runtime": a[3]=lambda o,e:"top.signal"
+    elif bad=="collision": local["10"]=("top",decl)
+    elif bad=="pkg_name": pkg["10"]=("bad::name",decl)
+    with pytest.raises(Unsupported): expand(*a)
+
+
+def test_package_inventory_exact():
+    from rtlprep.arithmetic_range_candidates import package_bounds
+    a=package_setup(); decl=a[6][2]["10"][1]
+    p={"kind":"Package","name":"pkg","members":[decl]}
+    assert package_bounds({"design":{"members":[{"kind":"CompilationUnit","members":[p]}]}})=={"10":("pkg",decl)}
+    assert package_bounds({"design":{"members":[p]}})=={"10":("pkg",decl)}
+
+
+@pytest.mark.parametrize("bad",["duplicate_address","duplicate_name","duplicate_package","nonparameter_collision",
+                               "nested","invalid_package","invalid_member"])
+def test_package_inventory_refusals(bad):
+    from rtlprep.arithmetic_range_candidates import package_bounds
+    decl=package_setup()[6][2]["10"][1]; other=copy.deepcopy(decl)
+    p={"kind":"Package","name":"pkg","members":[decl]}
+    root=[p]
+    if bad=="duplicate_address": other["name"]="OTHER"; p["members"].append(other)
+    elif bad=="duplicate_name": other["addr"]=12; p["members"].append(other)
+    elif bad=="duplicate_package": root.append({"kind":"Package","name":"pkg","members":[]})
+    elif bad=="nonparameter_collision":
+        other["kind"]="Variable"; other["name"]="OTHER"; p["members"].append(other)
+    elif bad=="nested": p["members"]=[{"kind":"GenerateBlock","members":[decl]}]
+    elif bad=="invalid_package": p["name"]="bad::name"
+    elif bad=="invalid_member": decl["name"]="bad::name"
+    assert "10" not in package_bounds({"design":{"members":root}})
+
+
+@pytest.mark.parametrize("limit",["MAX_PACKAGES","MAX_PACKAGE_MEMBERS"])
+def test_package_inventory_budget(monkeypatch,limit):
+    import rtlprep.arithmetic_range_candidates as m
+    monkeypatch.setattr(m,limit,0)
+    decl=package_setup()[6][2]["10"][1]
+    with pytest.raises(ValueError,match="budget"):
+        m.package_bounds({"design":{"members":[{"kind":"Package","name":"pkg","members":[decl]}]}})

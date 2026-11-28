@@ -25,13 +25,13 @@ def extract_fixture(folder):
 def check(name,result):
     c=result["counts"]
     expected=(0,0,0,0,0) if name=="alu" else (4,4,0,16,16)
-    assert tuple(c[k] for k in ("roots","supported","partial","potential_pairs","stored_coordinates"))==expected,c
+    assert tuple(c[k] for k in ("roots","supported","partial","potential_pairs","stored_coordinates"))==expected,(c,result["partial_reasons"],[(r["flat_assignment_id"],r.get("reason")) for r in result["items"]])
     assert len(result["items"])==c["roots"]
     assert result["historical_replay_exact"] and not result["historical_graph_promoted"]
     assert result["new_historical_edges"]==0 and not c["truncated"] and not result["partial_reasons"]
     # Independent source-line oracle; the order of historical flat IDs is not source order.
-    spec={13:("fflags_n",4,0,17),14:("frm_n",2,0,19),16:("fflags_n",4,0,18),
-          17:("frm_n",7,5,20)} if name=="fixture" else {
+    spec={17:("fflags_n",4,0,17),18:("frm_n",2,0,19),20:("fflags_n",4,0,18),
+          21:("frm_n",7,5,20)} if name=="fixture" else {
           925:("fflags_n",4,0,17),934:("frm_n",2,0,19),943:("fflags_n",4,0,18),944:("frm_n",7,5,20)}
     seen=set(); ids=set()
     for row in result["items"]:
@@ -47,7 +47,8 @@ def check(name,result):
         assert x["target"]==dst and x["source"]==src
         assert x["model"]=={"msb":hi,"lsb":lo,"width":n,"source_width":32,
                             "domain":"defined_binary_inputs_only"}
-        def param(p,v): return {"kind":"localparam","type":"logic signed[31:0]","parameter":p,"value":v}
+        pkg="arithmetic_range_pkg_pr125" if name=="fixture" else "cv32e40p_pkg"
+        def param(p,v): return {"kind":"localparam","type":"logic signed[31:0]","parameter":p,"value":v,"package":pkg}
         def lit(v): return {"kind":"literal","type":"int","value":v}
         def op(k,a,b,v): return {"kind":k,"type":"logic signed[31:0]","left":a,"right":b,"value":v}
         flags=param("C_FFLAG",5); rm=param("C_RM",3)
@@ -56,8 +57,8 @@ def check(name,result):
         one={"kind":"conversion","type":"logic signed[31:0]","operand":lit(1),"value":1}
         assert x["bound_proofs"]=={"msb":op("Subtract",upper,one,hi),"lsb":lower}
         params=[("C_FFLAG",5)] if dest=="fflags_n" else [("C_RM",3)] if lo==0 else [("C_RM",3),("C_FFLAG",5)]
-        assert x["parameter_proofs"]==[{"instance":owner,"parameter":p,"value":v,
-                                      "method":"direct_typed_literal_localparam"} for p,v in params]
+        assert x["parameter_proofs"]==[{"package":pkg,"reference_instance":owner,"parameter":p,"value":v,
+                                      "method":"direct_typed_literal_package_localparam"} for p,v in params]
         assert x["pairs"]==[{"source":src,"source_bit":lo+b,"target":dst,"target_bit":b} for b in range(n)]
         assert x["potential_pairs"]==n and x["permanent_constant"]=="not_inferred"
     assert seen==(set() if name=="alu" else set(spec))

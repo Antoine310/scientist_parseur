@@ -9,11 +9,12 @@ from .array_dependencies import Unsupported, layouts
 from .zero_extended_additions import endpoint
 from .bitaccess import build_bit_access_index
 from .capture_audit import audit_capture
-from .constant_indices import evaluate
+from .constant_indices import evaluate, integer_value
 from .dynamic_conversion_candidates import at_pointer, require
 from .residual_audit import exact_links, reconcile_capture
 from .symbols import SignalResolver
-from .typed_layout import raw_layouts
+from .typed_layout import raw_layouts, packages, identity, IDENT
+from .enum_member_writes import SYMBOL
 from .parameter_mux_candidates import inventory, PARAM_TYPE, obj
 from .localparam_range_concat_candidates import bound
 
@@ -24,12 +25,73 @@ MAX_BOUND_DEPTH=6
 MAX_BOUND_NODES=32
 MAX_REFERENCES=8
 MAX_INTERMEDIATE=64
+MAX_PACKAGE_MEMBERS=4096
+MAX_PACKAGES=128
 
 
 def matches(node):
     lhs,rhs=obj(node.get("left")),obj(node.get("right"))
     return (lhs.get("kind")=="NamedValue" and rhs.get("kind")=="RangeSelect"
             and any(obj(rhs.get(k)).get("kind")=="BinaryOp" for k in ("left","right")))
+
+
+def package_bounds(ast):
+    """Inventory exact direct package declarations, excluding ambiguous identities.
+
+    Address/name binding comes from the elaborated AST, not name search or
+    a guessed import. Package entries are not treated as instance locals.
+    """
+    pkgs=packages(ast)
+    if len(pkgs)>MAX_PACKAGES: raise ValueError("arithmetic_package_inventory_budget")
+    names=Counter(p.get("name") for p in pkgs if isinstance(p.get("name"),str))
+    candidates=defaultdict(list); count=0
+    for p in pkgs:
+        name=p.get("name"); members=p.get("members")
+        if not isinstance(members,list): raise ValueError("malformed_package_members")
+        count+=len(members)
+        if count>MAX_PACKAGE_MEMBERS: raise ValueError("arithmetic_package_member_budget")
+        member_names=Counter(n.get("name") for n in members if isinstance(n,dict)
+                             and isinstance(n.get("name"),str))
+        for n in members:
+            if not isinstance(n,dict): continue
+            addr=identity(n); pname=n.get("name")
+            if addr is None: continue
+            valid=(isinstance(name,str) and IDENT.fullmatch(name) is not None and names[name]==1
+                   and isinstance(pname,str) and IDENT.fullmatch(pname) is not None
+                   and member_names[pname]==1 and n.get("kind")=="Parameter")
+            candidates[addr].append((name,n) if valid else None)
+    return {k:v[0] for k,v in candidates.items() if len(v)==1 and v[0] is not None}
+
+
+def resolve_bound(expr,owner,resolve,inv):
+    parents,local_params,pkg_params=inv
+    require(owner in parents and expr.get("kind")=="NamedValue"
+            and expr.get("type")==PARAM_TYPE and resolve(owner,expr) is None,
+            "unsupported_arithmetic_parameter_reference")
+    token=expr.get("symbol")
+    m=SYMBOL.fullmatch(token) if isinstance(token,str) else None
+    require(m is not None,"malformed_arithmetic_parameter_symbol")
+    addr,name=m.groups()
+    require(not (addr in local_params and addr in pkg_params),"ambiguous_parameter_scope_identity")
+    if addr in local_params:
+        return bound(expr,owner,resolve,(parents,local_params))
+    pkg,p=pkg_params.get(addr,(None,{}))
+    require(isinstance(pkg,str) and IDENT.fullmatch(pkg) is not None
+            and p.get("kind")=="Parameter" and identity(p)==addr and p.get("name")==name
+            and p.get("type")==PARAM_TYPE and p.get("isLocal") is True
+            and p.get("isPort") is False and p.get("isBody") is True,
+            "unproven_package_localparam_identity")
+    init=obj(p.get("initializer"))
+    require(init.get("kind")=="Conversion" and init.get("type")==PARAM_TYPE
+            and obj(init.get("operand")).get("kind")=="IntegerLiteral"
+            and obj(init.get("operand")).get("type")=="int",
+            "unsupported_package_localparam_initializer")
+    value=evaluate(init,{})
+    require(type(value) is int and 0<=value<32,"unsupported_package_localparam_value")
+    require(integer_value(p.get("value"))==value and evaluate(expr,{addr:(name,value)})==value,
+            "package_localparam_value_or_tag_disagreement")
+    return addr,(name,value),{"package":pkg,"reference_instance":owner,"parameter":name,
+                              "value":value,"method":"direct_typed_literal_package_localparam"}
 
 
 def bound_expression(expr,owner,resolve,inv,constants,proofs,budget,depth=0):
@@ -39,7 +101,7 @@ def bound_expression(expr,owner,resolve,inv,constants,proofs,budget,depth=0):
     require(isinstance(expr,dict),"malformed_arithmetic_bound")
     kind=expr.get("kind"); typ=expr.get("type")
     if kind=="NamedValue":
-        addr,entry,proof=bound(expr,owner,resolve,inv)
+        addr,entry,proof=resolve_bound(expr,owner,resolve,inv)
         require(addr not in constants or constants[addr]==entry,"localparam_identity_disagreement")
         if addr not in constants and len(constants)>=MAX_REFERENCES:
             raise ValueError("arithmetic_bound_reference_budget")
@@ -47,6 +109,7 @@ def bound_expression(expr,owner,resolve,inv,constants,proofs,budget,depth=0):
         proofs[addr]=proof
         value=entry[1]
         trace={"kind":"localparam","type":typ,"parameter":entry[0],"value":value}
+        if "package" in proof: trace["package"]=proof["package"]
     elif kind=="IntegerLiteral":
         require(typ=="int","unsupported_bound_literal_type")
         value=evaluate(expr,{})
@@ -136,7 +199,7 @@ def audit_arithmetic_range(ast,index,graph):
         raise ValueError("bit_access_replay_disagreement")
     cap=reconcile_capture(replay,captured)
     resolver,raw=SignalResolver(ast,index),raw_layouts(index)
-    declared=layouts(index); inv=inventory(ast)
+    declared=layouts(index); inv=(*inventory(ast),package_bounds(ast))
     flat=graph["bit_dependency_graph"]
     if len(flat["edges"])>MAX_HISTORICAL_EDGES: raise ValueError("historical_edge_budget")
     edges=defaultdict(list)

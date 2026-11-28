@@ -1,11 +1,15 @@
+package arithmetic_range_pkg_pr125;
+    localparam logic signed [31:0] C_FFLAG=5;
+    localparam logic signed [31:0] C_RM=3;
+endpackage
+
 module arithmetic_range_pr125(
     input logic [31:0] csr_wdata_int,
     input logic [1:0] sel,
     output logic [4:0] fflags_n,
     output logic [2:0] frm_n
 );
-    localparam logic signed [31:0] C_FFLAG=5;
-    localparam logic signed [31:0] C_RM=3;
+    import arithmetic_range_pkg_pr125::*;
     always_comb begin
         fflags_n='0;
         frm_n='0;
