@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.57 — 28 novembre 2026 (fusion #122, chantier #123)**  
+**Version : 1.58 — 28 novembre 2026 (fusion #123, chantier #124)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #122** (b3f89840304773a9d5c15910e97b6ee8ef0ec262). CI PR/main50/50 ; 2286 locaux SHA exact.
-**PR en cours : #123**, concaténation avec plage à bornes localparam, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #123** (0b0b39fb290de77a2c21c877e887db288343900f). CI PR/main50/50 ; 2346 locaux SHA exact.
+**PR en cours : #124**, mux de concaténation paramétré, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -933,3 +933,8 @@ Prochaine action : ...
 ### PR #123 — Concaténation et plages localparam (en cours)
 
 - [~] **PR57-IDX-01 / PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 · P0** — #122 fusionnée,2286 locaux SHA exact,CI PR/main50/50,6 résiduels core/192 valeurs locales zéro/192 alternatives inactives, union87/98 et330/384. Deux warnings WIDTHTRUNC fixture conservés. #123 cible6 sites core940–945,18 arêtes historiques à vérifier et18 paires candidates sur3 résiduels. Exact identité et initialisateur localparam ; ne pas généraliser résolution, ranges, concat, gardes, X/Z ou intégration. Toutes dettes conservées. [Périmètre](localparam-range-concat-pr123.md).
+
+### PR #124 — Mux de concaténation paramétré (en cours)
+
+- [~] **PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 / PR115-CONVERSION-GENERAL-01 · P0** — #123 fusionnée,2346 locaux SHA exact,CI PR/main50/50,3 résiduels core/18 paires candidates et18 arêtes historiques corroborées, union87/98 et333/384. #124 cible3 sites CSR core0–2 ; FPU0,96 valeurs locales zéro/16 alternatives dynamiques inactives/80 valeurs préfixe inactives. Variante1 fixture, pas de généralisation ni promotion. Toutes dettes conservées. [Périmètre](parameter-concat-mux-pr124.md).
+- [?] **PR123-PERF-OBS-01 · P1** — Ralentissement local observé #123 : suite25,00s/pipeline14,83s vs7,92/3,98 #122 ; RSS Python184436 KiB identique, phases historiques également ralenties. CI unit13s vs18s, partagé284s vs288s, non appariés. Ne pas attribuer causalité. Mesurer répétitions SHA/outils/conditions comparables avant conclusion ; conserver résultats historiques et non-régression fonctionnelle distincte.

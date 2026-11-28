@@ -135,6 +135,8 @@ jobs:
         run: python -m scripts.prove_parameter_mux_pr122 --out reports/pr122-formal
       - name: PR123 localparam range concat binary models (Z3)
         run: python -m scripts.prove_localparam_range_concat_pr123 --out reports/pr123-formal
+      - name: PR124 parameter concat mux binary models (Z3)
+        run: python -m scripts.prove_parameter_concat_mux_pr124 --out reports/pr124-formal
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -166,6 +168,7 @@ jobs:
             reports/pr121-formal/**
             reports/pr122-formal/**
             reports/pr123-formal/**
+            reports/pr124-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
