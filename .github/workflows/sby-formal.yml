@@ -131,6 +131,8 @@ jobs:
         run: python -m scripts.prove_csr_composition_pr120 --out reports/pr120-formal
       - name: PR121 packed lane concat binary models (Z3)
         run: python -m scripts.prove_packed_lane_concat_pr121 --out reports/pr121-formal
+      - name: PR122 parameter mux binary models (Z3)
+        run: python -m scripts.prove_parameter_mux_pr122 --out reports/pr122-formal
       - name: Upload formal reports, proof logs and traces (even on failure)
         if: always()
         uses: actions/upload-artifact@v4
@@ -160,6 +162,7 @@ jobs:
             reports/pr119-formal/**
             reports/pr120-formal/**
             reports/pr121-formal/**
+            reports/pr122-formal/**
             reports/formal-*/formal.result.json
             reports/formal-*/formal_*.sby
             reports/formal-*/formal_*.result.json
