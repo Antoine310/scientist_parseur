@@ -419,6 +419,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_csr_composition_pr120 --out reports/pr120 --reference "${refs[0]}"
 
+      - name: PR121 packed lane concat candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_packed_lane_concat_pr121.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_packed_lane_concat_pr121 --out reports/pr121 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -615,3 +624,9 @@ jobs:
             reports/pr120/**/fixture/elaborated_ast.json
             reports/pr120/**/fixture/rtl_index.json
             reports/pr120/**/fixture/rtl_dependencies.json
+            reports/pr121/**/summary.json
+            reports/pr121/**/*.packed-lane-concat.json
+            reports/pr121/**/simulation_results.xml
+            reports/pr121/**/fixture/elaborated_ast.json
+            reports/pr121/**/fixture/rtl_index.json
+            reports/pr121/**/fixture/rtl_dependencies.json
