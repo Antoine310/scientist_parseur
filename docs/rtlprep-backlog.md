@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.53 — 28 novembre 2026 (fusion #118, chantier #119)**  
+**Version : 1.54 — 28 novembre 2026 (fusion #119, chantier #120)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #118** (7c5fd478bf4d691c6e3df96f7bc8c06b11814fd0). CI PR/main 50/50 ; 2099/2099 locaux, SHA non imprimé dans l'extrait.
-**PR en cours : #119**, composition décodeur écriture, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #119** (181c05485bed0a06adc384c9c72696d5a64b7a0a). CI PR/main50/50 ; 2138 locaux, SHA non imprimé.
+**PR en cours : #120**, composition décodeurs CSR, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -915,3 +915,7 @@ Prochaine action : ...
 
 - [~] **PR115-CONVERSION-GENERAL-01 · P0** — #118 fusionnée, 2099 tests, CI PR/main50/50, Icarus128 checks, 81/1296 expressions ALU/core (160/4022 positions), 31 recouvrements #115, 42 refus core. Dette générale maintenue.
 - [~] **PR96-COMPOSE-01 / PR111-LOGICAL-COMPOSE-01 · P0** — #119 64 résiduels core1044–1107 (448 paires attendues), composition extension non signée + égalité lexicale + mux scalaire, 0 ALU, oracle indépendant. PR74-IDX-02 et autres dettes restent ouvertes ; ne pas généraliser composition, X/Z, gardes, appels, boucles, preuve RTL, promotion/intégration historique. [Périmètre](decoder-composition-pr119.md).
+
+### PR #120 — Composition décodeurs CSR (en cours)
+
+- [~] **PR96-COMPOSE-01 / PR111-LOGICAL-COMPOSE-01 · P0** — #119 fusionnée,2138 locaux,CI PR/main50/50,64 IDs1044–1107/448 paires, union rapports79/98 et252/384. #120 cible IDs214–277, 64 sites/864 paires attendues, enum+addition constante+comparaison+AND/inhibition et paramètre largeur. Pas de généralisation, promotion, preuve globale, X/Z ou fermeture des dettes. PR115-CONVERSION-GENERAL-01, PR74-IDX-02, toutes dettes historiques conservées. [Périmètre](csr-composition-pr120.md).
