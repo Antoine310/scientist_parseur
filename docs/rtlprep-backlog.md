@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.56 — 28 novembre 2026 (fusion #121, chantier #122)**  
+**Version : 1.57 — 28 novembre 2026 (fusion #122, chantier #123)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #121** (2591136b4cb763464b1023c8c47d0b7454f4fb11). CI PR/main50/50 ; 2233 locaux SHA exact.
-**PR en cours : #122**, mux de paramètre élaboré, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #122** (b3f89840304773a9d5c15910e97b6ee8ef0ec262). CI PR/main50/50 ; 2286 locaux SHA exact.
+**PR en cours : #123**, concaténation avec plage à bornes localparam, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -929,3 +929,7 @@ Prochaine action : ...
 ### PR #122 — Mux de paramètre élaboré (en cours)
 
 - [~] **PR96-COMPOSE-01 / PR115-CONVERSION-GENERAL-01 · P0** — #121 fusionnée,2233 locaux SHA exact,CI PR/main50/50,8 résiduels ALU et8 core,8 paires/8 valeurs locales chacun, union87/98 et324/384. #122 cible six mux CSR core10–15, chaîne de paramètres parent/enfant,192 valeurs locales zéro et192 coordonnées alternatives inactives, zéro paire active pour configuration0. Variante1 fixture. Généralisation paramètres, mux, gardes, X/Z, priorités, appels, boucles, intégration restent ouverts. [Périmètre](parameter-mux-pr122.md).
+
+### PR #123 — Concaténation et plages localparam (en cours)
+
+- [~] **PR57-IDX-01 / PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 · P0** — #122 fusionnée,2286 locaux SHA exact,CI PR/main50/50,6 résiduels core/192 valeurs locales zéro/192 alternatives inactives, union87/98 et330/384. Deux warnings WIDTHTRUNC fixture conservés. #123 cible6 sites core940–945,18 arêtes historiques à vérifier et18 paires candidates sur3 résiduels. Exact identité et initialisateur localparam ; ne pas généraliser résolution, ranges, concat, gardes, X/Z ou intégration. Toutes dettes conservées. [Périmètre](localparam-range-concat-pr123.md).

@@ -437,6 +437,15 @@ jobs:
           test -f "${refs[0]}"
           python -m scripts.run_parameter_mux_pr122 --out reports/pr122 --reference "${refs[0]}"
 
+      - name: PR123 localparam range concat candidates and fixture simulation
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_localparam_range_concat_pr123.py
+          refs=(reports/pr80/run-*/reference/run-*/diagnostics.result.json)
+          test "${#refs[@]}" -eq 1
+          test -f "${refs[0]}"
+          python -m scripts.run_localparam_range_concat_pr123 --out reports/pr123 --reference "${refs[0]}"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -645,3 +654,9 @@ jobs:
             reports/pr122/**/fixture/elaborated_ast.json
             reports/pr122/**/fixture/rtl_index.json
             reports/pr122/**/fixture/rtl_dependencies.json
+            reports/pr123/**/summary.json
+            reports/pr123/**/*.localparam-range-concat.json
+            reports/pr123/**/simulation_results.xml
+            reports/pr123/**/fixture/elaborated_ast.json
+            reports/pr123/**/fixture/rtl_index.json
+            reports/pr123/**/fixture/rtl_dependencies.json
