@@ -923,3 +923,5 @@ Prochaine action : ...
 ### PR #121 — Concaténation de lane packed (en cours)
 
 - [~] **PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 · P0** — #120 fusionnée,2184 locaux SHA exact,CI PR/main50/50,64 résiduels core/864 paires, union rapports79/98 et316/384. #121 cible 8 résiduels ALU et8 core, chacun 8 paires et8 valeurs locales ; coordonnées multidimensionnelles exactes, pas d'inférence de constante permanente ni de promotion. Dettes composition, layout, X/Z, gardes/priorité, fonctions, boucles et intégration restent ouvertes. [Périmètre](packed-lane-concat-pr121.md).
+
+- #121 première validation : analyse fixture 8/8 mais oracle supposait à tort l'ordre source des IDs. Correspondance réelle [7,0,1,2,3,4,5,6] vérifiée dans l'artefact15265818842. Correction ciblée oracle et 7 tests de régression ; aucun changement de l'analyseur, des résultats historiques ou des dettes. CI initiale48/50 ; nouvelle validation requise.

@@ -28,28 +28,31 @@ def check(name,result):
     assert len(result["items"])==c["roots"]
     assert result["historical_replay_exact"] and not result["historical_graph_promoted"]
     assert result["new_historical_edges"]==0 and not c["truncated"] and not result["partial_reasons"]
+    # Historical bit-access traversal is not source order for this if/else.
+    # Independently pinned from the fixture AST/capture in CI 46152427528.
     ids={"alu":[413,414,415,416,437,438,439,440],
-         "core":[735,736,737,738,759,760,761,762],"fixture":list(range(8))}[name]
+         "core":[735,736,737,738,759,760,761,762],
+         "fixture":[7,0,1,2,3,4,5,6]}[name]
+    lines=[9,10,11,12,14,15,16,17] if name=="fixture" else [602,603,604,605,662,663,664,665]
     expected={}
     for j,i in enumerate(ids):
         k=3-(j%4)
         src="imm_vec_ext_i" if j<4 else "operand_b_i"
         b=0 if j<4 or j>=6 else 16
         v=[1,1,1,0,1,0,1,0][j]
-        expected[i]=(k,src,b,v)
+        expected[i]=(k,src,b,v,lines[j])
     observed=set()
     for row in result["items"]:
         i=row["flat_assignment_id"]
         assert i in expected and i not in observed
         observed.add(i)
-        k,src,b,v=expected[i]; x=row["candidate"]; owner=row["instance"]
+        k,src,b,v,line=expected[i]; x=row["candidate"]; owner=row["instance"]
         assert row["context"]=="AlwaysComb" and row["historical_status"]=="captured"
-        if name!="fixture":
-            assert row["historical_residual"]
-            assert owner==("cv32e40p_alu" if name=="alu" else "cv32e40p_core.ex_stage_i.alu_i")
-            assert row["source"]["line"]==([602,603,604,605,662,663,664,665][ids.index(i)])
+        assert row["historical_residual"],(name,i)
+        assert owner=={"fixture":TOP,"alu":"cv32e40p_alu","core":"cv32e40p_core.ex_stage_i.alu_i"}[name],(name,i,owner)
+        assert row["source"]["line"]==line,(name,i,row["source"],line)
         dst=owner+".shuffle_byte_sel"
-        assert x["target"]==dst and x["outer_index"]==k
+        assert x["target"]==dst and x["outer_index"]==k,(name,i,x["target"],x["outer_index"],dst,k)
         assert x["pairs"]==[{"source":owner+"."+src,"source_packed_indices":[],"source_bit":b,
                              "target":dst,"target_packed_indices":[k],"target_bit":1}]
         assert x["local_values"]==[{"target":dst,"target_packed_indices":[k],"target_bit":0,"value":v}]

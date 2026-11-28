@@ -101,3 +101,57 @@ def test_report_contract(monkeypatch,refused):
     assert r["counts"]["local_value_records"]==int(not refused)
     assert r["counts"]["stored_coordinates"]==2*int(not refused)
     assert ("candidate" in r["items"][0])!=refused
+
+
+def fixture_oracle_report():
+    # Fixed observations from the first CI fixture: historical ID is not
+    # the source ordinal. Deliberately retain report traversal order.
+    owner="packed_lane_concat_pr121"
+    target=owner+".shuffle_byte_sel"
+    rows=[]
+    for i,line,k,src,b,v in [
+        (3,14,3,"operand_b_i",16,1),(4,15,2,"operand_b_i",16,0),
+        (5,16,1,"operand_b_i",0,1),(6,17,0,"operand_b_i",0,0),
+        (7,9,3,"imm_vec_ext_i",0,1),(0,10,2,"imm_vec_ext_i",0,1),
+        (1,11,1,"imm_vec_ext_i",0,1),(2,12,0,"imm_vec_ext_i",0,0),
+    ]:
+        rows.append({"flat_assignment_id":i,"source":{"line":line},"instance":owner,
+                     "context":"AlwaysComb","historical_status":"captured","historical_residual":True,
+                     "candidate":{"target":target,"outer_index":k,
+                         "pairs":[{"source":owner+"."+src,"source_packed_indices":[],"source_bit":b,
+                                   "target":target,"target_packed_indices":[k],"target_bit":1}],
+                         "local_values":[{"target":target,"target_packed_indices":[k],"target_bit":0,"value":v}],
+                         "model":{"outer_index":k,"dynamic_inner_bit":1,"literal_inner_bit":0,
+                                  "literal_value":v,"width":2,"domain":"defined_binary_inputs_only"},
+                         "permanent_constant":"not_inferred"}})
+    return {"counts":{"roots":8,"supported":8,"partial":0,"potential_pairs":8,
+                      "local_value_records":8,"stored_coordinates":16,"truncated":False,
+                      "ast_occurrences":8,"historical_rows":8,"supported_residual":8},
+            "items":rows,"historical_replay_exact":True,"historical_graph_promoted":False,
+            "new_historical_edges":0,"partial_reasons":{}}
+
+
+def test_fixture_oracle_accepts_pinned_non_source_order():
+    from scripts.run_packed_lane_concat_pr121 import check
+    r=fixture_oracle_report()
+    check("fixture",r)
+    r["items"].reverse()
+    check("fixture",r)
+
+
+@pytest.mark.parametrize("bad",["source_order_ids","duplicate_id","source_line","lane","source_bit","literal"])
+def test_fixture_oracle_rejects_mutations(bad):
+    from scripts.run_packed_lane_concat_pr121 import check
+    r=fixture_oracle_report()
+    first=r["items"][0]
+    if bad=="source_order_ids":
+        for row in r["items"]:
+            line=row["source"]["line"]
+            row["flat_assignment_id"]=line-9 if line<14 else line-10
+    elif bad=="duplicate_id": first["flat_assignment_id"]=r["items"][1]["flat_assignment_id"]
+    elif bad=="source_line": first["source"]["line"]=9
+    elif bad=="lane": first["candidate"]["outer_index"]=2
+    elif bad=="source_bit": first["candidate"]["pairs"][0]["source_bit"]=0
+    elif bad=="literal": first["candidate"]["local_values"][0]["value"]=0
+    with pytest.raises(AssertionError):
+        check("fixture",r)
