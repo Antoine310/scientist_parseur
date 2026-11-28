@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.54 — 28 novembre 2026 (fusion #119, chantier #120)**  
+**Version : 1.55 — 28 novembre 2026 (fusion #120, chantier #121)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #119** (181c05485bed0a06adc384c9c72696d5a64b7a0a). CI PR/main50/50 ; 2138 locaux, SHA non imprimé.
-**PR en cours : #120**, composition décodeurs CSR, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #120** (f1ba72471d4499660436b40c28dde4e4fa726db0). CI PR/main50/50 ; 2184 locaux SHA exact.
+**PR en cours : #121**, concaténation packed lane, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -919,3 +919,7 @@ Prochaine action : ...
 ### PR #120 — Composition décodeurs CSR (en cours)
 
 - [~] **PR96-COMPOSE-01 / PR111-LOGICAL-COMPOSE-01 · P0** — #119 fusionnée,2138 locaux,CI PR/main50/50,64 IDs1044–1107/448 paires, union rapports79/98 et252/384. #120 cible IDs214–277, 64 sites/864 paires attendues, enum+addition constante+comparaison+AND/inhibition et paramètre largeur. Pas de généralisation, promotion, preuve globale, X/Z ou fermeture des dettes. PR115-CONVERSION-GENERAL-01, PR74-IDX-02, toutes dettes historiques conservées. [Périmètre](csr-composition-pr120.md).
+
+### PR #121 — Concaténation de lane packed (en cours)
+
+- [~] **PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 · P0** — #120 fusionnée,2184 locaux SHA exact,CI PR/main50/50,64 résiduels core/864 paires, union rapports79/98 et316/384. #121 cible 8 résiduels ALU et8 core, chacun 8 paires et8 valeurs locales ; coordonnées multidimensionnelles exactes, pas d'inférence de constante permanente ni de promotion. Dettes composition, layout, X/Z, gardes/priorité, fonctions, boucles et intégration restent ouvertes. [Périmètre](packed-lane-concat-pr121.md).
