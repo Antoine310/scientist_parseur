@@ -1,9 +1,9 @@
 # RTLPrep — Registre vivant des limites, optimisations et validations
 
-**Version : 1.55 — 28 novembre 2026 (fusion #120, chantier #121)**  
+**Version : 1.56 — 28 novembre 2026 (fusion #121, chantier #122)**  
 **Dépôt :** [Antoine310/scientist_parseur](https://github.com/Antoine310/scientist_parseur)  
-**Dernière PR fusionnée confirmée : #120** (f1ba72471d4499660436b40c28dde4e4fa726db0). CI PR/main50/50 ; 2184 locaux SHA exact.
-**PR en cours : #121**, concaténation packed lane, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
+**Dernière PR fusionnée confirmée : #121** (2591136b4cb763464b1023c8c47d0b7454f4fb11). CI PR/main50/50 ; 2233 locaux SHA exact.
+**PR en cours : #122**, mux de paramètre élaboré, validation à effectuer. [Feuille de route](roadmap-after-pr95.md).
 
 ## 1. Mode d'emploi — à transmettre à chaque nouvelle conversation
 
@@ -925,3 +925,7 @@ Prochaine action : ...
 - [~] **PR96-COMPOSE-01 / PR109-CONCAT-CORPUS-01 · P0** — #120 fusionnée,2184 locaux SHA exact,CI PR/main50/50,64 résiduels core/864 paires, union rapports79/98 et316/384. #121 cible 8 résiduels ALU et8 core, chacun 8 paires et8 valeurs locales ; coordonnées multidimensionnelles exactes, pas d'inférence de constante permanente ni de promotion. Dettes composition, layout, X/Z, gardes/priorité, fonctions, boucles et intégration restent ouvertes. [Périmètre](packed-lane-concat-pr121.md).
 
 - #121 première validation : analyse fixture 8/8 mais oracle supposait à tort l'ordre source des IDs. Correspondance réelle [7,0,1,2,3,4,5,6] vérifiée dans l'artefact15265818842. Correction ciblée oracle et 7 tests de régression ; aucun changement de l'analyseur, des résultats historiques ou des dettes. CI initiale48/50 ; nouvelle validation requise.
+
+### PR #122 — Mux de paramètre élaboré (en cours)
+
+- [~] **PR96-COMPOSE-01 / PR115-CONVERSION-GENERAL-01 · P0** — #121 fusionnée,2233 locaux SHA exact,CI PR/main50/50,8 résiduels ALU et8 core,8 paires/8 valeurs locales chacun, union87/98 et324/384. #122 cible six mux CSR core10–15, chaîne de paramètres parent/enfant,192 valeurs locales zéro et192 coordonnées alternatives inactives, zéro paire active pour configuration0. Variante1 fixture. Généralisation paramètres, mux, gardes, X/Z, priorités, appels, boucles, intégration restent ouverts. [Périmètre](parameter-mux-pr122.md).
